@@ -30,9 +30,30 @@ private struct SettingsView: View {
     @State private var showMenuBar: Bool = ContextSettings.shared.showMenuBarExtra
     @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
     @State private var theme: ThemeMode = ContextSettings.shared.themeMode
+    @State private var showInDock: Bool = ContextSettings.shared.showInDock
 
     var body: some View {
         Form {
+            Section("Placement") {
+                Toggle("Show in Dock", isOn: $showInDock)
+                    .onChange(of: showInDock) {
+                        ContextSettings.shared.showInDock = showInDock
+                        ContextSettings.shared.save()
+                        PlacementRelayer.dockChanged()
+                    }
+                Toggle("Show menu bar icon", isOn: $showMenuBar)
+                    .onChange(of: showMenuBar) {
+                        ContextSettings.shared.showMenuBarExtra = showMenuBar
+                        ContextSettings.shared.save()
+                        PlacementRelayer.menuBarChanged()
+                    }
+                Toggle("Pin above other windows", isOn: $pinOnTop)
+                    .onChange(of: pinOnTop) {
+                        ContextSettings.shared.pinOnTop = pinOnTop
+                        ContextSettings.shared.save()
+                        PinRelayer.pinOnTop = pinOnTop
+                    }
+            }
             Picker("Appearance", selection: $theme) {
                 Text("System").tag(ThemeMode.system)
                 Text("Light").tag(ThemeMode.light)
@@ -54,11 +75,13 @@ private struct SettingsView: View {
                 .onChange(of: pinOnTop) {
                     ContextSettings.shared.pinOnTop = pinOnTop
                     ContextSettings.shared.save()
+                    PinRelayer.pinOnTop = pinOnTop
                 }
             Toggle("Show menu bar icon", isOn: $showMenuBar)
                 .onChange(of: showMenuBar) {
                     ContextSettings.shared.showMenuBarExtra = showMenuBar
                     ContextSettings.shared.save()
+                    PlacementRelayer.menuBarChanged()
                 }
             HStack {
                 TextField("Obsidian vault folder", text: $vaultPath)
@@ -86,6 +109,23 @@ private struct SettingsView: View {
         }
         .padding(20)
     }
+}
+
+/// Relays Settings placement changes to the live app without a restart.
+/// Wired by the app delegate at launch; no-ops in tests.
+@MainActor
+enum PlacementRelayer {
+    nonisolated(unsafe) static var dockChanged: () -> Void = {}
+    nonisolated(unsafe) static var menuBarChanged: () -> Void = {}
+}
+
+/// Relays pin changes to the live overlay window. No restart needed.
+@MainActor
+enum PinRelayer {
+    nonisolated(unsafe) static var pinOnTop: Bool = false {
+        didSet { onChange?(pinOnTop) }
+    }
+    nonisolated(unsafe) static var onChange: ((Bool) -> Void)?
 }
 
 /// iCloud sync toggle + status. Uses the user's own iCloud; off by default.

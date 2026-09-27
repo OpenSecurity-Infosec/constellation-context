@@ -46,6 +46,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | URL schemes (`context://`) | Shipped (open, new, search, append) |
 | Raycast/Alfred | Shipped via URL schemes (see Automation below) |
 | Themes (system / light / dark, instant switch) | Shipped |
+| Dock + menu bar + pin (dock / menu / both / neither) | Shipped |
 
 ## Automation (URL schemes, Raycast, Alfred)
 

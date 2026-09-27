@@ -1,4 +1,5 @@
 import Carbon
+import ContextDomain
 import Foundation
 
 /// Global hotkey. Default ⌥A like Antinote.

@@ -514,29 +514,55 @@ final class ContextWindowController {
     }
 }
 
-/// Thin status-bar extra. No dock icon requirement — menu bar keeps it alive.
+/// Status-bar extra. Click toggles the overlay; menu offers show/new/quit.
+/// Lives in the same file as the window controller so actions stay wired.
 @MainActor
-final class ContextStatusItem {
+final class ContextStatusItem: NSObject {
     private var item: NSStatusItem?
+    private var onToggle: (() -> Void)?
+    private var onNewNote: (() -> Void)?
 
     func install(toggle: @escaping () -> Void, newNote: @escaping () -> Void) {
         guard ContextSettings.shared.showMenuBarExtra else { return }
+        remove()
+        onToggle = toggle
+        onNewNote = newNote
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.title = "◍"
         item.button?.action = #selector(handle(_:))
-        item.button?.target = nil
+        item.button?.target = self
         let menu = NSMenu()
-        menu.addItem(withTitle: "Show Context", action: #selector(showAction(_:)), keyEquivalent: "")
-        menu.addItem(withTitle: "New Note", action: #selector(newAction(_:)), keyEquivalent: "")
+        let show = NSMenuItem(title: "Show Context", action: #selector(showAction(_:)), keyEquivalent: "")
+        show.target = self
+        menu.addItem(show)
+        let fresh = NSMenuItem(title: "New Note", action: #selector(newAction(_:)), keyEquivalent: "")
+        fresh.target = self
+        menu.addItem(fresh)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         self.item = item
-        _ = toggle
-        _ = newNote
     }
 
-    @objc private func handle(_ sender: Any?) {}
-    @objc private func showAction(_ sender: Any?) {}
-    @objc private func newAction(_ sender: Any?) {}
+    /// Live add/remove when Settings toggles the icon. No restart needed.
+    func refresh(toggle: @escaping () -> Void, newNote: @escaping () -> Void) {
+        if ContextSettings.shared.showMenuBarExtra {
+            install(toggle: toggle, newNote: newNote)
+        } else {
+            remove()
+        }
+    }
+
+    func remove() {
+        if let item {
+            NSStatusBar.system.removeStatusItem(item)
+        }
+        item = nil
+        onToggle = nil
+        onNewNote = nil
+    }
+
+    @objc private func handle(_ sender: Any?) { onToggle?() }
+    @objc private func showAction(_ sender: Any?) { onToggle?() }
+    @objc private func newAction(_ sender: Any?) { onNewNote?() }
 }

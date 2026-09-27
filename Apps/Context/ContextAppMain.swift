@@ -16,13 +16,34 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         app.run()
     }
 
+    /// Dock / menu-bar placement. Dock on by default; menu-bar-only uses
+    /// accessory policy so Context lives in the menu bar like Antinote.
+    func applyPlacement() {
+        if ContextSettings.shared.showInDock {
+            NSApp.setActivationPolicy(.regular)
+        } else {
+            NSApp.setActivationPolicy(.accessory)
+        }
+        status?.refresh(
+            toggle: { [weak self] in self?.main?.toggle() },
+            newNote: { [weak self] in self?.main?.newNote() }
+        )
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = buildMenu()
         let controller = ContextWindowController()
         main = controller
         let status = ContextStatusItem()
         self.status = status
-        status.install(toggle: {}, newNote: {})
+        status.install(
+            toggle: { [weak controller] in controller?.toggle() },
+            newNote: { [weak controller] in controller?.newNote() }
+        )
+        PlacementRelayer.dockChanged = { [weak self] in self?.applyPlacement() }
+        PlacementRelayer.menuBarChanged = { [weak self] in self?.applyPlacement() }
+        PinRelayer.onChange = { [weak controller] _ in controller?.updatePin() }
+        applyPlacement()
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         controller.show()
         SyncManager.shared.start()
