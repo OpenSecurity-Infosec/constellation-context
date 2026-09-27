@@ -79,9 +79,39 @@ private struct SettingsView: View {
                     }
                 }
             }
-            Text("Toggle with ⌥A from anywhere. Notes stay on this Mac.")
+            SyncSettingsRow()
+            Text("Toggle with ⌥A from anywhere. Notes stay on this Mac unless iCloud sync is on.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(20)
+    }
+}
+
+/// iCloud sync toggle + status. Uses the user's own iCloud; off by default.
+private struct SyncSettingsRow: View {
+    @State private var enabled: Bool = ContextSettings.shared.iCloudSyncEnabled
+    @State private var status: String = SyncManager.shared.statusText()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("Sync notes with iCloud", isOn: $enabled)
+                .onChange(of: enabled) {
+                    SyncManager.shared.isEnabled = enabled
+                    status = SyncManager.shared.statusText()
+                }
+            Text(status)
+                .font(.caption).foregroundStyle(.secondary)
+            if enabled {
+                Button("Sync now") {
+                    SyncManager.shared.sync()
+                    status = SyncManager.shared.statusText()
+                }
+                .font(.caption)
+            }
+        }
+        .onAppear {
+            enabled = ContextSettings.shared.iCloudSyncEnabled
+            status = SyncManager.shared.statusText()
+        }
     }
 }

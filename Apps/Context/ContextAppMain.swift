@@ -25,6 +25,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         status.install(toggle: {}, newNote: {})
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         controller.show()
+        SyncManager.shared.start()
         if let pending = pendingURL {
             pendingURL = nil
             handleSchemeURL(pending)

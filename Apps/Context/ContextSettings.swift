@@ -10,6 +10,8 @@ public struct ContextSettings: Codable, Sendable {
     public var hotKeyModifiers: UInt32 = 0x0800 // optionKey
     public var obsidianVaultPath: String? = nil
     public var themeMode: ThemeMode = .system
+    public var iCloudSyncEnabled: Bool = false
+    public var lastSyncAt: Date? = nil
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
 

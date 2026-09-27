@@ -34,6 +34,19 @@ public final class NoteStore: @unchecked Sendable {
         lock.withLock { notes.first { $0.id == id } }
     }
 
+    public var allNotes: [ContextNote] {
+        lock.withLock { notes }
+    }
+
+    /// Replaces the full set (iCloud merge result). Last-writer-wins already
+    /// resolved by the caller.
+    public func replaceAll(_ merged: [ContextNote]) {
+        lock.withLock {
+            notes = merged
+            save()
+        }
+    }
+
     // MARK: - Writes
 
     @discardableResult

@@ -42,7 +42,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Shipped |
 | Two-finger swipe navigation | Shipped |
 | Note search pane (⌘F) | Shipped |
-| iCloud sync | Not started (local JSON store only) |
+| iCloud sync (your own iCloud, off by default, last-writer-wins) | Shipped |
 | URL schemes (`context://`) | Shipped (open, new, search, append) |
 | Raycast/Alfred | Shipped via URL schemes (see Automation below) |
 | Themes (system / light / dark, instant switch) | Shipped |

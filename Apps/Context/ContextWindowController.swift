@@ -144,6 +144,11 @@ final class ContextWindowController {
             autoPaste.stop()
         }
         render(preservingFocus: true)
+        // Opportunistic push when sync is on; SyncManager no-ops when off.
+        Task { @MainActor in SyncManager.shared.sync(
+            localNotes: { [weak self] in self?.store.allNotes ?? [] },
+            applyMerged: { _ in }
+        ) }
     }
 
     private func appendAutoPaste(_ pasted: String) {
@@ -360,6 +365,20 @@ final class ContextWindowController {
         } else {
             vc.show()
         }
+    }
+
+    func syncNow() {
+        SyncManager.shared.sync(
+            localNotes: { [weak self] in self?.store.allNotes ?? [] },
+            applyMerged: { [weak self] merged in
+                guard let notes = merged as? [ContextNote] else { return }
+                self?.store.replaceAll(notes)
+                if let current = self?.noteID, !notes.contains(where: { $0.id == current }) {
+                    self?.noteID = notes.first?.id ?? self?.store.create().id ?? UUID()
+                }
+                self?.render(preservingFocus: true)
+            }
+        )
     }
 
     // MARK: - URL scheme actions
