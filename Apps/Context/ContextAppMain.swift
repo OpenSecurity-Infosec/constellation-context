@@ -31,6 +31,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func newNote(_ sender: Any?) { main?.newNote() }
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }
     @objc func prevNote(_ sender: Any?) { main?.prevNote() }
+    @objc func cycleMarker(_ sender: Any?) { main?.cycleMarkerAtCaret() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
 
@@ -48,6 +49,11 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         file.addItem(.separator())
         file.addItem(withTitle: "The Void", action: #selector(showVoid(_:)), keyEquivalent: "")
         let fileItem = NSMenuItem(); fileItem.submenu = file; menu.addItem(fileItem)
+        let format = NSMenu(title: "Format")
+        let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")
+        cycle.keyEquivalentModifierMask = [.command, .shift]
+        format.addItem(cycle)
+        let formatItem = NSMenuItem(); formatItem.submenu = format; menu.addItem(formatItem)
         let window = NSMenu(title: "Window")
         window.addItem(withTitle: "Toggle Context", action: #selector(toggleWindow(_:)), keyEquivalent: "a")
         let windowItem = NSMenuItem(); windowItem.submenu = window; menu.addItem(windowItem)

@@ -132,6 +132,47 @@ final class ContextWindowController {
         render(preservingFocus: true)
     }
 
+    func indentChecklist(id: Int, direction: ChecklistItem.IndentDirection) {
+        let next = ChecklistItem.indent(text: note.text, id: id, direction: direction)
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    func cycleChecklistMarker(id: Int) {
+        let next = ChecklistItem.cycleMarker(text: note.text, id: id)
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    /// Current checklist row id under the caret in the plain text buffer.
+    func rowIDForCaret(_ caret: Int) -> Int {
+        let text = note.text
+        let lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        var pos = 0
+        for (i, line) in lines.enumerated() {
+            if caret <= pos + line.count { return max(0, i - offset) }
+            pos += line.count + 1
+        }
+        return max(0, lines.count - 1 - offset)
+    }
+
+    func indentRowAtCaret(direction: ChecklistItem.IndentDirection) {
+        indentChecklist(id: rowIDForCaret(lastCaret), direction: direction)
+    }
+
+    private var lastCaret: Int = 0
+
+    func trackCaret(_ caret: Int) { lastCaret = caret }
+
+    func cycleMarkerAtCaret(_ caret: Int) {
+        cycleChecklistMarker(id: rowIDForCaret(caret))
+    }
+
+    func cycleMarkerAtCaret() {
+        cycleChecklistMarker(id: rowIDForCaret(lastCaret))
+    }
+
     // MARK: - Timer controls
 
     private func startTimerTick() {

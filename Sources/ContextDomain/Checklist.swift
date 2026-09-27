@@ -6,29 +6,69 @@ public struct ChecklistItem: Equatable, Sendable, Identifiable {
     public var checked: Bool
     public var text: String
     public var indent: Int
+    public var marker: Marker
+
+    public enum Marker: Equatable, Sendable {
+        case checkbox
+        case bullet
+        case numbered(Int)
+
+        /// Cycles checkbox → bullet → numbered → checkbox, per Antinote ⌘⇧M.
+        public func next() -> Marker {
+            switch self {
+            case .checkbox: return .bullet
+            case .bullet: return .numbered(1)
+            case .numbered: return .checkbox
+            }
+        }
+    }
 
     public static func parse(_ noteText: String) -> [ChecklistItem] {
         let lines = noteText.components(separatedBy: .newlines)
         // Skip trigger line when present.
         let body = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? Array(lines.dropFirst()) : lines
         var items: [ChecklistItem] = []
+        var number = 1
         for (i, line) in body.enumerated() {
             let leading = line.prefix(while: { $0 == " " || $0 == "\t" }).count
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix("[ ] ") || trimmed.hasPrefix("[x] ") || trimmed.hasPrefix("[X] ") {
                 let checked = trimmed.lowercased().hasPrefix("[x] ")
-                items.append(ChecklistItem(id: i, checked: checked, text: String(trimmed.dropFirst(4)), indent: leading / 2))
+                items.append(ChecklistItem(id: i, checked: checked, text: String(trimmed.dropFirst(4)), indent: leading / 2, marker: .checkbox))
+                number = 1
+            } else if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("• ") {
+                items.append(ChecklistItem(id: i, checked: false, text: String(trimmed.dropFirst(2)), indent: leading / 2, marker: .bullet))
+                number = 1
+            } else if let match = trimmed.range(of: #"^(\d+)[.)]\s+"#, options: .regularExpression) {
+                let digits = trimmed[match].filter(\.isNumber)
+                number = Int(digits) ?? number
+                items.append(ChecklistItem(id: i, checked: false, text: String(trimmed[match.upperBound...]), indent: leading / 2, marker: .numbered(number)))
+                number += 1
             } else if !trimmed.isEmpty {
-                items.append(ChecklistItem(id: i, checked: false, text: trimmed, indent: leading / 2))
+                items.append(ChecklistItem(id: i, checked: false, text: trimmed, indent: leading / 2, marker: .checkbox))
+                number = 1
+            } else {
+                number = 1
             }
         }
         return items
     }
 
     public static func serialize(_ items: [ChecklistItem], trigger: Bool) -> String {
+        var number = 1
         var lines = items.map { item -> String in
             let pad = String(repeating: "  ", count: item.indent)
-            return "\(pad)\(item.checked ? "[x]" : "[ ]") \(item.text)"
+            switch item.marker {
+            case .checkbox:
+                number = 1
+                return "\(pad)\(item.checked ? "[x]" : "[ ]") \(item.text)"
+            case .bullet:
+                number = 1
+                return "\(pad)- \(item.text)"
+            case .numbered:
+                defer { number += 1 }
+                return "\(pad)\(number). \(item.text)"
+            }
         }
         if trigger { lines.insert("list", at: 0) }
         return lines.joined(separator: "\n")
@@ -48,6 +88,53 @@ public struct ChecklistItem: Equatable, Sendable, Identifiable {
             line = "[x] \(line.trimmingCharacters(in: .whitespaces))"
         }
         lines[idx] = line
+        return lines.joined(separator: "\n")
+    }
+
+    /// Tab nests the target line one level deeper; Shift+Tab outdents (floor 0).
+    public static func indent(text: String, id: Int, direction: IndentDirection) -> String {
+        var lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        let idx = id + offset
+        guard lines.indices.contains(idx) else { return text }
+        var line = lines[idx]
+        switch direction {
+        case .in:
+            line = "  " + line
+        case .out:
+            if line.hasPrefix("  ") { line = String(line.dropFirst(2)) }
+            else if line.hasPrefix("\t") { line = String(line.dropFirst()) }
+            else if line.hasPrefix(" ") { line = String(line.dropFirst()) }
+        }
+        lines[idx] = line
+        return lines.joined(separator: "\n")
+    }
+
+    public enum IndentDirection { case `in`, out }
+
+    /// ⌘⇧M cycles the current line: checkbox ↔ bullet ↔ numbered.
+    /// Markers live in the text itself.
+    public static func cycleMarker(text: String, id: Int) -> String {
+        var lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        let idx = id + offset
+        guard lines.indices.contains(idx) else { return text }
+        let line = lines[idx]
+        let leading = String(line.prefix(while: { $0 == " " || $0 == "\t" }))
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("[ ] ") || trimmed.hasPrefix("[x] ") || trimmed.hasPrefix("[X] ") {
+            let rest = String(trimmed.dropFirst(4))
+            lines[idx] = "\(leading)- \(rest)"
+        } else if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("• ") {
+            let rest = String(trimmed.dropFirst(2))
+            lines[idx] = "\(leading)1. \(rest)"
+        } else if trimmed.range(of: #"^\d+[.)]\s+"#, options: .regularExpression) != nil,
+                  let match = trimmed.range(of: #"^\d+[.)]\s+"#, options: .regularExpression) {
+            let rest = String(trimmed[match.upperBound...])
+            lines[idx] = "\(leading)[ ] \(rest)"
+        } else if !trimmed.isEmpty {
+            lines[idx] = "\(leading)[ ] \(trimmed)"
+        }
         return lines.joined(separator: "\n")
     }
 }

@@ -79,7 +79,9 @@ struct ContextEditorRoot: View {
             } else {
                 ZStack(alignment: .topLeading) {
                     mathGutter
-                    PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) })
+                    PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
+                        controller?.indentRowAtCaret(direction: direction)
+                    })
                         .font(.system(size: ContextSettings.shared.fontSize))
                 }
             }
@@ -130,6 +132,10 @@ struct ContextEditorRoot: View {
                 HStack {
                     Button(item.checked ? "☑" : "☐") { controller?.toggleChecklist(id: item.id) }
                         .buttonStyle(.plain)
+                    Text(markerPrefix(item))
+                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 24, alignment: .trailing)
                     TextField("", text: Binding(
                         get: { item.text },
                         set: { _ in }
@@ -139,10 +145,23 @@ struct ContextEditorRoot: View {
                     .foregroundStyle(item.checked ? .secondary : .primary)
                 }
                 .padding(.leading, CGFloat(item.indent) * 16)
+                .contextMenu {
+                    Button("Nest (Tab)") { controller?.indentChecklist(id: item.id, direction: .in) }
+                    Button("Outdent (⇧Tab)") { controller?.indentChecklist(id: item.id, direction: .out) }
+                    Button("Cycle marker (⌘⇧M)") { controller?.cycleChecklistMarker(id: item.id) }
+                }
             }
             .onDelete { _ in }
         }
         .listStyle(.plain)
+    }
+
+    private func markerPrefix(_ item: ChecklistItem) -> String {
+        switch item.marker {
+        case .checkbox: return item.checked ? "[x]" : "[ ]"
+        case .bullet: return "-"
+        case .numbered(let n): return "\(n)."
+        }
     }
 
     @ViewBuilder
@@ -197,6 +216,8 @@ private struct PlainTextEditor: NSViewRepresentable {
     @Binding var text: String
     @Binding var isEditing: Bool
     var onCommit: () -> Void
+    var onCaret: ((Int) -> Void)?
+    var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
@@ -205,6 +226,8 @@ private struct PlainTextEditor: NSViewRepresentable {
             onCommit()
         }
         tv.onFocus = { focused in isEditing = focused }
+        tv.onCaret = { caret in onCaret?(caret) }
+        tv.onIndent = { direction in onIndent?(direction) }
         tv.font = ContextTheme.bodyFont
         tv.isRichText = false
         tv.usesFontPanel = false
@@ -238,6 +261,8 @@ private struct PlainTextEditor: NSViewRepresentable {
 final class ContextTextView: NSTextView {
     var onChange: ((String) -> Void)?
     var onFocus: ((Bool) -> Void)?
+    var onCaret: ((Int) -> Void)?
+    var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
 
     override func paste(_ sender: Any?) {
         // Plain text only: strip styling, bullets, indentation.
@@ -249,9 +274,23 @@ final class ContextTextView: NSTextView {
         super.paste(sender)
     }
 
+    override func doCommand(by selector: Selector) {
+        // Tab nests / Shift+Tab outdents the current checklist line.
+        if selector == #selector(insertTab(_:)) {
+            onIndent?(.in)
+            return
+        }
+        if selector == #selector(insertBacktab(_:)) {
+            onIndent?(.out)
+            return
+        }
+        super.doCommand(by: selector)
+    }
+
     override func didChangeText() {
         super.didChangeText()
         onChange?(string)
+        onCaret?(selectedRange().location)
     }
 
     override func becomeFirstResponder() -> Bool {
