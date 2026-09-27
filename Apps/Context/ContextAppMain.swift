@@ -35,6 +35,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func sendToAppleNotes(_ sender: Any?) { main?.sendToAppleNotes() }
     @objc func sendToObsidian(_ sender: Any?) { main?.sendToObsidian() }
     @objc func sendToBear(_ sender: Any?) { main?.sendToBear() }
+    @objc func openSearch(_ sender: Any?) { main?.openSearch() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
 
@@ -51,6 +52,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         file.addItem(withTitle: "Previous Note", action: #selector(prevNote(_:)), keyEquivalent: "[")
         file.addItem(.separator())
         file.addItem(withTitle: "The Void", action: #selector(showVoid(_:)), keyEquivalent: "")
+        file.addItem(withTitle: "Search Notes…", action: #selector(openSearch(_:)), keyEquivalent: "f")
         let fileItem = NSMenuItem(); fileItem.submenu = file; menu.addItem(fileItem)
         let format = NSMenu(title: "Format")
         let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")

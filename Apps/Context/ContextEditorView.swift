@@ -73,6 +73,8 @@ struct ContextEditorRoot: View {
                 Button("Send to Bear") { controller?.sendToBear() }
             }
             Button("Void") { controller?.openVoid() }.buttonStyle(.plain)
+            Button("🔍") { controller?.openSearch() }.buttonStyle(.plain)
+                .help("Search notes (⌘F)")
             Button("+") { controller?.newNote() }.buttonStyle(.plain)
             Button("🗑") { controller?.trashCurrent() }.buttonStyle(.plain)
         }

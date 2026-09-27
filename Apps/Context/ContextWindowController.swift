@@ -346,6 +346,17 @@ final class ContextWindowController {
 
     func openSettings() { SettingsWindowController.shared.show() }
 
+    // MARK: - Search
+
+    func openSearch() {
+        let vc = SearchWindowController(store: store) { [weak self] id in
+            self?.noteID = id
+            self?.afterNavigate()
+            self?.show()
+        }
+        vc.show()
+    }
+
     // MARK: - Swipe
 
     private func applySwipe(_ direction: SwipeNavigation.Direction) {

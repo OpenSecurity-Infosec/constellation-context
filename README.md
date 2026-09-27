@@ -23,7 +23,8 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Plain-text notes, formatting stripped on paste | Shipped |
 | Swipe/arrow navigation between notes, new note past the end | Shipped (‹/› buttons, ⌘[/⌘]) |
 | `math` inline evaluation with descriptive text | Shipped |
-| Unit conversions (length, weight, temperature) | Shipped (currency/crypto rates pending) |
+| Unit conversions (length, weight, temperature) | Shipped |
+| Currency + crypto conversions in `math` (cached rates, offline fallback) | Shipped |
 | Reactive variables (`name = expr`, recalculates down the note) | Shipped |
 | `sum` / `avg` totals | Shipped |
 | `count` lines/words/chars with `//` comments | Shipped |
@@ -36,8 +37,14 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Shipped (30 days) |
 | iCloud sync | Not started (local JSON store only) |
-| Apple Notes / Obsidian / Bear direct export | Not started |
-| Link shrink, themes, extensions/`::` commands, URL schemes, Raycast/Alfred | Not started |
+| Apple Notes / Obsidian / Bear direct export | Shipped |
+| Link shrink (shortened display, click expand, ⌘↩ open) | Shipped |
+| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) | Shipped (first set; full JS runtime pending) |
+| Checklist nesting (Tab) + marker cycling (⌘⇧M) | Shipped |
+| Two-finger swipe navigation | Shipped |
+| Note search pane (⌘F) | Shipped |
+| iCloud sync | Not started (local JSON store only) |
+| Themes, URL schemes, Raycast/Alfred | Not started |
 
 ## Notes
 
