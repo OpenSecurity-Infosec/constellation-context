@@ -20,6 +20,9 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin" "$app/Contents/MacOS/Context"
 cp Apps/Context/Info.plist "$app/Contents/Info.plist"
+if [[ -f Apps/Context/Context.entitlements ]]; then
+  cp Apps/Context/Context.entitlements "$app/Contents/Resources/Context.entitlements"
+fi
 rev="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo dev)"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $rev" "$app/Contents/Info.plist" >/dev/null
 printf '%s\n' "$rev" > "$app/Contents/Resources/ContextRevision"

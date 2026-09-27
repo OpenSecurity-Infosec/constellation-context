@@ -7,7 +7,7 @@ import Foundation
 ///
 /// Two transports, same payload:
 /// - KVS (small libraries): chunked JSON records under `context.notes.v1`.
-/// - CloudKit (future, same record shape): private DB, encrypted fields.
+/// - CloudKit private DB (full sync): one record per note, see CloudKitSync.
 public enum SyncPayload: Sendable {
     public static let kvKey = "context.notes.v1"
     public static let chunkSize = 900 * 1024 // KVS per-key limit is 1MB.
