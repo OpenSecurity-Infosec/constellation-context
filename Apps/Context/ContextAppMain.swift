@@ -32,6 +32,9 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }
     @objc func prevNote(_ sender: Any?) { main?.prevNote() }
     @objc func cycleMarker(_ sender: Any?) { main?.cycleMarkerAtCaret() }
+    @objc func sendToAppleNotes(_ sender: Any?) { main?.sendToAppleNotes() }
+    @objc func sendToObsidian(_ sender: Any?) { main?.sendToObsidian() }
+    @objc func sendToBear(_ sender: Any?) { main?.sendToBear() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
 
@@ -54,6 +57,11 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         cycle.keyEquivalentModifierMask = [.command, .shift]
         format.addItem(cycle)
         let formatItem = NSMenuItem(); formatItem.submenu = format; menu.addItem(formatItem)
+        let share = NSMenu(title: "Share")
+        share.addItem(withTitle: "Send to Apple Notes", action: #selector(sendToAppleNotes(_:)), keyEquivalent: "")
+        share.addItem(withTitle: "Send to Obsidian", action: #selector(sendToObsidian(_:)), keyEquivalent: "")
+        share.addItem(withTitle: "Send to Bear", action: #selector(sendToBear(_:)), keyEquivalent: "")
+        let shareItem = NSMenuItem(); shareItem.submenu = share; menu.addItem(shareItem)
         let window = NSMenu(title: "Window")
         window.addItem(withTitle: "Toggle Context", action: #selector(toggleWindow(_:)), keyEquivalent: "a")
         let windowItem = NSMenuItem(); windowItem.submenu = window; menu.addItem(windowItem)

@@ -55,6 +55,49 @@ public enum NoteExport: Sendable {
         NSPasteboard.general.setString(note.text, forType: .string)
     }
 
+    // MARK: - One-click handoff
+
+    /// Sends the note to Apple Notes via osascript. Throws when Notes is
+    /// missing or the script fails so the UI can show a graceful alert.
+    @MainActor
+    public static func sendToAppleNotes(_ note: ContextNote) throws {
+        let (title, body) = Handoff.titleAndBody(for: note)
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", Handoff.appleNotesScript(title: title, body: body)]
+        try proc.run()
+        proc.waitUntilExit()
+        guard proc.terminationStatus == 0 else { throw ExportError.handoffFailed("Apple Notes did not accept the note.") }
+    }
+
+    /// Writes the note as Markdown into the Obsidian vault folder.
+    @MainActor
+    public static func sendToObsidian(_ note: ContextNote, vault: URL) throws {
+        try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+        let dest = Handoff.obsidianFileURL(for: note, vault: vault)
+        // Avoid clobbering an existing vault note with the same title.
+        var final = dest
+        var n = 2
+        while FileManager.default.fileExists(atPath: final.path) {
+            final = vault.appendingPathComponent("\(dest.deletingPathExtension().lastPathComponent)-\(n).md")
+            n += 1
+        }
+        try markdown(note).write(to: final, atomically: true, encoding: .utf8)
+        NSWorkspace.shared.activateFileViewerSelecting([final])
+    }
+
+    /// Opens Bear's x-callback-url to create the note.
+    @MainActor
+    public static func sendToBear(_ note: ContextNote) throws {
+        guard let url = Handoff.bearURL(for: note) else { throw ExportError.handoffFailed("Could not build the Bear URL.") }
+        if !NSWorkspace.shared.open(url) {
+            throw ExportError.handoffFailed("Bear is not installed or did not open.")
+        }
+    }
+
     public enum ExportKind: Sendable { case txt, markdown, pdf }
-    public enum ExportError: Error { case renderFailed }
+    public enum ExportError: Error {
+        case renderFailed
+        case handoffFailed(String)
+    }
 }

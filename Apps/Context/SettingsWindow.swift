@@ -27,6 +27,7 @@ private struct SettingsView: View {
     @State private var fontSize: Double = Double(ContextSettings.shared.fontSize)
     @State private var pinOnTop: Bool = ContextSettings.shared.pinOnTop
     @State private var showMenuBar: Bool = ContextSettings.shared.showMenuBarExtra
+    @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
 
     var body: some View {
         Form {
@@ -46,6 +47,25 @@ private struct SettingsView: View {
                     ContextSettings.shared.showMenuBarExtra = showMenuBar
                     ContextSettings.shared.save()
                 }
+            HStack {
+                TextField("Obsidian vault folder", text: $vaultPath)
+                    .onChange(of: vaultPath) {
+                        let trimmed = vaultPath.trimmingCharacters(in: .whitespaces)
+                        ContextSettings.shared.obsidianVaultPath = trimmed.isEmpty ? nil : trimmed
+                        ContextSettings.shared.save()
+                    }
+                Button("Choose…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = false
+                    panel.canChooseDirectories = true
+                    panel.canCreateDirectories = true
+                    if panel.runModal() == .OK, let url = panel.url {
+                        vaultPath = url.path
+                        ContextSettings.shared.obsidianVaultPath = url.path
+                        ContextSettings.shared.save()
+                    }
+                }
+            }
             Text("Toggle with ⌥A from anywhere. Notes stay on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
         }

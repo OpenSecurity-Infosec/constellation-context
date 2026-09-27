@@ -229,6 +229,54 @@ final class ContextWindowController {
 
     func copyNote() { NoteExport.copyToClipboard(note) }
 
+    func sendToAppleNotes() {
+        do {
+            try NoteExport.sendToAppleNotes(note)
+        } catch {
+            alert("Apple Notes is not available right now.")
+        }
+    }
+
+    func sendToObsidian() {
+        if let path = ContextSettings.shared.obsidianVaultPath, !path.isEmpty {
+            do {
+                try NoteExport.sendToObsidian(note, vault: URL(fileURLWithPath: path))
+            } catch {
+                alert("Could not write to the Obsidian vault folder.")
+            }
+            return
+        }
+        // No vault configured yet: prompt once, then send.
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.message = "Choose your Obsidian vault folder"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        ContextSettings.shared.obsidianVaultPath = url.path
+        ContextSettings.shared.save()
+        do {
+            try NoteExport.sendToObsidian(note, vault: url)
+        } catch {
+            alert("Could not write to the Obsidian vault folder.")
+        }
+    }
+
+    func sendToBear() {
+        do {
+            try NoteExport.sendToBear(note)
+        } catch {
+            alert("Bear is not installed or did not open.")
+        }
+    }
+
+    private func alert(_ message: String) {
+        let a = NSAlert()
+        a.messageText = "Context"
+        a.informativeText = message
+        a.runModal()
+    }
+
     func openVoid() {
         let vc = VoidWindowController(store: store) { [weak self] id in
             self?.noteID = id

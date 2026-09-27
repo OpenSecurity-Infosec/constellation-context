@@ -63,6 +63,10 @@ struct ContextEditorRoot: View {
                 Button("Save .txt") { controller?.export(kind: .txt) }
                 Button("Save Markdown") { controller?.export(kind: .markdown) }
                 Button("Save PDF") { controller?.export(kind: .pdf) }
+                Divider()
+                Button("Send to Apple Notes") { controller?.sendToAppleNotes() }
+                Button("Send to Obsidian") { controller?.sendToObsidian() }
+                Button("Send to Bear") { controller?.sendToBear() }
             }
             Button("Void") { controller?.openVoid() }.buttonStyle(.plain)
             Button("+") { controller?.newNote() }.buttonStyle(.plain)
