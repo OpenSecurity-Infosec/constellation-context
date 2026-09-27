@@ -12,6 +12,7 @@ public struct ContextSettings: Codable, Sendable {
     public var themeMode: ThemeMode = .system
     public var iCloudSyncEnabled: Bool = false
     public var lastSyncAt: Date? = nil
+    public var extensionsAllowNetwork: Bool = false
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
 

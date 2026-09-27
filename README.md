@@ -38,7 +38,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Recoverable trash (The Void) with expiry | Shipped (30 days) |
 | Apple Notes / Obsidian / Bear direct export | Shipped |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Shipped |
-| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) | Shipped (first set; full JS runtime pending) |
+| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Shipped (sandboxed .js in the Extensions folder; network toggle off by default) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Shipped |
 | Two-finger swipe navigation | Shipped |
 | Note search pane (⌘F) | Shipped |
@@ -61,6 +61,23 @@ Shortcuts, or the terminal (`open "context://..."`):
 
 Raycast: Script Commands or Quicklinks calling `open "context://new?text=…"`.
 Alfred: Workflow → Open URL with the same forms.
+
+## Extensions (`::` commands)
+
+Type `::` in any note for autocomplete: native builtins plus installed
+JavaScript extensions. Drop `.js` files into the Extensions folder
+(Settings → Reveal), each declaring a command:
+
+```js
+// name: shout — hint: Uppercase the note body
+function run(input) { return { fullText: input.text.toUpperCase() }; }
+```
+
+`input` is `{ text, token, selection, now }`. Return `{ replacement }` to
+swap the `::token`, `{ fullText }` to rewrite the buffer, `{ append }` to
+add, or a bare string. Scripts run sandboxed in JavaScriptCore with no
+network bridge; Settings → "Let extensions call their own APIs" stays OFF
+unless you opt in.
 
 ## Notes
 

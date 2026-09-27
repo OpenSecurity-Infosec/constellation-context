@@ -16,6 +16,7 @@ struct ContextEditorRoot: View {
     var remaining: TimeInterval?
     var timerRunning: Bool
     var ratesFootnote: String? = nil
+    var jsExtensions: [JSExtension.Script] = []
 
     @State private var text: String = ""
     @State private var isEditing = false
@@ -97,7 +98,7 @@ struct ContextEditorRoot: View {
                         slashSelected = 0
                     })
                         .font(.system(size: ContextSettings.shared.fontSize))
-                    if let fragment = slashFragment, !SlashCommand.completions(matching: fragment).isEmpty {
+                    if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
                         slashPopup(fragment: fragment)
                     }
                 }
@@ -105,7 +106,7 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.return) {
             if slashFragment != nil, let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment)
+                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
                 if slashSelected < matches.count {
                     runSlashCommand(matches[slashSelected].name)
                     return .handled
@@ -122,7 +123,7 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.downArrow) {
             if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment)
+                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
                 slashSelected = min(slashSelected + 1, matches.count - 1)
                 return .handled
             }
@@ -137,7 +138,7 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.tab) {
             if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment)
+                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
                 if slashSelected < matches.count {
                     runSlashCommand(matches[slashSelected].name)
                     return .handled
@@ -224,8 +225,9 @@ struct ContextEditorRoot: View {
     }
 
     /// `::` autocomplete popup: type to filter, Tab/↑↓ to move, Return to run.
+    /// Native builtins first, then installed JS extensions.
     private func slashPopup(fragment: String) -> some View {
-        let matches = SlashCommand.completions(matching: fragment)
+        let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
         return VStack(alignment: .leading, spacing: 0) {
             ForEach(matches.indices, id: \.self) { i in
                 Button {

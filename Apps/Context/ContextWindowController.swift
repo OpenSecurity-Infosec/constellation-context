@@ -206,11 +206,20 @@ final class ContextWindowController {
         cycleChecklistMarker(id: rowIDForCaret(lastCaret))
     }
 
+    // MARK: - Extensions
+
+    /// Installed JS extensions, reloaded each render so dropped files appear.
+    var jsExtensions: [JSExtension.Script] {
+        JSExtension.load(from: JSExtension.defaultFolder())
+    }
+
     // MARK: - Slash commands
 
-    /// Runs a `::` command: replaces the token range, or applies the
-    /// whole-buffer transform for commands like sort_lines.
+    /// Runs a `::` command: native builtins first, then installed JS scripts.
+    /// JS `replacement` swaps the token; `fullText` rewrites the buffer;
+    /// `append` adds to the end.
     func runSlashCommand(name: String, tokenRange: NSRange) {
+        if runJSExtension(name: name, tokenRange: tokenRange) { return }
         let fullText = note.text
         let chars = Array(fullText)
         let intRange: Range<Int>? = {
@@ -235,6 +244,49 @@ final class ContextWindowController {
             store.update(id: noteID, text: updated)
         }
         render(preservingFocus: true)
+    }
+
+    @discardableResult
+    private func runJSExtension(name: String, tokenRange: NSRange) -> Bool {
+        let scripts = jsExtensions
+        guard let script = SlashCommand.extensionScript(named: name, in: scripts) else { return false }
+        let fullText = note.text
+        let chars = Array(fullText)
+        let token: String = {
+            guard tokenRange.location >= 0,
+                  tokenRange.location + tokenRange.length <= chars.count
+            else { return "::\(name)" }
+            return String(chars[tokenRange.location..<(tokenRange.location + tokenRange.length)])
+        }()
+        let input = JSExtension.Input(
+            text: fullText,
+            token: token,
+            selection: "",
+            nowISO: ISO8601DateFormatter().string(from: Date())
+        )
+        guard let output = JSExtension.run(
+            script, input: input,
+            allowNetwork: ContextSettings.shared.extensionsAllowNetwork
+        ) else { return true }
+        switch output {
+        case .replacement(let rep):
+            var updated = fullText
+            if tokenRange.location >= 0, tokenRange.location + tokenRange.length <= chars.count {
+                let start = updated.index(updated.startIndex, offsetBy: tokenRange.location)
+                let end = updated.index(updated.startIndex, offsetBy: tokenRange.location + tokenRange.length)
+                updated.replaceSubrange(start..<end, with: rep)
+            } else {
+                updated += rep
+            }
+            store.update(id: noteID, text: updated)
+        case .fullText(let full):
+            store.update(id: noteID, text: full)
+        case .append(let extra):
+            let base = note.text
+            store.update(id: noteID, text: base.isEmpty ? extra : base + "\n" + extra)
+        }
+        render(preservingFocus: true)
+        return true
     }
 
     // MARK: - Timer controls
@@ -439,7 +491,8 @@ final class ContextWindowController {
             elapsed: timer.elapsed,
             remaining: timer.remaining,
             timerRunning: timer.isRunning,
-            ratesFootnote: ratesFootnote
+            ratesFootnote: ratesFootnote,
+            jsExtensions: jsExtensions
         )
         if let hosting {
             hosting.rootView = view

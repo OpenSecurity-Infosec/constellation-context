@@ -80,6 +80,7 @@ private struct SettingsView: View {
                 }
             }
             SyncSettingsRow()
+            ExtensionSettingsRow()
             Text("Toggle with ⌥A from anywhere. Notes stay on this Mac unless iCloud sync is on.")
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -112,6 +113,36 @@ private struct SyncSettingsRow: View {
         .onAppear {
             enabled = ContextSettings.shared.iCloudSyncEnabled
             status = SyncManager.shared.statusText()
+        }
+    }
+}
+
+/// JS extension privacy + folder. Scripts run sandboxed with no network
+/// bridge; the toggle stays OFF unless the user opts in.
+private struct ExtensionSettingsRow: View {
+    @State private var allowNetwork: Bool = ContextSettings.shared.extensionsAllowNetwork
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("Let extensions call their own APIs", isOn: $allowNetwork)
+                .onChange(of: allowNetwork) {
+                    ContextSettings.shared.extensionsAllowNetwork = allowNetwork
+                    ContextSettings.shared.save()
+                }
+            HStack {
+                Text("Extensions folder")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("Reveal") {
+                    NSWorkspace.shared.activateFileViewerSelecting([JSExtension.defaultFolder()])
+                }
+                .font(.caption)
+            }
+            Text("Drop .js files with `// name: x` headers to add ::commands.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear {
+            allowNetwork = ContextSettings.shared.extensionsAllowNetwork
         }
     }
 }

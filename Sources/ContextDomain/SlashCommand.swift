@@ -62,9 +62,20 @@ public enum SlashCommand: Sendable {
     }
 
     /// Filtered completions for a `::` prefix fragment (without the colons).
-    public static func completions(matching fragment: String) -> [Definition] {
+    /// Native builtins first, then installed JS extensions.
+    public static func completions(matching fragment: String, extensions: [JSExtension.Script] = []) -> [Definition] {
         let lower = fragment.lowercased()
-        return builtins.filter { lower.isEmpty || $0.name.lowercased().hasPrefix(lower) }
+        let native = builtins.filter { lower.isEmpty || $0.name.lowercased().hasPrefix(lower) }
+        let js = extensions
+            .filter { lower.isEmpty || $0.commandName.lowercased().hasPrefix(lower) }
+            .filter { ext in !builtins.contains { $0.name.lowercased() == ext.commandName.lowercased() } }
+            .map { Definition(name: $0.commandName, hint: $0.hint) }
+        return native + js
+    }
+
+    /// Looks up an installed JS extension by command name.
+    public static func extensionScript(named name: String, in extensions: [JSExtension.Script]) -> JSExtension.Script? {
+        extensions.first { $0.commandName.lowercased() == name.lowercased() }
     }
 
     /// Runs a command. `now` is injected for deterministic tests.
