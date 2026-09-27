@@ -3,9 +3,14 @@ import Foundation
 
 /// Inline math for `math` notes: arithmetic with variables, one result per line.
 /// Supports + - * / % ^, parentheses, unary minus, `name = expr` assignment,
-/// and simple unit conversions (`10 km in mi`, `5 kg in lb`).
+/// unit conversions (`10 km in mi`, `5 kg in lb`), and currency/crypto
+/// conversions (`42 USD in EUR`, `0.5 BTC in USD`) via an injected rate table.
 public struct MathEngine: Sendable {
-    public init() {}
+    private let rates: CurrencyRates.Snapshot?
+
+    public init(rates: CurrencyRates.Snapshot? = nil) {
+        self.rates = rates
+    }
 
     public struct LineResult: Equatable, Sendable {
         public var value: Double
@@ -29,9 +34,9 @@ public struct MathEngine: Sendable {
             variables[assign.name] = assign.value
             return LineResult(value: assign.value, display: format(assign.value))
         }
-        // Unit conversion: "<expr> in <unit>".
-        if let conv = parseConversion(work, variables: variables) {
-            return LineResult(value: conv, display: format(conv))
+        // Unit conversion: "<expr> in|to <unit>".
+        if isConversionLine(work) {
+            return parseConversion(work, variables: &variables)
         }
         // Otherwise evaluate trailing expression: take the longest evaluable
         // suffix so "oats 2 + 2" still yields 4. Bare names count as
@@ -61,8 +66,17 @@ public struct MathEngine: Sendable {
         return (name, value)
     }
 
-    private func parseConversion(_ line: String, variables: [String: Double]) -> Double? {
-        guard let range = line.range(of: #"\bin\b"#, options: .regularExpression) else { return nil }
+    /// A line shaped like "<expr> in|to <word>" is a conversion attempt.
+    /// Returns nil result (not a variable fallback) when units are unknown.
+    private func isConversionLine(_ line: String) -> Bool {
+        guard line.range(of: #"\b(in|to)\b"#, options: .regularExpression) != nil else { return false }
+        // Must have at least "<something> <word>" shape before the keyword.
+        let parts = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        return parts.count >= 3
+    }
+
+    private func parseConversion(_ line: String, variables: inout [String: Double]) -> LineResult? {
+        guard let range = line.range(of: #"\b(in|to)\b"#, options: .regularExpression) else { return nil }
         let lhs = line[line.startIndex..<range.lowerBound].trimmingCharacters(in: .whitespaces)
         let rhs = line[range.upperBound...].trimmingCharacters(in: .whitespaces).lowercased()
         // lhs is "<number expr> <from-unit>"
@@ -70,7 +84,17 @@ public struct MathEngine: Sendable {
         let expr = lhs[lhs.startIndex..<split].trimmingCharacters(in: .whitespaces)
         let from = lhs[lhs.index(after: split)...].trimmingCharacters(in: .whitespaces).lowercased()
         guard let amount = try? parseExpression(String(expr), variables: variables) else { return nil }
-        return UnitConvert.convert(amount: amount, from: from, to: rhs)
+        if let physical = UnitConvert.convert(amount: amount, from: from, to: rhs) {
+            return LineResult(value: physical, display: format(physical))
+        }
+        // Currency/crypto via the injected rate table; nil offline.
+        if let rates, CurrencyRates.isCurrency(from), CurrencyRates.isCurrency(rhs),
+           let converted = CurrencyRates.convert(amount: amount, from: from, to: rhs, rates: rates)
+        {
+            return LineResult(value: converted, display: format(converted))
+        }
+        // Conversion-shaped but unresolvable: blank gutter, never a crash.
+        return nil
     }
 
     // MARK: - Expression parser (recursive descent)

@@ -12,7 +12,8 @@ import Vision
 final class ContextWindowController {
     let window: ContextPanel
     private let store = NoteStore()
-    private let math = MathEngine()
+    private let rates = RateStore()
+    private var math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
     private var noteID: UUID
     private var timer = NoteTimer()
@@ -35,9 +36,35 @@ final class ContextWindowController {
         window.center()
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
+        refreshRates()
         render()
         startTimerTick()
         updatePin()
+    }
+
+    private func refreshRates() {
+        if let snap = rates.current { math = MathEngine(rates: snap) }
+        Task { [weak self] in
+            await self?.rates.refreshIfNeeded()
+            await MainActor.run {
+                if let snap = self?.rates.current {
+                    self?.math = MathEngine(rates: snap)
+                    self?.render(preservingFocus: true)
+                }
+            }
+        }
+    }
+
+    var ratesFootnote: String? {
+        // Show only in math notes mentioning a currency code.
+        let body = note.bodyWithoutTrigger.uppercased()
+        let mentionsCurrency = (CurrencyRates.fiat.union(CurrencyRates.crypto)).contains { body.contains($0) }
+        guard note.kind == .math, mentionsCurrency else { return nil }
+        guard let snap = rates.current else { return "rates unavailable offline" }
+        let age = Int(Date().timeIntervalSince(snap.fetchedAt) / 60)
+        if age < 1 { return "rates just now" }
+        if age < 60 { return "rates \(age)m ago" }
+        return "rates \(age / 60)h ago"
     }
 
     var note: ContextNote { store.note(id: noteID) ?? ContextNote(text: "") }
@@ -322,7 +349,8 @@ final class ContextWindowController {
             autoPasteArmed: autoPaste.isArmed,
             elapsed: timer.elapsed,
             remaining: timer.remaining,
-            timerRunning: timer.isRunning
+            timerRunning: timer.isRunning,
+            ratesFootnote: ratesFootnote
         )
         if let hosting {
             hosting.rootView = view

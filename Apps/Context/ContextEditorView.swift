@@ -15,6 +15,7 @@ struct ContextEditorRoot: View {
     var elapsed: TimeInterval
     var remaining: TimeInterval?
     var timerRunning: Bool
+    var ratesFootnote: String? = nil
 
     @State private var text: String = ""
     @State private var isEditing = false
@@ -205,8 +206,13 @@ struct ContextEditorRoot: View {
 
     private var statusBar: some View {
         HStack {
-            Text("⌥A toggle · ←/→ swipe notes · plain text always")
-                .font(.caption).foregroundStyle(.secondary)
+            if let ratesFootnote {
+                Text(ratesFootnote)
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("⌥A toggle · ←/→ swipe notes · plain text always")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Spacer()
             Button("Settings") { controller?.openSettings() }
                 .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
