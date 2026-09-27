@@ -1,3 +1,4 @@
+import ContextDomain
 import SwiftUI
 
 /// Settings: text size, float-on-top, menu bar extra.
@@ -28,9 +29,21 @@ private struct SettingsView: View {
     @State private var pinOnTop: Bool = ContextSettings.shared.pinOnTop
     @State private var showMenuBar: Bool = ContextSettings.shared.showMenuBarExtra
     @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
+    @State private var theme: ThemeMode = ContextSettings.shared.themeMode
 
     var body: some View {
         Form {
+            Picker("Appearance", selection: $theme) {
+                Text("System").tag(ThemeMode.system)
+                Text("Light").tag(ThemeMode.light)
+                Text("Dark").tag(ThemeMode.dark)
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: theme) {
+                ContextSettings.shared.themeMode = theme
+                ContextSettings.shared.save()
+                ContextTheme.apply(mode: theme)
+            }
             Slider(value: $fontSize, in: 11...22, step: 1) {
                 Text("Text size: \(Int(fontSize))")
             }.onChange(of: fontSize) {

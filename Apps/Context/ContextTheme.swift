@@ -1,4 +1,5 @@
 import AppKit
+import ContextDomain
 import SwiftUI
 
 /// Catppuccin Mocha tokens. Dark default is Mocha; light uses Latte.
@@ -16,6 +17,24 @@ enum ContextTheme {
     static let mochaGreen = NSColor(srgbRed: 0xa6 / 255, green: 0xe3 / 255, blue: 0xa1 / 255, alpha: 1)
     static let mochaPeach = NSColor(srgbRed: 0xfa / 255, green: 0xb3 / 255, blue: 0x87 / 255, alpha: 1)
     static let mochaRed = NSColor(srgbRed: 0xf3 / 255, green: 0x8b / 255, blue: 0x8d / 255, alpha: 1)
+
+    /// Resolves the effective dark/light appearance for a theme mode.
+    static func isDark(mode: ThemeMode, systemDark: Bool) -> Bool {
+        mode.isDark(systemDark: systemDark)
+    }
+
+    /// Applies the mode to every Context window. No restart needed.
+    @MainActor
+    static func apply(mode: ThemeMode) {
+        let name: NSAppearance.Name? = switch mode {
+        case .system: nil
+        case .light: .aqua
+        case .dark: .darkAqua
+        }
+        for window in NSApp.windows {
+            window.appearance = name.flatMap { NSAppearance(named: $0) }
+        }
+    }
 
     static var editorBackground: NSColor {
         NSColor(name: "ContextEditorBackground") { appearance in

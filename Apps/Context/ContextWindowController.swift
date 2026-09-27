@@ -36,6 +36,7 @@ final class ContextWindowController {
         window.center()
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
+        ContextTheme.apply(mode: ContextSettings.shared.themeMode)
         refreshRates()
         render()
         startTimerTick()

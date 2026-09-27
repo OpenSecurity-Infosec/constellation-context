@@ -1,3 +1,4 @@
+import ContextDomain
 import Foundation
 
 /// MVP settings. Persisted as JSON in Application Support.
@@ -8,6 +9,7 @@ public struct ContextSettings: Codable, Sendable {
     public var hotKeyCode: UInt32 = 0 // ANSI A
     public var hotKeyModifiers: UInt32 = 0x0800 // optionKey
     public var obsidianVaultPath: String? = nil
+    public var themeMode: ThemeMode = .system
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
 

@@ -36,7 +36,6 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | One-click export (txt, Markdown, PDF) | Shipped |
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Shipped (30 days) |
-| iCloud sync | Not started (local JSON store only) |
 | Apple Notes / Obsidian / Bear direct export | Shipped |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Shipped |
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) | Shipped (first set; full JS runtime pending) |
@@ -44,7 +43,8 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Two-finger swipe navigation | Shipped |
 | Note search pane (⌘F) | Shipped |
 | iCloud sync | Not started (local JSON store only) |
-| Themes, URL schemes, Raycast/Alfred | Not started |
+| URL schemes, Raycast/Alfred | Not started |
+| Themes (system / light / dark, instant switch) | Shipped |
 
 ## Notes
 
