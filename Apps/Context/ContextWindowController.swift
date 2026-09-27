@@ -10,7 +10,7 @@ import Vision
 /// inline math gutter, checklist rows, OCR drop, and export.
 @MainActor
 final class ContextWindowController {
-    let window: NSPanel
+    let window: ContextPanel
     private let store = NoteStore()
     private let math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
@@ -24,7 +24,7 @@ final class ContextWindowController {
         store.collectGarbage()
         let first = store.liveNotes.first ?? store.create()
         noteID = first.id
-        window = NSPanel(
+        window = ContextPanel(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered, defer: false
@@ -34,6 +34,7 @@ final class ContextWindowController {
         window.level = .floating
         window.center()
         window.isMovableByWindowBackground = false
+        window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
         render()
         startTimerTick()
         updatePin()
@@ -197,6 +198,15 @@ final class ContextWindowController {
     }
 
     func openSettings() { SettingsWindowController.shared.show() }
+
+    // MARK: - Swipe
+
+    private func applySwipe(_ direction: SwipeNavigation.Direction) {
+        switch direction {
+        case .next: nextNote()
+        case .previous: prevNote()
+        }
+    }
 
     // MARK: - Render
 
