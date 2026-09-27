@@ -1,0 +1,26 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.dia"
+  },
+  "/Users/oz/Projects/context/Sources/ContextDomain/Note.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.dia"
+  },
+  "/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.dia"
+  }
+}

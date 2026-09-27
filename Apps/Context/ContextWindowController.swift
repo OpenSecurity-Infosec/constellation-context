@@ -1,0 +1,273 @@
+import AppKit
+import ContextDomain
+import ContextExport
+import ContextMath
+import ContextStore
+import SwiftUI
+import Vision
+
+/// Main scratchpad window: borderless floating panel with swipe navigation,
+/// inline math gutter, checklist rows, OCR drop, and export.
+@MainActor
+final class ContextWindowController {
+    let window: NSPanel
+    private let store = NoteStore()
+    private let math = MathEngine()
+    private let autoPaste = AutoPasteMonitor()
+    private var noteID: UUID
+    private var timer = NoteTimer()
+    private var timerMode: NoteTimer.Mode = .stopwatch
+    private var tickTimer: Timer?
+    private var hosting: NSHostingView<ContextEditorRoot>?
+
+    init() {
+        store.collectGarbage()
+        let first = store.liveNotes.first ?? store.create()
+        noteID = first.id
+        window = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered, defer: false
+        )
+        window.title = "Context"
+        window.isFloatingPanel = true
+        window.level = .floating
+        window.center()
+        window.isMovableByWindowBackground = false
+        render()
+        startTimerTick()
+        updatePin()
+    }
+
+    var note: ContextNote { store.note(id: noteID) ?? ContextNote(text: "") }
+
+    func show() {
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    func toggle() {
+        if window.isVisible { window.orderOut(nil) } else { show() }
+    }
+
+    func updatePin() {
+        window.level = ContextSettings.shared.pinOnTop ? .screenSaver : .floating
+    }
+
+    // MARK: - Note ops
+
+    func newNote() {
+        let n = store.create()
+        noteID = n.id
+        autoPaste.stop()
+        timer = NoteTimer()
+        render()
+        show()
+    }
+
+    func nextNote() {
+        let live = store.liveNotes
+        guard let idx = live.firstIndex(where: { $0.id == noteID }) else {
+            if live.isEmpty { newNote() }
+            return
+        }
+        if idx + 1 < live.count {
+            noteID = live[idx + 1].id
+            afterNavigate()
+        } else {
+            newNote()
+        }
+    }
+
+    func prevNote() {
+        let live = store.liveNotes
+        guard let idx = live.firstIndex(where: { $0.id == noteID }), idx > 0 else { return }
+        noteID = live[idx - 1].id
+        afterNavigate()
+    }
+
+    private func afterNavigate() {
+        autoPaste.stop()
+        timer = NoteTimer()
+        render()
+    }
+
+    func trashCurrent() {
+        store.trash(id: noteID)
+        autoPaste.stop()
+        if let next = store.liveNotes.first {
+            noteID = next.id
+        } else {
+            noteID = store.create().id
+        }
+        render()
+    }
+
+    func onTextChange(_ text: String) {
+        store.update(id: noteID, text: text)
+        let kind = ContextNote(text: text).kind
+        // Arm/disarm AutoPaste with the `paste` trigger.
+        if kind == .paste, !autoPaste.isArmed {
+            autoPaste.start { [weak self] pasted in
+                Task { @MainActor in self?.appendAutoPaste(pasted) }
+            }
+        } else if kind != .paste, autoPaste.isArmed {
+            autoPaste.stop()
+        }
+        render(preservingFocus: true)
+    }
+
+    private func appendAutoPaste(_ pasted: String) {
+        guard let current = store.note(id: noteID), current.kind == .paste else { return }
+        let clean = PlainText.sanitizePasteboard(pasted)
+        let next = current.text.isEmpty ? clean : current.text + "\n" + clean
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    func toggleChecklist(id: Int) {
+        let next = ChecklistItem.toggle(text: note.text, id: id)
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    // MARK: - Timer controls
+
+    private func startTimerTick() {
+        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.render(preservingFocus: true) }
+        }
+    }
+
+    func timerStart() { timerMode = NoteTimer.parseMode(from: note.text); timer.start(mode: timerMode) }
+    func timerStop() { timer.stop() }
+    func timerReset() { timer.reset() }
+
+    // MARK: - OCR
+
+    func handleImageDrop(_ image: NSImage) {
+        Task { @MainActor in
+            guard let text = await recognize(image) else { return }
+            let clean = PlainText.sanitize(text)
+            let base = store.note(id: noteID)?.text ?? ""
+            let next = base.isEmpty ? clean : base + "\n" + clean
+            store.update(id: noteID, text: next)
+            render(preservingFocus: true)
+        }
+    }
+
+    private func recognize(_ image: NSImage) async -> String? {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return await withCheckedContinuation { cont in
+            let req = VNRecognizeTextRequest { req, _ in
+                let s = req.results?.compactMap({ $0 as? VNRecognizedTextObservation })
+                    .compactMap({ $0.topCandidates(1).first?.string }).joined(separator: "\n")
+                cont.resume(returning: s)
+            }
+            req.recognitionLevel = .accurate
+            req.usesLanguageCorrection = true
+            DispatchQueue.global(qos: .userInitiated).async {
+                try? VNImageRequestHandler(cgImage: cg, options: [:]).perform([req])
+            }
+        }
+    }
+
+    // MARK: - Export
+
+    func export(kind: NoteExport.ExportKind) {
+        let panel = NSSavePanel()
+        switch kind {
+        case .txt: panel.nameFieldStringValue = "note.txt"
+        case .markdown: panel.nameFieldStringValue = "note.md"
+        case .pdf: panel.nameFieldStringValue = "note.pdf"
+        }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? NoteExport.writeFile(note, kind: kind, to: url)
+    }
+
+    func copyNote() { NoteExport.copyToClipboard(note) }
+
+    func openVoid() {
+        let vc = VoidWindowController(store: store) { [weak self] id in
+            self?.noteID = id
+            self?.afterNavigate()
+            self?.show()
+        }
+        vc.show()
+    }
+
+    func openSettings() { SettingsWindowController.shared.show() }
+
+    // MARK: - Render
+
+    private func render(preservingFocus: Bool = false) {
+        let current = note
+        let results = current.kind == .math ? math.evaluate(note: current.bodyWithoutTrigger) : []
+        let sumAvg: Double? = {
+            switch current.kind {
+            case .sum: return math.aggregate(current.bodyWithoutTrigger, mode: .sum)
+            case .avg: return math.aggregate(current.bodyWithoutTrigger, mode: .avg)
+            default: return nil
+            }
+        }()
+        let stats = current.kind == .count ? NoteStats.compute(for: current.bodyWithoutTrigger) : nil
+        let items = current.kind == .list ? ChecklistItem.parse(current.text) : []
+        let view = ContextEditorRoot(
+            controller: self,
+            note: current,
+            liveCount: store.liveNotes.count,
+            mathResults: results,
+            aggregate: sumAvg.map(math.format),
+            stats: stats,
+            checklist: items,
+            autoPasteArmed: autoPaste.isArmed,
+            elapsed: timer.elapsed,
+            remaining: timer.remaining,
+            timerRunning: timer.isRunning
+        )
+        if let hosting {
+            hosting.rootView = view
+        } else {
+            let h = NSHostingView(rootView: view)
+            h.translatesAutoresizingMaskIntoConstraints = false
+            let container = NSView(frame: window.contentLayoutRect)
+            container.addSubview(h)
+            NSLayoutConstraint.activate([
+                h.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                h.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                h.topAnchor.constraint(equalTo: container.topAnchor),
+                h.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            ])
+            window.contentView = container
+            hosting = h
+        }
+        _ = preservingFocus
+    }
+}
+
+/// Thin status-bar extra. No dock icon requirement — menu bar keeps it alive.
+@MainActor
+final class ContextStatusItem {
+    private var item: NSStatusItem?
+
+    func install(toggle: @escaping () -> Void, newNote: @escaping () -> Void) {
+        guard ContextSettings.shared.showMenuBarExtra else { return }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.button?.title = "◍"
+        item.button?.action = #selector(handle(_:))
+        item.button?.target = nil
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Show Context", action: #selector(showAction(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "New Note", action: #selector(newAction(_:)), keyEquivalent: "")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        item.menu = menu
+        self.item = item
+        _ = toggle
+        _ = newNote
+    }
+
+    @objc private func handle(_ sender: Any?) {}
+    @objc private func showAction(_ sender: Any?) {}
+    @objc private func newAction(_ sender: Any?) {}
+}

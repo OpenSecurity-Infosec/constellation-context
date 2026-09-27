@@ -1,0 +1,3 @@
+module ContextStore {
+    header "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/include/ContextStore-Swift.h"
+}

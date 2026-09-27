@@ -1,0 +1,3 @@
+module ContextDomain {
+    header "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/include/ContextDomain-Swift.h"
+}

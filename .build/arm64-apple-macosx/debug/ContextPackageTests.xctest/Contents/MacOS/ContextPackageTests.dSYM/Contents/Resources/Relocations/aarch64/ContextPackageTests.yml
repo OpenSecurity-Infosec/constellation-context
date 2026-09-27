@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests'
+relocations:     []
+...

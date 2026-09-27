@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.dia"
+  }
+}

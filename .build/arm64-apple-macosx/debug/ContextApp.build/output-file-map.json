@@ -1,0 +1,68 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextSettings.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextTheme.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.dia"
+  },
+  "/Users/oz/Projects/context/Apps/Context/VoidWindow.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.dia"
+  }
+}

@@ -1,0 +1,3 @@
+module ContextMath {
+    header "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/include/ContextMath-Swift.h"
+}

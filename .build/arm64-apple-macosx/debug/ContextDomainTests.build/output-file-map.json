@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.dia"
+  }
+}

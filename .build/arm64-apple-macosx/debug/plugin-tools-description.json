@@ -1,0 +1,1640 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests",
+      "packagePath" : "/Users/oz/Projects/context",
+      "productName" : "ContextPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ContextApp-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextSettings.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextTheme.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/VoidWindow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ContextApp",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ContextApp_main",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextSettings.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextTheme.swift",
+        "/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift",
+        "/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift",
+        "/Users/oz/Projects/context/Apps/Context/VoidWindow.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextDomain-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/Note.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextDomain",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/include/ContextDomain-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift",
+        "/Users/oz/Projects/context/Sources/ContextDomain/Note.swift",
+        "/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextDomainTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextDomainTests",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextExport-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextExport",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/include/ContextExport-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextMath-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextMath",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/include/ContextMath-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextMathTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextMathTests",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextPackageTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextPackageTests",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/include/ContextPackageTests-Swift.h",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ContextStore-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources",
+      "importPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ContextStore",
+      "moduleOutputPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule",
+      "objects" : [
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx15.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/include/ContextStore-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "context"
+      ],
+      "outputFileMapPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift"
+      ],
+      "tempsPath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ContextApp" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextApp",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextSettings.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextTheme.swift",
+      "/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift",
+      "/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift",
+      "/Users/oz/Projects/context/Apps/Context/VoidWindow.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ContextApp_main",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextDomain" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextDomain",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift",
+      "/Users/oz/Projects/context/Sources/ContextDomain/Note.swift",
+      "/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/include/ContextDomain-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextDomainTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextDomainTests",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextExport" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextExport",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/include/ContextExport-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextMath" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextMath",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/include/ContextMath-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextMathTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextMathTests",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextPackageTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextPackageTests",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/include/ContextPackageTests-Swift.h",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ContextStore" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ContextStore",
+      "-package-name",
+      "context",
+      "-c",
+      "/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift",
+      "-I",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx15.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/include/ContextStore-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "context",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ContextApp" : [
+      "ContextExport",
+      "ContextStore",
+      "ContextMath",
+      "ContextDomain"
+    ],
+    "ContextDomain" : [
+
+    ],
+    "ContextDomainTests" : [
+      "ContextDomain"
+    ],
+    "ContextExport" : [
+      "ContextDomain"
+    ],
+    "ContextMath" : [
+      "ContextDomain"
+    ],
+    "ContextMathTests" : [
+      "ContextMath",
+      "ContextDomain"
+    ],
+    "ContextPackageTests" : [
+      "ContextDomainTests",
+      "ContextMathTests",
+      "ContextMath",
+      "ContextDomain"
+    ],
+    "ContextStore" : [
+      "ContextDomain"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextSettings.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextTheme.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Apps/Context/VoidWindow.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/Note.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources"
+    },
+    "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

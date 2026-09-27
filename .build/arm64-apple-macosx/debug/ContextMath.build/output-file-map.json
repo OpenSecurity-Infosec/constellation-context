@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.dia"
+  }
+}

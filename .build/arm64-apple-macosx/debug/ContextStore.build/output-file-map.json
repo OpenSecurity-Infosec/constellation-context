@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.dia"
+  }
+}

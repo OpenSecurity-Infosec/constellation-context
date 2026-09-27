@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/primary.swiftdeps"
+  },
+  "/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift": {
+    "dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.d",
+    "object": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o",
+    "swiftmodule": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport~partial.swiftmodule",
+    "swift-dependencies": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swiftdeps",
+    "diagnostics": "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.dia"
+  }
+}

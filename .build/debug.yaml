@@ -1,0 +1,256 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "Context-arm64-apple-macosx-debug.exe": ["<Context-arm64-apple-macosx-debug.exe>"]
+  "ContextApp-arm64-apple-macosx-debug.module": ["<ContextApp-arm64-apple-macosx-debug.module>"]
+  "ContextDomain-arm64-apple-macosx-debug.module": ["<ContextDomain-arm64-apple-macosx-debug.module>"]
+  "ContextDomainTests-arm64-apple-macosx-debug.module": ["<ContextDomainTests-arm64-apple-macosx-debug.module>"]
+  "ContextExport-arm64-apple-macosx-debug.module": ["<ContextExport-arm64-apple-macosx-debug.module>"]
+  "ContextMath-arm64-apple-macosx-debug.module": ["<ContextMath-arm64-apple-macosx-debug.module>"]
+  "ContextMathTests-arm64-apple-macosx-debug.module": ["<ContextMathTests-arm64-apple-macosx-debug.module>"]
+  "ContextPackageTests-arm64-apple-macosx-debug.module": ["<ContextPackageTests-arm64-apple-macosx-debug.module>"]
+  "ContextPackageTests-arm64-apple-macosx-debug.test": ["<ContextPackageTests-arm64-apple-macosx-debug.test>"]
+  "ContextStore-arm64-apple-macosx-debug.module": ["<ContextStore-arm64-apple-macosx-debug.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<Context-arm64-apple-macosx-debug.exe>","<ContextApp-arm64-apple-macosx-debug.module>","<ContextDomain-arm64-apple-macosx-debug.module>","<ContextExport-arm64-apple-macosx-debug.module>","<ContextMath-arm64-apple-macosx-debug.module>","<ContextStore-arm64-apple-macosx-debug.module>"]
+  "test": ["<Context-arm64-apple-macosx-debug.exe>","<ContextApp-arm64-apple-macosx-debug.module>","<ContextDomain-arm64-apple-macosx-debug.module>","<ContextDomainTests-arm64-apple-macosx-debug.module>","<ContextExport-arm64-apple-macosx-debug.module>","<ContextMath-arm64-apple-macosx-debug.module>","<ContextMathTests-arm64-apple-macosx-debug.module>","<ContextPackageTests-arm64-apple-macosx-debug.test>","<ContextStore-arm64-apple-macosx-debug.module>"]
+default: "main"
+nodes:
+  "/Users/oz/Projects/context/Apps/Context/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Sources/ContextDomain/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Sources/ContextExport/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Sources/ContextMath/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Sources/ContextStore/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Tests/ContextDomainTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/Tests/ContextMathTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context":
+    is-mutated: true
+commands:
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift","/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift","/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift","/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift","/Users/oz/Projects/context/Apps/Context/ContextSettings.swift","/Users/oz/Projects/context/Apps/Context/ContextTheme.swift","/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift","/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift","/Users/oz/Projects/context/Apps/Context/VoidWindow.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift","/Users/oz/Projects/context/Sources/ContextDomain/Note.swift","/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift":
+    tool: test-entry-point-tool
+    inputs: []
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift"]
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources"]
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources"
+
+  "/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<Context-arm64-apple-macosx-debug.exe>":
+    tool: phony
+    inputs: ["<Context-arm64-apple-macosx-debug.exe-CodeSigning>"]
+    outputs: ["<Context-arm64-apple-macosx-debug.exe>"]
+
+  "<ContextApp-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule"]
+    outputs: ["<ContextApp-arm64-apple-macosx-debug.module>"]
+
+  "<ContextDomain-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"]
+    outputs: ["<ContextDomain-arm64-apple-macosx-debug.module>"]
+
+  "<ContextDomainTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule"]
+    outputs: ["<ContextDomainTests-arm64-apple-macosx-debug.module>"]
+
+  "<ContextExport-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule"]
+    outputs: ["<ContextExport-arm64-apple-macosx-debug.module>"]
+
+  "<ContextMath-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule"]
+    outputs: ["<ContextMath-arm64-apple-macosx-debug.module>"]
+
+  "<ContextMathTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule"]
+    outputs: ["<ContextMathTests-arm64-apple-macosx-debug.module>"]
+
+  "<ContextPackageTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule"]
+    outputs: ["<ContextPackageTests-arm64-apple-macosx-debug.module>"]
+
+  "<ContextPackageTests-arm64-apple-macosx-debug.test>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests"]
+    outputs: ["<ContextPackageTests-arm64-apple-macosx-debug.test>"]
+
+  "<ContextStore-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule"]
+    outputs: ["<ContextStore-arm64-apple-macosx-debug.module>"]
+
+  "C.Context-arm64-apple-macosx-debug.exe":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/Context"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug","-o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context","-module-name","Context","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_ContextApp_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Library/Developer/CommandLineTools/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx15.0","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.Context-arm64-apple-macosx-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist"]
+    outputs: ["<Context-arm64-apple-macosx-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/Context"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context-entitlement.plist","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Context"]
+
+  "C.ContextApp-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Apps/Context/AutoPasteMonitor.swift","/Users/oz/Projects/context/Apps/Context/ContextAppMain.swift","/Users/oz/Projects/context/Apps/Context/ContextEditorView.swift","/Users/oz/Projects/context/Apps/Context/ContextHotKeys.swift","/Users/oz/Projects/context/Apps/Context/ContextSettings.swift","/Users/oz/Projects/context/Apps/Context/ContextTheme.swift","/Users/oz/Projects/context/Apps/Context/ContextWindowController.swift","/Users/oz/Projects/context/Apps/Context/SettingsWindow.swift","/Users/oz/Projects/context/Apps/Context/VoidWindow.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/AutoPasteMonitor.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextAppMain.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextEditorView.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextHotKeys.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextSettings.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextTheme.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/ContextWindowController.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/SettingsWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/VoidWindow.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule"]
+    description: "Compiling Swift Module 'ContextApp' (9 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextApp","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextApp.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/output-file-map.json","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextApp.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","ContextApp_main","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextDomain-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Sources/ContextDomain/Checklist.swift","/Users/oz/Projects/context/Sources/ContextDomain/Note.swift","/Users/oz/Projects/context/Sources/ContextDomain/NoteTimer.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule"]
+    description: "Compiling Swift Module 'ContextDomain' (3 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextDomain","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/include/ContextDomain-Swift.h","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextDomainTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Tests/ContextDomainTests/NoteTests.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule"]
+    description: "Compiling Swift Module 'ContextDomainTests' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextDomainTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextExport-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Sources/ContextExport/NoteExport.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/NoteExport.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule"]
+    description: "Compiling Swift Module 'ContextExport' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextExport","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextExport.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextExport.build/include/ContextExport-Swift.h","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextMath-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Sources/ContextMath/MathEngine.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule"]
+    description: "Compiling Swift Module 'ContextMath' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextMath","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/include/ContextMath-Swift.h","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextMathTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Tests/ContextMathTests/MathTests.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule"]
+    description: "Compiling Swift Module 'ContextMathTests' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextMathTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextPackageTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.derived/runner.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule"]
+    description: "Compiling Swift Module 'ContextPackageTests' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextPackageTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/include/ContextPackageTests-Swift.h","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "C.ContextPackageTests-arm64-apple-macosx-debug.test":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Checklist.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/Note.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomain.build/NoteTimer.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextDomainTests.build/NoteTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMath.build/MathEngine.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextMathTests.build/MathTests.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.build/runner.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug","-o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.xctest/Contents/MacOS/ContextPackageTests","-module-name","ContextPackageTests","-Xlinker","-no_warn_duplicate_libraries","-Xlinker","-bundle","-Xlinker","-rpath","-Xlinker","@loader_path/../../../","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextPackageTests.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Library/Developer/CommandLineTools/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx15.0","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomainTests.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMath.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextMathTests.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextPackageTests.swiftmodule","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.ContextStore-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/oz/Projects/context/Sources/ContextStore/NoteStore.swift","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextDomain.swiftmodule","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources"]
+    outputs: ["/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/NoteStore.swift.o","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule"]
+    description: "Compiling Swift Module 'ContextStore' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","ContextStore","-emit-dependencies","-emit-module","-emit-module-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules/ContextStore.swiftmodule","-output-file-map","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/sources","-I","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx15.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/oz/Projects/context/.build/arm64-apple-macosx/debug/ContextStore.build/include/ContextStore-Swift.h","-swift-version","6","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","context"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/oz/Projects/context/Apps/Context/","/Users/oz/Projects/context/Sources/ContextDomain/","/Users/oz/Projects/context/Sources/ContextExport/","/Users/oz/Projects/context/Sources/ContextMath/","/Users/oz/Projects/context/Sources/ContextStore/","/Users/oz/Projects/context/Tests/ContextDomainTests/","/Users/oz/Projects/context/Tests/ContextMathTests/","/Users/oz/Projects/context/Package.swift","/Users/oz/Projects/context/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
