@@ -19,6 +19,9 @@ struct ContextEditorRoot: View {
 
     @State private var text: String = ""
     @State private var isEditing = false
+    @State private var slashFragment: String? = nil
+    @State private var slashRange: NSRange = NSRange(location: 0, length: 0)
+    @State private var slashSelected: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -86,10 +89,59 @@ struct ContextEditorRoot: View {
                     mathGutter
                     PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
                         controller?.indentRowAtCaret(direction: direction)
+                    }, onSlash: { fragment, range in
+                        slashFragment = fragment
+                        slashRange = range
+                        slashSelected = 0
                     })
                         .font(.system(size: ContextSettings.shared.fontSize))
+                    if let fragment = slashFragment, !SlashCommand.completions(matching: fragment).isEmpty {
+                        slashPopup(fragment: fragment)
+                    }
                 }
             }
+        }
+        .onKeyPress(.return) {
+            if slashFragment != nil, let fragment = slashFragment {
+                let matches = SlashCommand.completions(matching: fragment)
+                if slashSelected < matches.count {
+                    runSlashCommand(matches[slashSelected].name)
+                    return .handled
+                }
+            }
+            return .ignored
+        }
+        .onKeyPress(.escape) {
+            if slashFragment != nil {
+                slashFragment = nil
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(.downArrow) {
+            if let fragment = slashFragment {
+                let matches = SlashCommand.completions(matching: fragment)
+                slashSelected = min(slashSelected + 1, matches.count - 1)
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(.upArrow) {
+            if slashFragment != nil {
+                slashSelected = max(slashSelected - 1, 0)
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(.tab) {
+            if let fragment = slashFragment {
+                let matches = SlashCommand.completions(matching: fragment)
+                if slashSelected < matches.count {
+                    runSlashCommand(matches[slashSelected].name)
+                    return .handled
+                }
+            }
+            return .ignored
         }
         .onDrop(of: [.fileURL, .tiff, .png], isTargeted: nil) { providers in
             for p in providers {
@@ -169,6 +221,48 @@ struct ContextEditorRoot: View {
         }
     }
 
+    /// `::` autocomplete popup: type to filter, Tab/↑↓ to move, Return to run.
+    private func slashPopup(fragment: String) -> some View {
+        let matches = SlashCommand.completions(matching: fragment)
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(matches.indices, id: \.self) { i in
+                Button {
+                    runSlashCommand(matches[i].name)
+                } label: {
+                    HStack {
+                        Text("::\(matches[i].name)")
+                            .font(.system(.body).monospaced())
+                        Text(matches[i].hint)
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(i == slashSelected ? Color.ctxAccent.opacity(0.25) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Color.ctxPanelBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .shadow(radius: 8)
+        .frame(width: 280)
+        .offset(x: 24, y: 60)
+    }
+
+    private func handleSlashKey(_ event: NSEvent, matches: [SlashCommand.Definition]) -> NSEvent? {
+        // Kept for AppKit-level handling if needed; SwiftUI onKeyPress owns keys.
+        _ = event
+        _ = matches
+        return event
+    }
+
+    private func runSlashCommand(_ name: String) {
+        controller?.runSlashCommand(name: name, tokenRange: slashRange)
+        slashFragment = nil
+    }
+
     @ViewBuilder
     private var modeBar: some View {
         Divider()
@@ -228,6 +322,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     var onCommit: () -> Void
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
+    var onSlash: ((String, NSRange) -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
@@ -238,6 +333,7 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.onFocus = { focused in isEditing = focused }
         tv.onCaret = { caret in onCaret?(caret) }
         tv.onIndent = { direction in onIndent?(direction) }
+        tv.onSlash = { fragment, range in onSlash?(fragment, range) }
         tv.onOpenURL = { url in NSWorkspace.shared.open(url) }
         tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
@@ -279,6 +375,8 @@ final class ContextTextView: NSTextView {
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onOpenURL: ((URL) -> Void)?
+    var onSlash: ((String, NSRange) -> Void)?
+    private var slashCompletion: NSView?
 
     override func paste(_ sender: Any?) {
         // Plain text only: strip styling, bullets, indentation.
@@ -310,6 +408,32 @@ final class ContextTextView: NSTextView {
         refreshLinkAttributes()
         onChange?(string)
         onCaret?(selectedRange().location)
+        checkSlashTrigger()
+    }
+
+    /// Fires onSlash while the caret sits on a `::token`.
+    private func checkSlashTrigger() {
+        let caret = selectedRange().location
+        guard let found = SlashCommand.token(at: caret, in: string) else {
+            hideSlashCompletion()
+            return
+        }
+        let fragment = String(found.token.dropFirst(2))
+        let range = NSRange(location: found.range.lowerBound, length: found.range.upperBound - found.range.lowerBound)
+        onSlash?(fragment, range)
+        showSlashCompletion(fragment: fragment, tokenRange: range)
+    }
+
+    private func showSlashCompletion(fragment: String, tokenRange: NSRange) {
+        // SwiftUI owns the popup (see ContextEditorRoot); AppKit just reports
+        // the fragment. Hide any stale AppKit view.
+        hideSlashCompletion()
+        _ = tokenRange
+    }
+
+    private func hideSlashCompletion() {
+        slashCompletion?.removeFromSuperview()
+        slashCompletion = nil
     }
 
     /// Shortens display of long URLs while keeping full text intact.

@@ -200,6 +200,37 @@ final class ContextWindowController {
         cycleChecklistMarker(id: rowIDForCaret(lastCaret))
     }
 
+    // MARK: - Slash commands
+
+    /// Runs a `::` command: replaces the token range, or applies the
+    /// whole-buffer transform for commands like sort_lines.
+    func runSlashCommand(name: String, tokenRange: NSRange) {
+        let fullText = note.text
+        let chars = Array(fullText)
+        let intRange: Range<Int>? = {
+            guard tokenRange.location >= 0,
+                  tokenRange.location + tokenRange.length <= chars.count
+            else { return nil }
+            return tokenRange.location..<(tokenRange.location + tokenRange.length)
+        }()
+        guard let edit = SlashCommand.run(
+            name: name,
+            tokenRange: intRange,
+            fullText: fullText,
+            selection: nil
+        ) else { return }
+        if let transformed = edit.fullText {
+            store.update(id: noteID, text: transformed)
+        } else if let range = edit.tokenRange {
+            var updated = fullText
+            let start = updated.index(updated.startIndex, offsetBy: range.lowerBound)
+            let end = updated.index(updated.startIndex, offsetBy: range.upperBound)
+            updated.replaceSubrange(start..<end, with: edit.replacement)
+            store.update(id: noteID, text: updated)
+        }
+        render(preservingFocus: true)
+    }
+
     // MARK: - Timer controls
 
     private func startTimerTick() {
