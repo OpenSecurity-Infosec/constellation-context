@@ -43,8 +43,24 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Two-finger swipe navigation | Shipped |
 | Note search pane (⌘F) | Shipped |
 | iCloud sync | Not started (local JSON store only) |
-| URL schemes, Raycast/Alfred | Not started |
+| URL schemes (`context://`) | Shipped (open, new, search, append) |
+| Raycast/Alfred | Shipped via URL schemes (see Automation below) |
 | Themes (system / light / dark, instant switch) | Shipped |
+
+## Automation (URL schemes, Raycast, Alfred)
+
+Context registers the `context://` scheme. Drive it from Raycast, Alfred,
+Shortcuts, or the terminal (`open "context://..."`):
+
+| URL | Action |
+| --- | --- |
+| `context://open` | Show the overlay |
+| `context://new?text=hello` | New note, optionally prefilled |
+| `context://search?query=milk` | Open search with a query |
+| `context://append?text=more` | Append to the current note |
+
+Raycast: Script Commands or Quicklinks calling `open "context://new?text=…"`.
+Alfred: Workflow → Open URL with the same forms.
 
 ## Notes
 

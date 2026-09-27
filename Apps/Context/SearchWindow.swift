@@ -23,6 +23,12 @@ final class SearchWindowController {
         render(query: "")
     }
 
+    func open(query: String) {
+        render(query: query)
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+
     func show() {
         render(query: "")
         NSApp.activate(ignoringOtherApps: true)

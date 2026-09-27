@@ -28,5 +28,16 @@
 	<string>NSApplication</string>
 	<key>LSUIElement</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Constellation Context</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>context</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

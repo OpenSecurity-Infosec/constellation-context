@@ -349,13 +349,40 @@ final class ContextWindowController {
 
     // MARK: - Search
 
-    func openSearch() {
+    func openSearch(query: String? = nil) {
         let vc = SearchWindowController(store: store) { [weak self] id in
             self?.noteID = id
             self?.afterNavigate()
             self?.show()
         }
-        vc.show()
+        if let query, !query.isEmpty {
+            vc.open(query: query)
+        } else {
+            vc.show()
+        }
+    }
+
+    // MARK: - URL scheme actions
+
+    func newNoteWithText(_ text: String?) {
+        if let text, !text.isEmpty {
+            let n = store.create(text: text)
+            noteID = n.id
+        } else {
+            noteID = store.create().id
+        }
+        autoPaste.stop()
+        timer = NoteTimer()
+        render()
+        show()
+    }
+
+    func appendToCurrent(_ text: String) {
+        let base = note.text
+        let next = base.isEmpty ? text : base + "\n" + text
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+        show()
     }
 
     // MARK: - Swipe

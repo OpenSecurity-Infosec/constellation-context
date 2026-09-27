@@ -1,10 +1,12 @@
 import AppKit
+import ContextDomain
 
 @main
 @MainActor
 final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     private var main: ContextWindowController?
     private var status: ContextStatusItem?
+    private var pendingURL: URL?
 
     static func main() {
         let app = NSApplication.shared
@@ -23,9 +25,57 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         status.install(toggle: {}, newNote: {})
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         controller.show()
+        if let pending = pendingURL {
+            pendingURL = nil
+            handleSchemeURL(pending)
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    /// Handles `context://` URLs from Raycast/Alfred/scripts/Shortcuts.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            if URLScheme.parse(url) != nil {
+                handleSchemeURL(url)
+            }
+        }
+    }
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURLEvent(_:withReply:)),
+            forEventClass: UInt32(kInternetEventClass),
+            andEventID: UInt32(kAEGetURL)
+        )
+    }
+
+    @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReply _: NSAppleEventDescriptor) {
+        if let s = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+           let url = URL(string: s), URLScheme.parse(url) != nil
+        {
+            if main == nil {
+                pendingURL = url
+            } else {
+                handleSchemeURL(url)
+            }
+        }
+    }
+
+    private func handleSchemeURL(_ url: URL) {
+        guard let intent = URLScheme.parse(url) else { return }
+        switch intent {
+        case .open:
+            main?.show()
+        case .newNote(let text):
+            main?.newNoteWithText(text)
+        case .search(let query):
+            main?.openSearch(query: query)
+        case .append(let text):
+            main?.appendToCurrent(text)
+        }
+    }
 
     @objc func toggleWindow(_ sender: Any?) { main?.toggle() }
     @objc func newNote(_ sender: Any?) { main?.newNote() }
