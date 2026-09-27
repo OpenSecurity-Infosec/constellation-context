@@ -228,6 +228,8 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.onFocus = { focused in isEditing = focused }
         tv.onCaret = { caret in onCaret?(caret) }
         tv.onIndent = { direction in onIndent?(direction) }
+        tv.onOpenURL = { url in NSWorkspace.shared.open(url) }
+        tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
         tv.isRichText = false
         tv.usesFontPanel = false
@@ -249,6 +251,7 @@ private struct PlainTextEditor: NSViewRepresentable {
             let selected = tv.selectedRanges
             tv.string = text
             tv.selectedRanges = selected
+            (tv as? ContextTextView)?.refreshLinkAttributes()
         }
         tv.font = ContextTheme.bodyFont
     }
@@ -258,17 +261,22 @@ private struct PlainTextEditor: NSViewRepresentable {
 }
 
 /// NSTextView that strips formatting on paste and reports changes.
+/// Applies Link Shrink: pasted URLs display shortened while the full URL
+/// is preserved for open/copy. Links render clickable.
 final class ContextTextView: NSTextView {
     var onChange: ((String) -> Void)?
     var onFocus: ((Bool) -> Void)?
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
+    var onOpenURL: ((URL) -> Void)?
 
     override func paste(_ sender: Any?) {
         // Plain text only: strip styling, bullets, indentation.
         let board = NSPasteboard.general
         if let s = board.string(forType: .string) {
-            insertText(PlainText.sanitizePasteboard(s), replacementRange: selectedRange())
+            let clean = PlainText.sanitizePasteboard(s)
+            insertText(clean, replacementRange: selectedRange())
+            shrinkURLsAroundSelection()
             return
         }
         super.paste(sender)
@@ -289,8 +297,83 @@ final class ContextTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
+        refreshLinkAttributes()
         onChange?(string)
         onCaret?(selectedRange().location)
+    }
+
+    /// Shortens display of long URLs while keeping full text intact.
+    /// Uses link attributes with a shortened tooltip so the buffer stays
+    /// plain text and copy/paste preserves the real URL.
+    func refreshLinkAttributes() {
+        guard let storage = textStorage else { return }
+        let full = string as NSString
+        let range = NSRange(location: 0, length: full.length)
+        storage.removeAttribute(.link, range: range)
+        storage.removeAttribute(.toolTip, range: range)
+        for urlRange in LinkShrink.urlRanges(in: string) {
+            let ns = NSRange(urlRange, in: string)
+            let raw = String(string[urlRange])
+            guard let url = LinkShrink.openableURL(raw) else { continue }
+            storage.addAttribute(.link, value: url, range: ns)
+            let short = LinkShrink.shortened(raw)
+            if short != raw {
+                storage.addAttribute(.toolTip, value: short, range: ns)
+            }
+        }
+        linkTextAttributes = [
+            .foregroundColor: NSColor.linkColor,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+            .cursor: NSCursor.pointingHand,
+        ]
+    }
+
+    private func shrinkURLsAroundSelection() {
+        refreshLinkAttributes()
+    }
+
+    /// ⌘↩ opens the URL under the caret in the default browser.
+    func openURLAtCaret() -> Bool {
+        let caret = selectedRange().location
+        let text = string
+        for urlRange in LinkShrink.urlRanges(in: text) {
+            let ns = NSRange(urlRange, in: text)
+            if NSLocationInRange(caret, ns) || NSLocationInRange(max(0, caret - 1), ns) {
+                let raw = String(text[urlRange])
+                if let url = LinkShrink.openableURL(raw) {
+                    onOpenURL?(url)
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        // Option-click (or double-click) a link reveals the full URL in place:
+        // selection expands to the whole URL so it can be edited/copied.
+        if event.modifierFlags.contains(.option) || event.clickCount >= 2 {
+            let point = convert(event.locationInWindow, from: nil)
+            let idx = characterIndexForInsertion(at: point)
+            for urlRange in LinkShrink.urlRanges(in: string) {
+                let ns = NSRange(urlRange, in: string)
+                if NSLocationInRange(idx, ns) {
+                    setSelectedRange(ns)
+                    return
+                }
+            }
+        }
+        super.mouseDown(with: event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        // ⌘↩ opens the URL under the caret.
+        if event.modifierFlags.contains(.command),
+           event.keyCode == 36 || event.characters == "\r" || event.characters == "\n"
+        {
+            if openURLAtCaret() { return }
+        }
+        super.keyDown(with: event)
     }
 
     override func becomeFirstResponder() -> Bool {
