@@ -40,6 +40,29 @@ public struct CurrencyRates: Sendable {
     public static func convert(amount: Double, from: String, to: String, rates: Snapshot) -> Double? {
         rates.rate(from: from, to: to).map { amount * $0 }
     }
+
+    /// Freshness of a rate snapshot for gutter/footnote display.
+    public enum Freshness: Equatable, Sendable {
+        case live
+        case cachedStale
+        case unavailable
+    }
+
+    /// Classifies a snapshot: fresh within TTL is live, older is cached
+    /// stale, nil is unavailable. Never invents a number — callers show
+    /// the cached value with its age or an honest offline message.
+    public static func freshness(of snapshot: Snapshot?, now: Date = Date()) -> Freshness {
+        guard let snapshot else { return .unavailable }
+        return now.timeIntervalSince(snapshot.fetchedAt) <= RateStore.cacheTTL ? .live : .cachedStale
+    }
+
+    /// Human age for footnotes: "just now", "25m ago", "3h ago".
+    public static func ageLabel(since fetchedAt: Date, now: Date = Date()) -> String {
+        let mins = Int(now.timeIntervalSince(fetchedAt) / 60)
+        if mins < 1 { return "just now" }
+        if mins < 60 { return "\(mins)m ago" }
+        return "\(mins / 60)h ago"
+    }
 }
 
 /// Disk-cached rate fetcher. Refreshes at most hourly; serves stale cache
@@ -49,6 +72,8 @@ public final class RateStore: @unchecked Sendable {
     private var snapshot: CurrencyRates.Snapshot?
     private let fileURL: URL
     public static let cacheTTL: TimeInterval = 3600
+    /// Injectable fetch for tests (outage/timeout simulation).
+    nonisolated(unsafe) public var fetchOverride: (@Sendable (String) async throws -> Data)?
 
     public init(fileURL: URL? = nil) {
         if let fileURL {
@@ -75,18 +100,18 @@ public final class RateStore: @unchecked Sendable {
 
     /// Refreshes fiat + crypto rates unless the cache is fresh.
     /// Never throws — offline keeps serving the last snapshot.
-    public func refreshIfNeeded() async {
-        if !isStale { return }
-        await refresh()
-    }
-
-    public func refresh() async {
+    /// Returns true when at least one provider answered; false means the
+    /// outage path: caller keeps showing cached rates with their age.
+    @discardableResult
+    public func refresh() async -> Bool {
         var usdPerUnit: [String: Double] = ["USD": 1.0]
+        var anyProvider = false
         // Fiat via Frankfurter (base USD).
         if let data = try? await fetch(url: "https://api.frankfurter.app/latest?from=USD"),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let rates = json["rates"] as? [String: Double]
+           let rates = json["rates"] as? [String: Double], !rates.isEmpty
         {
+            anyProvider = true
             for (code, perUSD) in rates where perUSD != 0 {
                 usdPerUnit[code.uppercased()] = 1.0 / perUSD
             }
@@ -100,12 +125,22 @@ public final class RateStore: @unchecked Sendable {
                   let amountStr = dataObj["amount"] as? String,
                   let amount = Double(amountStr)
             else { continue }
+            anyProvider = true
             usdPerUnit[coin] = amount
         }
-        guard usdPerUnit.count > 1 else { return }
+        // Outage: no provider answered — keep the old snapshot untouched.
+        guard anyProvider, usdPerUnit.count > 1 else { return false }
         let snap = CurrencyRates.Snapshot(fetchedAt: Date(), usdPerUnit: usdPerUnit)
         lock.withLock { snapshot = snap }
         save()
+        return true
+    }
+
+    /// Refreshes unless the cache is fresh. Returns provider-reached flag.
+    @discardableResult
+    public func refreshIfNeeded() async -> Bool {
+        if !isStale { return true }
+        return await refresh()
     }
 
     public func inject(_ snapshot: CurrencyRates.Snapshot) {
@@ -114,6 +149,7 @@ public final class RateStore: @unchecked Sendable {
     }
 
     private func fetch(url: String) async throws -> Data {
+        if let override = fetchOverride { return try await override(url) }
         guard let u = URL(string: url) else { throw URLError(.badURL) }
         var req = URLRequest(url: u, timeoutInterval: 8)
         req.setValue("ConstellationContext/1.0", forHTTPHeaderField: "User-Agent")

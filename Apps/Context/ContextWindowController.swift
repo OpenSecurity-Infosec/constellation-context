@@ -62,11 +62,14 @@ final class ContextWindowController {
         let body = note.bodyWithoutTrigger.uppercased()
         let mentionsCurrency = (CurrencyRates.fiat.union(CurrencyRates.crypto)).contains { body.contains($0) }
         guard note.kind == .math, mentionsCurrency else { return nil }
-        guard let snap = rates.current else { return "rates unavailable offline" }
-        let age = Int(Date().timeIntervalSince(snap.fetchedAt) / 60)
-        if age < 1 { return "rates just now" }
-        if age < 60 { return "rates \(age)m ago" }
-        return "rates \(age / 60)h ago"
+        switch CurrencyRates.freshness(of: rates.current) {
+        case .unavailable:
+            return "rates unavailable offline — connect once to fetch"
+        case .live:
+            return "rates \(CurrencyRates.ageLabel(since: rates.current!.fetchedAt))"
+        case .cachedStale:
+            return "rates \(CurrencyRates.ageLabel(since: rates.current!.fetchedAt)) (cached — provider unreachable)"
+        }
     }
 
     var note: ContextNote { store.note(id: noteID) ?? ContextNote(text: "") }

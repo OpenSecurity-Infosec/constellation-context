@@ -24,7 +24,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Swipe/arrow navigation between notes, new note past the end | Partial (‹/› buttons and ⌘[/⌘] work; trackpad swipe untested across hardware) |
 | `math` inline evaluation with descriptive text | Partial (core eval works; error states and large-note polish missing) |
 | Unit conversions (length, weight, temperature) | Partial (unit-tested; gutter edge cases unpolished) |
-| Currency + crypto conversions in `math` (cached rates, offline fallback) | Partial (live rates + 1h cache work; provider-outage UX thin) |
+| Currency + crypto conversions in `math` (cached rates, offline fallback) | Partial (live rates + 1h cache; outage keeps last cache with its age in the footnote, honest offline message with no cache, recovers on next refresh) |
 | Reactive variables (`name = expr`, recalculates down the note) | Partial |
 | `sum` / `avg` totals | Partial |
 | `count` lines/words/chars with `//` comments | Partial |
