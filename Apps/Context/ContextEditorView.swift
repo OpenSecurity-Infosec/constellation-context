@@ -223,7 +223,7 @@ struct ContextEditorRoot: View {
                     Button("Cycle marker (⌘⇧M)") { controller?.cycleChecklistMarker(id: item.id) }
                 }
             }
-            .onMove { from, to in controller?.moveChecklist(from: from, to: to) }
+            .onMove { from, to in controller?.moveChecklistBlock(from: from, to: to) }
             .onDelete { _ in }
         }
         .listStyle(.plain)

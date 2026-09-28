@@ -209,6 +209,21 @@ final class ContextWindowController {
         render(preservingFocus: true)
     }
 
+    /// Drag-reorder with subtree-follow: the dragged row carries its nested
+    /// children. Display positions translate to body ids via parse order.
+    func moveChecklistBlock(from: IndexSet, to displayTo: Int) {
+        let text = note.text
+        let lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        let ids = ChecklistItem.parse(text).map(\.id)
+        let (srcId, anchor) = ChecklistItem.moveDisplay(
+            ids: ids, from: from, to: displayTo, bodyLineCount: lines.count - offset
+        )
+        let next = ChecklistItem.moveBlock(text: text, from: srcId, to: anchor, bodyLineCount: lines.count - offset)
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
     /// Current checklist row id under the caret in the plain text buffer.
     func rowIDForCaret(_ caret: Int) -> Int {
         let text = note.text

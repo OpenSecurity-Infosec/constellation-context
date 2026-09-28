@@ -75,9 +75,9 @@ public struct ChecklistItem: Equatable, Sendable, Identifiable {
     }
 
     /// Drag-reorders one checklist line: moves the body line at `from` to
-    /// `to` (both body-relative ids, as produced by parse). The `list`
-    /// trigger line never moves. Tick, indent, and markers ride along
-    /// because lines move verbatim.
+    /// post-removal insertion index `to` (both body-relative, as produced by
+    /// parse). The `list` trigger line never moves. Tick, indent, and
+    /// markers ride along because lines move verbatim.
     public static func move(text: String, from: Int, to: Int) -> String {
         var lines = text.components(separatedBy: .newlines)
         let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
@@ -87,6 +87,62 @@ public struct ChecklistItem: Equatable, Sendable, Identifiable {
         let clamped = max(offset, min(dst, lines.count))
         lines.insert(line, at: clamped)
         return lines.joined(separator: "\n")
+    }
+
+    /// Block move: moving a parent carries its contiguous nested block
+    /// (deeper-indented item lines) with it, so the subtree stays intact
+    /// with indent preserved. `from` is the body id of the block head;
+    /// `to` is the body id of the line that should FOLLOW the block after
+    /// the move, or `bodyLineCount` to append at the end. Landing inside
+    /// the block (or exactly home) is a no-op.
+    public static func moveBlock(text: String, from: Int, to anchor: Int, bodyLineCount: Int) -> String {
+        var lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        let src = from + offset
+        guard lines.indices.contains(src) else { return text }
+        var end = src
+        let baseIndent = indentOf(lines[src])
+        var i = src + 1
+        while i < lines.count, isItemLine(lines[i]), indentOf(lines[i]) > baseIndent {
+            end = i
+            i += 1
+        }
+        let endBody = end - offset
+        if anchor >= from, anchor <= endBody + 1 { return text }
+        let block = Array(lines[src...end])
+        lines.removeSubrange(src...end)
+        let insertAt: Int
+        if anchor >= bodyLineCount {
+            insertAt = lines.count
+        } else if anchor > endBody {
+            insertAt = anchor - block.count + offset
+        } else {
+            insertAt = anchor + offset
+        }
+        lines.insert(contentsOf: block, at: max(offset, min(insertAt, lines.count)))
+        return lines.joined(separator: "\n")
+    }
+
+    /// Display-order move for SwiftUI .onMove: `ids` are body ids in parse
+    /// order, `to` is SwiftUI's post-removal insertion position. Returns the
+    /// (fromId, anchorId) pair for moveBlock, where the anchor is the body
+    /// id of the row that should follow the block (or bodyLineCount to
+    /// append at the end).
+    public static func moveDisplay(ids: [Int], from: IndexSet, to displayTo: Int, bodyLineCount: Int) -> (from: Int, anchor: Int) {
+        guard let raw = from.first, ids.indices.contains(raw) else { return (0, 0) }
+        let srcId = ids[raw]
+        var remaining = ids
+        remaining.remove(at: raw)
+        guard displayTo < remaining.count else { return (srcId, bodyLineCount) }
+        return (srcId, remaining[max(0, displayTo)])
+    }
+
+    private static func indentOf(_ line: String) -> Int {
+        line.prefix(while: { $0 == " " || $0 == "\t" }).count / 2
+    }
+
+    private static func isItemLine(_ line: String) -> Bool {
+        !line.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     public static func toggle(text: String, id: Int) -> String {
