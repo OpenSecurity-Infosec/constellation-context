@@ -32,7 +32,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |
 | `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen display with progress and finish beep; no Antinote-grade fullscreen scene polish yet) |
 | `paste` AutoPaste collection | Partial |
-| Screenshot-to-text OCR (on-device) | Partial (image drop via Apple Vision works; screenshot hotkey flow missing) |
+| Screenshot-to-text OCR (on-device) | Partial (image drop + ⌥⇧S region capture via Apple Vision into the current note; Esc cancels; Screen Recording permission prompt on first use) |
 | One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry works; rows now show per-note days-left countdown) |

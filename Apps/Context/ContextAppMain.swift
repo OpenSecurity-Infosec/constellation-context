@@ -46,6 +46,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         ThemeRelayer.lookChanged = { [weak controller] in controller?.applyLook() }
         applyPlacement()
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
+        ContextHotKeys.onCapture { [weak controller] in controller?.captureScreenshotToText() }
         controller.show()
         SyncManager.shared.start()
         if let pending = pendingURL {
@@ -109,6 +110,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func sendToObsidian(_ sender: Any?) { main?.sendToObsidian() }
     @objc func sendToBear(_ sender: Any?) { main?.sendToBear() }
     @objc func openSearch(_ sender: Any?) { main?.openSearch() }
+    @objc func captureScreenshot(_ sender: Any?) { main?.captureScreenshotToText() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
 
@@ -126,6 +128,10 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         file.addItem(.separator())
         file.addItem(withTitle: "The Void", action: #selector(showVoid(_:)), keyEquivalent: "")
         file.addItem(withTitle: "Search Notes…", action: #selector(openSearch(_:)), keyEquivalent: "f")
+        file.addItem(.separator())
+        let shot = NSMenuItem(title: "Capture Screenshot to Text", action: #selector(captureScreenshot(_:)), keyEquivalent: "s")
+        shot.keyEquivalentModifierMask = [.option, .shift]
+        file.addItem(shot)
         let fileItem = NSMenuItem(); fileItem.submenu = file; menu.addItem(fileItem)
         let format = NSMenu(title: "Format")
         let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")

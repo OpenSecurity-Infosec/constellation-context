@@ -370,12 +370,57 @@ final class ContextWindowController {
     func handleImageDrop(_ image: NSImage) {
         Task { @MainActor in
             guard let text = await recognize(image) else { return }
-            let clean = PlainText.sanitize(text)
-            let base = store.note(id: noteID)?.text ?? ""
-            let next = base.isEmpty ? clean : base + "\n" + clean
-            store.update(id: noteID, text: next)
-            render(preservingFocus: true)
+            appendRecognizedText(text)
         }
+    }
+
+    /// Appends OCR text to the current note via the sanitize path.
+    func appendRecognizedText(_ text: String) {
+        let clean = PlainText.sanitize(text)
+        guard !clean.isEmpty else { return }
+        let base = store.note(id: noteID)?.text ?? ""
+        let next = base.isEmpty ? clean : base + "\n" + clean
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    /// Screenshot region → text: hides the overlay so it is not in the
+    /// shot, runs the system crosshair picker, OCRs the capture into the
+    /// current note, then reshows. Esc in the picker cancels cleanly.
+    func captureScreenshotToText() {
+        window.orderOut(nil)
+        // Small delay so the panel is gone before the picker arms.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.runCapture()
+                self.show()
+            }
+        }
+    }
+
+    private func runCapture() async {
+        let output = ScreenshotCapture.tempFileURL()
+        defer { ScreenshotCapture.cleanup(at: output) }
+        let ok = await withCheckedContinuation { cont in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let proc = Process()
+                proc.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                proc.arguments = ScreenshotCapture.arguments(outputPath: output.path)
+                do {
+                    try proc.run()
+                    proc.waitUntilExit()
+                    cont.resume(returning: proc.terminationStatus == 0)
+                } catch {
+                    cont.resume(returning: false)
+                }
+            }
+        }
+        guard ok, ScreenshotCapture.isUsableCapture(at: output),
+              let image = NSImage(contentsOf: output),
+              let text = await recognize(image), !text.isEmpty
+        else { return }
+        appendRecognizedText(text)
     }
 
     private func recognize(_ image: NSImage) async -> String? {

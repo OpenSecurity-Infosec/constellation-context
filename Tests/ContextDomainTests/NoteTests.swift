@@ -97,8 +97,7 @@ import Testing
     }
 }
 
-@Suite struct VoidExpiryTests {
-    @Test func liveNotesHaveNoCountdown() {
+@Suite struct VoidExpiryTests {    @Test func liveNotesHaveNoCountdown() {
         #expect(NoteExpiry.daysLeft(for: ContextNote(text: "hi")) == nil)
         #expect(NoteExpiry.label(for: ContextNote(text: "hi")) == nil)
     }
@@ -125,5 +124,40 @@ import Testing
         n.trashedAt = now.addingTimeInterval(-40 * 24 * 3600)
         #expect(NoteExpiry.daysLeft(for: n, now: now) == 0)
         #expect(NoteExpiry.label(for: n, now: now) == "expires soon")
+    }
+}
+
+@Suite struct ScreenshotCaptureTests {
+    @Test func argumentsPickRegionToFile() {
+        let args = ScreenshotCapture.arguments(outputPath: "/tmp/x.png")
+        #expect(args.contains("-i"))
+        #expect(args.contains("-x"))
+        #expect(args.last == "/tmp/x.png")
+    }
+
+    @Test func tempFilesAreUniquePng() {
+        let a = ScreenshotCapture.tempFileURL()
+        let b = ScreenshotCapture.tempFileURL()
+        #expect(a != b)
+        #expect(a.pathExtension == "png")
+    }
+
+    @Test func missingFileIsNotUsable() {
+        #expect(!ScreenshotCapture.isUsableCapture(at: URL(fileURLWithPath: "/tmp/context-nope-\(UUID().uuidString).png")))
+    }
+
+    @Test func nonEmptyPngIsUsable() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ctx-\(UUID().uuidString).png")
+        try Data([0x89, 0x50, 0x4E, 0x47]).write(to: url)
+        #expect(ScreenshotCapture.isUsableCapture(at: url))
+        ScreenshotCapture.cleanup(at: url)
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
+
+    @Test func emptyFileIsNotUsable() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("ctx-\(UUID().uuidString).png")
+        try Data().write(to: url)
+        #expect(!ScreenshotCapture.isUsableCapture(at: url))
+        try? FileManager.default.removeItem(at: url)
     }
 }
