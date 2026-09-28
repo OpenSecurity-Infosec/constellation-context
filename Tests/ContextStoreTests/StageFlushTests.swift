@@ -45,3 +45,53 @@ import Testing
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
 }
+
+@Suite struct BulkRestoreTests {
+    private func store(file: String) -> NoteStore {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(file)
+        try? FileManager.default.removeItem(at: url)
+        return NoteStore(fileURL: url)
+    }
+
+    @Test func restoresSeveralAtOnce() {
+        let s = store(file: "ctx-bulk-\(UUID().uuidString).json")
+        let a = s.create(text: "a")
+        let b = s.create(text: "b")
+        let c = s.create(text: "keep")
+        s.trash(id: a.id)
+        s.trash(id: b.id)
+        let result = s.restoreMany(ids: [a.id, b.id])
+        #expect(result == NoteStore.BulkRestoreResult(restored: 2, skippedExpired: 0))
+        #expect(s.voidNotes.isEmpty)
+        #expect(s.liveNotes.count == 3)
+        _ = c
+    }
+
+    @Test func skipsExpiredNotes() {
+        let s = store(file: "ctx-bulk-\(UUID().uuidString).json")
+        let doomed = s.create(text: "doomed")
+        let fresh = s.create(text: "fresh")
+        s.trash(id: doomed.id)
+        s.trash(id: fresh.id)
+        // Backdate an explicit expiry via the sync-merge path.
+        var all = s.allNotes
+        if let i = all.firstIndex(where: { $0.id == doomed.id }) {
+            all[i].expiresAt = Date().addingTimeInterval(-10)
+        }
+        s.replaceAll(all)
+        let result = s.restoreMany(ids: [doomed.id, fresh.id])
+        #expect(result == NoteStore.BulkRestoreResult(restored: 1, skippedExpired: 1))
+        #expect(s.note(id: fresh.id)?.isTrashed == false)
+        #expect(s.note(id: doomed.id)?.isTrashed == true)
+    }
+
+    @Test func unknownAndLiveIdsAreIgnored() {
+        let s = store(file: "ctx-bulk-\(UUID().uuidString).json")
+        let live = s.create(text: "live")
+        let t = s.create(text: "trashed")
+        s.trash(id: t.id)
+        let result = s.restoreMany(ids: [live.id, UUID(), t.id])
+        #expect(result.restored == 1)
+        #expect(s.note(id: t.id)?.isTrashed == false)
+    }
+}

@@ -102,6 +102,40 @@ public final class NoteStore: @unchecked Sendable {
         }
     }
 
+    public struct BulkRestoreResult: Equatable, Sendable {
+        public var restored: Int
+        public var skippedExpired: Int
+
+        public init(restored: Int, skippedExpired: Int) {
+            self.restored = restored
+            self.skippedExpired = skippedExpired
+        }
+    }
+
+    /// Restores several trashed notes in one action. Notes past `expiresAt`
+    /// are skipped (left for garbage collection) and counted, never
+    /// resurrected as live notes. Order of `ids` is preserved in the
+    /// restore pass; live ordering still follows updatedAt.
+    public func restoreMany(ids: [UUID], now: Date = Date()) -> BulkRestoreResult {
+        lock.withLock {
+            var restored = 0, skipped = 0
+            for id in ids {
+                guard let i = notes.firstIndex(where: { $0.id == id }),
+                      notes[i].isTrashed
+                else { continue }
+                if let exp = notes[i].expiresAt, exp <= now {
+                    skipped += 1
+                    continue
+                }
+                notes[i].trashedAt = nil
+                notes[i].updatedAt = now
+                restored += 1
+            }
+            if restored > 0 { save() }
+            return BulkRestoreResult(restored: restored, skippedExpired: skipped)
+        }
+    }
+
     public func destroy(id: UUID) {
         lock.withLock {
             notes.removeAll { $0.id == id }

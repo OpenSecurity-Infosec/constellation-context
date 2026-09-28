@@ -27,13 +27,27 @@ final class VoidWindowController {
         window.makeKeyAndOrderFront(nil)
     }
 
+    private var lastNotice = ""
+
     private func render() {
         let void = store.voidNotes
-        let view = VoidListView(notes: void, onRestore: { [weak self] id in
+        let view = VoidListView(notes: void, notice: lastNotice, onRestore: { [weak self] id in
+            self?.lastNotice = ""
             self?.store.restore(id: id)
             self?.onRestore(id)
             self?.render()
+        }, onRestoreMany: { [weak self] ids in
+            guard let self else { return }
+            let result = store.restoreMany(ids: ids)
+            if let first = ids.first { onRestore(first) }
+            if result.skippedExpired > 0 {
+                lastNotice = "Restored \(result.restored); \(result.skippedExpired) expired left behind."
+            } else {
+                lastNotice = "Restored \(result.restored)."
+            }
+            render()
         }, onDestroy: { [weak self] id in
+            self?.lastNotice = ""
             self?.store.destroy(id: id)
             self?.render()
         })
@@ -43,19 +57,37 @@ final class VoidWindowController {
 
 private struct VoidListView: View {
     var notes: [ContextNote]
+    var notice: String
     var onRestore: (UUID) -> Void
+    var onRestoreMany: ([UUID]) -> Void
     var onDestroy: (UUID) -> Void
+    @State private var selection: Set<UUID> = []
     var body: some View {
         VStack(alignment: .leading) {
             Text("Deleted notes linger here for 30 days.")
                 .font(.caption).foregroundStyle(.secondary)
-                .padding()
+                .padding([.top, .horizontal])
+            if !notice.isEmpty {
+                Text(notice)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
             if notes.isEmpty {
                 Text("The Void is empty.")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(notes, id: \.id) { note in
+                HStack {
+                    Button("Restore Selected (\(selection.count))") {
+                        onRestoreMany(Array(selection))
+                        selection = []
+                    }
+                    .disabled(selection.isEmpty)
+                    Button("Clear Selection") { selection = [] }
+                        .disabled(selection.isEmpty)
+                }
+                .padding(.horizontal)
+                List(notes, id: \.id, selection: $selection) { note in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(note.text.components(separatedBy: .newlines).first ?? "(empty)")
