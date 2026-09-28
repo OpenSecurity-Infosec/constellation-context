@@ -26,7 +26,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Unit conversions (length, weight, temperature) | Partial (unit-tested; gutter edge cases unpolished) |
 | Currency + crypto conversions in `math` (cached rates, offline fallback) | Partial (live rates + 1h cache; outage keeps last cache with its age in the footnote, honest offline message with no cache, recovers on next refresh) |
 | Reactive variables (`name = expr`, recalculates down the note) | Partial |
-| `sum` / `avg` totals | Partial |
+| `sum` / `avg` totals | Partial (per-line contribution gutter, live totals, thousands folding, ISO-date ignore, comment skip) |
 | `count` lines/words/chars with `//` comments | Partial |
 | `list` checklists with tick-off | Partial (nesting + marker cycling + drag-reorder with subtree-follow and persisted order; live-drag human verification still open) |
 | `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |

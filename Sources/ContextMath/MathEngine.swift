@@ -216,21 +216,45 @@ public struct MathEngine: Sendable {
     }
 
     /// Totals every number in the note (sum) or averages them (avg).
+    /// Single source of truth with contributions(): thousands separators
+    /// fold ("1,000" counts once), ISO dates are ignored, `//` comments
+    /// are skipped.
     public func aggregate(_ text: String, mode: AggregateMode) -> Double? {
-        let pattern = #"-?\d+(?:\.\d+)?"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
-        let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
-        let numbers = matches.compactMap { m -> Double? in
-            guard let r = Range(m.range, in: text) else { return nil }
-            // Skip numbers on `//` comment lines.
-            let lineStart = text[..<r.lowerBound].lastIndex(of: "\n").map { text.index(after: $0) } ?? text.startIndex
-            if text[lineStart...].hasPrefix("//") { return nil }
-            return Double(text[r])
-        }
-        guard !numbers.isEmpty else { return nil }
+        let all = contributions(text: text).flatMap { $0 }
+        guard !all.isEmpty else { return nil }
         switch mode {
-        case .sum: return numbers.reduce(0, +)
-        case .avg: return numbers.reduce(0, +) / Double(numbers.count)
+        case .sum: return all.reduce(0, +)
+        case .avg: return all.reduce(0, +) / Double(all.count)
+        }
+    }
+
+    /// Per-line numbers for sum/avg notes: one entry per body line, each
+    /// the numbers that line contributes (empty when the line counts for
+    /// nothing). Drives both the total and the per-line gutter.
+    public func contributions(text: String) -> [[Double]] {
+        text.components(separatedBy: .newlines).map { lineNumbers($0) }
+    }
+
+    /// Numbers on one line after normalization. Empty for comments,
+    /// dateless prose, and lines with no digits.
+    public func lineNumbers(_ line: String) -> [Double] {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || trimmed.hasPrefix("//") { return [] }
+        var work = line
+        // ISO dates never count: "2024-01-15" is a day, not 2040.
+        work = work.replacingOccurrences(of: #"\d{4}-\d{1,2}-\d{1,2}"#, with: " ", options: .regularExpression)
+        // Thousands separators fold: "1,000" is one thousand, not 1 and 0.
+        var prev = ""
+        while prev != work {
+            prev = work
+            work = work.replacingOccurrences(of: #"(\d),(\d)"#, with: "$1$2", options: .regularExpression)
+        }
+        let pattern = #"-?\d+(?:\.\d+)?"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let matches = regex.matches(in: work, range: NSRange(work.startIndex..., in: work))
+        return matches.compactMap { m -> Double? in
+            guard let r = Range(m.range, in: work) else { return nil }
+            return Double(work[r])
         }
     }
 

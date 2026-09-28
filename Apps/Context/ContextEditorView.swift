@@ -9,6 +9,7 @@ struct ContextEditorRoot: View {
     var liveCount: Int
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
+    var sumAvgLines: [String] = []
     var stats: NoteStats?
     var checklist: [ChecklistItem]
     var autoPasteArmed: Bool
@@ -169,12 +170,24 @@ struct ContextEditorRoot: View {
     }
 
     private var mathGutter: some View {
-        // Right-aligned inline results for math notes.
+        // Right-aligned inline results for math notes, per-line
+        // contributions for sum/avg notes.
         VStack(alignment: .trailing, spacing: 0) {
             // Offset past the trigger line.
-            if note.kind == .math { Color.clear.frame(height: lineHeight) }
-            ForEach(mathResults.indices, id: \.self) { i in
-                switch mathResults[i] {
+            if note.kind == .math || note.kind == .sum || note.kind == .avg {
+                Color.clear.frame(height: lineHeight)
+            }
+            switch note.kind {
+            case .sum, .avg:
+                ForEach(sumAvgLines.indices, id: \.self) { i in
+                    Text(sumAvgLines[i])
+                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                        .foregroundStyle(.secondary)
+                        .frame(height: lineHeight)
+                }
+            default:
+                ForEach(mathResults.indices, id: \.self) { i in
+                    switch mathResults[i] {
                 case .value(let r):
                     Text(r.display)
                         .font(.system(size: ContextSettings.shared.fontSize).monospaced())
@@ -188,6 +201,7 @@ struct ContextEditorRoot: View {
                 case .blank:
                     Text("")
                         .frame(height: lineHeight)
+                }
                 }
             }
             Spacer()

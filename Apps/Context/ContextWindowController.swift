@@ -672,6 +672,17 @@ final class ContextWindowController {
             default: return nil
             }
         }()
+        // Per-line sum/avg gutter so each line shows what it contributes.
+        // Empty for other modes; blank string means "counts for nothing".
+        let sumAvgLines: [String]
+        switch current.kind {
+        case .sum, .avg:
+            sumAvgLines = math.contributions(text: current.bodyWithoutTrigger).map { nums in
+                nums.isEmpty ? "" : math.format(nums.reduce(0, +))
+            }
+        default:
+            sumAvgLines = []
+        }
         let stats = current.kind == .count ? NoteStats.compute(for: current.bodyWithoutTrigger) : nil
         let items = current.kind == .list ? ChecklistItem.parse(current.text) : []
         let view = ContextEditorRoot(
@@ -680,6 +691,7 @@ final class ContextWindowController {
             liveCount: store.liveNotes.count,
             mathResults: results,
             aggregate: sumAvg.map(math.format),
+            sumAvgLines: sumAvgLines,
             stats: stats,
             checklist: items,
             autoPasteArmed: autoPaste.isArmed,

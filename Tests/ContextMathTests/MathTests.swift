@@ -33,6 +33,35 @@ import Testing
         #expect(total == 3)
     }
 
+    @Test func thousandsFoldOnce() {
+        #expect(engine.lineNumbers("1,000") == [1000])
+        #expect(engine.lineNumbers("1,000,000") == [1000000])
+        #expect(engine.aggregate("1,000\n2,000", mode: .sum) == 3000)
+    }
+
+    @Test func isoDatesIgnored() {
+        #expect(engine.lineNumbers("due 2024-01-15") == [])
+        #expect(engine.aggregate("2024-01-15\n5", mode: .sum) == 5)
+    }
+
+    @Test func contributionsMapLines() {
+        #expect(engine.contributions(text: "2 + 3\nno numbers\n// 9\n4") == [[2, 3], [], [], [4]])
+    }
+
+    @Test func aggregateMatchesContributions() {
+        let text = "oats 2\n1,000\n// skip 9\ndue 2024-01-15\n3.5"
+        let flat = engine.contributions(text: text).flatMap { $0 }
+        #expect(engine.aggregate(text, mode: .sum) == flat.reduce(0, +))
+        #expect(engine.aggregate(text, mode: .avg) == flat.reduce(0, +) / Double(flat.count))
+    }
+
+    @Test func mixedContentLiveUpdate() {
+        #expect(engine.aggregate("milk 2\neggs 3", mode: .sum) == 5)
+        #expect(engine.aggregate("milk 2\neggs 30", mode: .sum) == 32)
+        #expect(engine.aggregate("nothing here", mode: .sum) == nil)
+        #expect(engine.aggregate("nothing here", mode: .avg) == nil)
+    }
+
     @Test func average() {
         let avg = engine.aggregate("2\n4", mode: .avg)
         #expect(avg == 3)
