@@ -17,7 +17,35 @@ import Testing
     @Test func sanitizeStripsBullets() {
         #expect(PlainText.sanitize("- hello") == "hello")
         #expect(PlainText.sanitize("1. hello") == "hello")
-        #expect(PlainText.sanitize("  • hello  ") == "hello")
+        #expect(PlainText.sanitize("  • hello  ") == "  hello")
+    }
+
+    @Test func sanitizeKeepsRelativeIndent() {
+        let pasted = "- top\n    - nested\n        - deep\n1) numbered"
+        #expect(PlainText.sanitize(pasted) == "top\n    nested\n        deep\nnumbered")
+    }
+
+    @Test func sanitizeUnwrapsTables() {
+        let pasted = "| name | qty |\n| --- | --- |\n| milk | 2 |"
+        #expect(PlainText.sanitize(pasted) == "name  qty\nmilk  2")
+    }
+
+    @Test func sanitizeStripsQuotesAndEntities() {
+        #expect(PlainText.sanitize("> quoted\n>> deep") == "quoted\ndeep")
+        #expect(PlainText.sanitize("fish &amp; chips &#39;yum&#39;") == "fish & chips 'yum'")
+        #expect(PlainText.sanitize("a &#x27;b&#x27; c") == "a 'b' c")
+    }
+
+    @Test func sanitizeNormalizesSmartPunctuation() {
+        #expect(PlainText.sanitize("\u{201C}hi\u{201D} \u{2019}yo\u{2019} \u{2026}") == "\"hi\" 'yo' ...")
+    }
+
+    @Test func sanitizeCollapsesBlankRuns() {
+        #expect(PlainText.sanitize("\n\na\n\n\n\nb\n\n") == "a\n\nb")
+    }
+
+    @Test func sanitizeHandlesCRLFAndTabs() {
+        #expect(PlainText.sanitize("a\r\n\t- b") == "a\n  b")
     }
 
     @Test func statsIgnoreComments() {

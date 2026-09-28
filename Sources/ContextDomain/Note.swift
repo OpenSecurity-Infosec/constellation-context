@@ -90,22 +90,106 @@ public enum NoteKind: String, Equatable, Sendable {
     }
 }
 
-/// Plain-text sanitizer: strips rich text, bullets, numbering, leading whitespace.
+/// Plain-text sanitizer: strips rich text, bullets, numbering, table grid
+/// junk, and HTML entities. Preserves relative indentation (tabs become two
+/// spaces) so pasted nested lists keep their nesting for checklist parse.
 public enum PlainText {
     public static func sanitize(_ input: String) -> String {
-        let lines = input.components(separatedBy: .newlines).map { line -> String in
+        // Normalize line endings and tabs first.
+        var text = input.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: "\t", with: "  ")
+        text = decodeHTMLEntities(text)
+        text = normalizeSmartPunctuation(text)
+        let rawLines = text.components(separatedBy: .newlines)
+        // Drop markdown table delimiter rows entirely (they join as blanks).
+        let lines = rawLines.filter { line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            let isDelimiter = t.range(of: #"^\|?[\s:\-|]+\|?$"#, options: .regularExpression) != nil && t.contains("-")
+            return !isDelimiter
+        }.map { line -> String in
             var out = line
-            // Strip common bullet/number prefixes: "- ", "* ", "• ", "1. ", "1) ".
-            if let range = out.range(of: #"^[\s>]*([-*•‣▪]|(\d+[.)]))\s+"#, options: .regularExpression) {
+            // Strip quote markers; keep the indent that follows them.
+            if let range = out.range(of: #"^(?:\s*>)+\s?"#, options: .regularExpression) {
                 out.removeSubrange(range)
             }
-            return out.trimmingCharacters(in: .whitespaces)
+            // Markdown tables: unwrap cell pipes into spaced text.
+            let trimmed = out.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("|") && trimmed.hasSuffix("|") {
+                let cells = trimmed.dropFirst().dropLast().split(separator: "|")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                let indent = String(out.prefix(while: { $0 == " " }))
+                return cells.isEmpty ? "" : indent + cells.joined(separator: "  ")
+            }
+            // Strip bullet/number prefixes but keep leading indent.
+            if let range = out.range(of: #"^(\s*)(?:[-*•‣▪‣◦▪–—]|(\d+[.)])|(\[.\]))\s+"#, options: .regularExpression) {
+                let indent = String(out[range].prefix(while: { $0 == " " }))
+                out.removeSubrange(range)
+                out = indent + out
+            }
+            // Trim trailing whitespace and NBSP only; leading indent is kept.
+            while out.last == " " || out.last == "\u{00A0}" { out.removeLast() }
+            return out
         }
-        return lines.joined(separator: "\n")
+        // Collapse blank runs to a single blank line; drop leading/trailing blanks.
+        var collapsed: [String] = []
+        var blanks = 0
+        for line in lines {
+            if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                blanks += 1
+                if blanks <= 1 { collapsed.append("") }
+            } else {
+                blanks = 0
+                collapsed.append(line)
+            }
+        }
+        while collapsed.first == "" { collapsed.removeFirst() }
+        while collapsed.last == "" { collapsed.removeLast() }
+        return collapsed.joined(separator: "\n")
     }
 
     public static func sanitizePasteboard(_ input: String) -> String {
         sanitize(input)
+    }
+
+    /// Decodes common HTML entities left behind by web-app paste.
+    static func decodeHTMLEntities(_ s: String) -> String {
+        var out = s
+        let named: [String: String] = [
+            "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": "\"",
+            "&apos;": "'", "&nbsp;": " ", "&mdash;": "—", "&ndash;": "–",
+            "&hellip;": "…", "&copy;": "©", "&reg;": "®",
+        ]
+        for (entity, char) in named { out = out.replacingOccurrences(of: entity, with: char) }
+        // Numeric entities: &#39; and &#x27;.
+        while let range = out.range(of: #"&#(\d+);"#, options: .regularExpression) {
+            let digits = out[range].filter(\.isNumber)
+            if let code = UInt32(digits), let scalar = UnicodeScalar(code) {
+                out.replaceSubrange(range, with: String(scalar))
+            } else {
+                break
+            }
+        }
+        while let range = out.range(of: #"&#x([0-9a-fA-F]+);"#, options: .regularExpression) {
+            let hex = out[range].replacingOccurrences(of: "&#x", with: "")
+                .replacingOccurrences(of: ";", with: "")
+            if let code = UInt32(hex, radix: 16), let scalar = UnicodeScalar(code) {
+                out.replaceSubrange(range, with: String(scalar))
+            } else {
+                break
+            }
+        }
+        return out
+    }
+
+    /// Normalizes smart quotes/dashes/ellipsis to ASCII plain text.
+    static func normalizeSmartPunctuation(_ s: String) -> String {
+        s.replacingOccurrences(of: "“", with: "\"")
+            .replacingOccurrences(of: "”", with: "\"")
+            .replacingOccurrences(of: "‘", with: "'")
+            .replacingOccurrences(of: "’", with: "'")
+            .replacingOccurrences(of: "…", with: "...")
     }
 }
 

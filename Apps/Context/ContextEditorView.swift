@@ -96,6 +96,8 @@ struct ContextEditorRoot: View {
                         slashFragment = fragment
                         slashRange = range
                         slashSelected = 0
+                    }, onImagePaste: { image in
+                        controller?.handleImageDrop(image)
                     })
                         .font(.system(size: ContextSettings.shared.fontSize))
                     if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
@@ -328,6 +330,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
+    var onImagePaste: ((NSImage) -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
@@ -340,6 +343,7 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.onIndent = { direction in onIndent?(direction) }
         tv.onSlash = { fragment, range in onSlash?(fragment, range) }
         tv.onOpenURL = { url in NSWorkspace.shared.open(url) }
+        tv.onImagePaste = { image in onImagePaste?(image) }
         tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
         tv.isRichText = false
@@ -381,6 +385,7 @@ final class ContextTextView: NSTextView {
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onOpenURL: ((URL) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
+    var onImagePaste: ((NSImage) -> Void)?
     private var slashCompletion: NSView?
 
     override func paste(_ sender: Any?) {
@@ -390,6 +395,12 @@ final class ContextTextView: NSTextView {
             let clean = PlainText.sanitizePasteboard(s)
             insertText(clean, replacementRange: selectedRange())
             shrinkURLsAroundSelection()
+            return
+        }
+        // Rich image with no text (screenshots, copied graphics): route to
+        // on-device OCR instead of embedding an attachment.
+        if let image = board.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage {
+            onImagePaste?(image)
             return
         }
         super.paste(sender)

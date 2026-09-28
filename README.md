@@ -20,7 +20,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Antinote feature | Context status (honest: Partial until proven feelable vs Antinote) |
 | --- | --- |
 | Global hotkey overlay (⌥A) | Shipped |
-| Plain-text notes, formatting stripped on paste | Partial (paste-strip edge cases: nested lists, tables, rich images unproven) |
+| Plain-text notes, formatting stripped on paste | Partial (nested-list indent, tables, quotes, entities, smart punctuation, CRLF, image-to-OCR all strip clean; exotic word-processor layouts still unproven) |
 | Swipe/arrow navigation between notes, new note past the end | Partial (‹/› buttons and ⌘[/⌘] work; trackpad swipe untested across hardware) |
 | `math` inline evaluation with descriptive text | Partial (core eval works; error states and large-note polish missing) |
 | Unit conversions (length, weight, temperature) | Partial (unit-tested; gutter edge cases unpolished) |
