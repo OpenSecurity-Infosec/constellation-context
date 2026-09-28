@@ -35,8 +35,7 @@ import Testing
     }
 }
 
-@Suite struct HandoffAvailabilityTests {
-    private func env(
+@Suite struct HandoffAvailabilityTests {    private func env(
         notes: Bool = true, bear: Bool = true,
         files: Set<String> = [], dirs: Set<String> = [], writable: Set<String> = []
     ) -> Handoff.Environment {
@@ -93,5 +92,36 @@ import Testing
         // Pure check layer: a missing vault never reaches directory creation.
         let e = env()
         #expect(Handoff.checkVault(path: "/nope", env: e) != nil)
+    }
+}
+
+@Suite struct QuickExportTests {
+    @Test func slugFilenamePerKind() {
+        let note = ContextNote(text: "Grocery List\nmilk")
+        let dir = URL(fileURLWithPath: "/tmp/qx", isDirectory: true)
+        #expect(NoteExport.quickDestination(for: note, kind: .txt, in: dir) { _ in false }.lastPathComponent == "grocery-list.txt")
+        #expect(NoteExport.quickDestination(for: note, kind: .markdown, in: dir) { _ in false }.lastPathComponent == "grocery-list.md")
+        #expect(NoteExport.quickDestination(for: note, kind: .pdf, in: dir) { _ in false }.lastPathComponent == "grocery-list.pdf")
+    }
+
+    @Test func dedupsExistingNames() {
+        let note = ContextNote(text: "Hi")
+        let dir = URL(fileURLWithPath: "/tmp/qx", isDirectory: true)
+        let taken: Set<String> = ["/tmp/qx/hi.txt", "/tmp/qx/hi-2.txt"]
+        let dest = NoteExport.quickDestination(for: note, kind: .txt, in: dir) { taken.contains($0) }
+        #expect(dest.lastPathComponent == "hi-3.txt")
+    }
+
+    @Test func emptyNoteFallsBackToSlug() {
+        let note = ContextNote(text: "")
+        let dir = URL(fileURLWithPath: "/tmp/qx", isDirectory: true)
+        #expect(NoteExport.quickDestination(for: note, kind: .txt, in: dir) { _ in false }.lastPathComponent == "context-note.txt")
+    }
+
+    @Test func defaultFolderPrefersLastUsed() {
+        let dir = FileManager.default.temporaryDirectory
+        #expect(NoteExport.defaultFolder(lastUsed: dir.path) == dir)
+        #expect(NoteExport.defaultFolder(lastUsed: "/nope/missing-\(UUID().uuidString)") != URL(fileURLWithPath: "/nope"))
+        #expect(NoteExport.defaultFolder(lastUsed: nil).lastPathComponent == "Downloads")
     }
 }

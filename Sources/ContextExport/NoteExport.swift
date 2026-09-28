@@ -55,6 +55,43 @@ public enum NoteExport: Sendable {
         NSPasteboard.general.setString(note.text, forType: .string)
     }
 
+    // MARK: - Quick export
+
+    /// File extension per kind.
+    public static func fileExtension(for kind: ExportKind) -> String {
+        switch kind {
+        case .txt: return "txt"
+        case .markdown: return "md"
+        case .pdf: return "pdf"
+        }
+    }
+
+    /// Default export folder: last-used directory, else Downloads.
+    public static func defaultFolder(lastUsed: String?) -> URL {
+        if let lastUsed, !lastUsed.isEmpty,
+           FileManager.default.fileExists(atPath: lastUsed)
+        {
+            return URL(fileURLWithPath: lastUsed, isDirectory: true)
+        }
+        return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+    }
+
+    /// Unique destination in `dir` from the note title slug. Never
+    /// clobbers: appends -2, -3 when the name exists. `exists` is
+    /// injectable so tests never touch disk.
+    public static func quickDestination(for note: ContextNote, kind: ExportKind, in dir: URL, exists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> URL {
+        let (title, _) = Handoff.titleAndBody(for: note)
+        let base = Handoff.slug(title)
+        let ext = fileExtension(for: kind)
+        var candidate = dir.appendingPathComponent("\(base).\(ext)")
+        var n = 2
+        while exists(candidate.path) {
+            candidate = dir.appendingPathComponent("\(base)-\(n).\(ext)")
+            n += 1
+        }
+        return candidate
+    }
+
     // MARK: - One-click handoff
 
     /// Sends the note to Apple Notes via osascript. Throws when Notes is

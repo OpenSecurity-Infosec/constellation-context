@@ -16,6 +16,7 @@ public struct ContextSettings: Codable, Sendable {
     public var showInDock: Bool = true
     public var colorTheme: ColorTheme = .mocha
     public var translucentWindow: Bool = false
+    public var lastExportDirectory: String? = nil
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
 
@@ -32,7 +33,8 @@ public struct ContextSettings: Codable, Sendable {
         extensionsAllowNetwork: Bool = false,
         showInDock: Bool = true,
         colorTheme: ColorTheme = .mocha,
-        translucentWindow: Bool = false
+        translucentWindow: Bool = false,
+        lastExportDirectory: String? = nil
     ) {
         self.fontSize = fontSize
         self.showMenuBarExtra = showMenuBarExtra
@@ -47,6 +49,7 @@ public struct ContextSettings: Codable, Sendable {
         self.showInDock = showInDock
         self.colorTheme = colorTheme
         self.translucentWindow = translucentWindow
+        self.lastExportDirectory = lastExportDirectory
     }
 
     private static var fileURL: URL {
@@ -69,6 +72,7 @@ public struct ContextSettings: Codable, Sendable {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
         case obsidianVaultPath, themeMode, iCloudSyncEnabled, lastSyncAt
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
+        case lastExportDirectory
     }
 
     public init(from decoder: Decoder) throws {
@@ -86,6 +90,7 @@ public struct ContextSettings: Codable, Sendable {
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha
         translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
+        lastExportDirectory = try c.decodeIfPresent(String.self, forKey: .lastExportDirectory)
     }
 
     public func save() {

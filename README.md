@@ -33,7 +33,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen display with progress and finish beep; no Antinote-grade fullscreen scene polish yet) |
 | `paste` AutoPaste collection | Partial |
 | Screenshot-to-text OCR (on-device) | Partial (image drop + ⌥⇧S region capture via Apple Vision into the current note; Esc cancels; Screen Recording permission prompt on first use) |
-| One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |
+| One-click export (txt, Markdown, PDF) | Partial (quick export writes to last folder/Downloads with slug names + dedup + Finder reveal; Save As… remembers its folder; write failures alert instead of vanishing) |
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
 | Apple Notes / Obsidian / Bear direct export | Partial (all three wired; missing-app paths now specific — Notes/Bear install prompts, vault unset/missing/not-a-folder/unwritable each named, picker only when no usable vault, no fake vault creation) |

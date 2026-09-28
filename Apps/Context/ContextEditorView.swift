@@ -66,9 +66,13 @@ struct ContextEditorRoot: View {
             }
             Menu("Export") {
                 Button("Copy") { controller?.copyNote() }
-                Button("Save .txt") { controller?.export(kind: .txt) }
-                Button("Save Markdown") { controller?.export(kind: .markdown) }
-                Button("Save PDF") { controller?.export(kind: .pdf) }
+                Button("Quick Export .txt") { controller?.quickExport(kind: .txt) }
+                Button("Quick Export Markdown") { controller?.quickExport(kind: .markdown) }
+                Button("Quick Export PDF") { controller?.quickExport(kind: .pdf) }
+                Divider()
+                Button("Save .txt As…") { controller?.export(kind: .txt) }
+                Button("Save Markdown As…") { controller?.export(kind: .markdown) }
+                Button("Save PDF As…") { controller?.export(kind: .pdf) }
                 Divider()
                 Button("Send to Apple Notes") { controller?.sendToAppleNotes() }
                 Button("Send to Obsidian") { controller?.sendToObsidian() }

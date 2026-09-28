@@ -505,8 +505,32 @@ final class ContextWindowController {
         case .markdown: panel.nameFieldStringValue = "note.md"
         case .pdf: panel.nameFieldStringValue = "note.pdf"
         }
+        if let last = ContextSettings.shared.lastExportDirectory {
+            panel.directoryURL = URL(fileURLWithPath: last, isDirectory: true)
+        }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        try? NoteExport.writeFile(note, kind: kind, to: url)
+        ContextSettings.shared.lastExportDirectory = url.deletingLastPathComponent().path
+        ContextSettings.shared.save()
+        do {
+            try NoteExport.writeFile(note, kind: kind, to: url)
+        } catch {
+            alert("Could not write that export. Check the folder and try again.")
+        }
+    }
+
+    /// One-click export: writes straight to the last folder (else
+    /// Downloads) with a title-slug name, reveals in Finder. No panel.
+    func quickExport(kind: NoteExport.ExportKind) {
+        let dir = NoteExport.defaultFolder(lastUsed: ContextSettings.shared.lastExportDirectory)
+        let dest = NoteExport.quickDestination(for: note, kind: kind, in: dir)
+        do {
+            try NoteExport.writeFile(note, kind: kind, to: dest)
+            ContextSettings.shared.lastExportDirectory = dir.path
+            ContextSettings.shared.save()
+            NSWorkspace.shared.activateFileViewerSelecting([dest])
+        } catch {
+            alert("Could not write \(dest.lastPathComponent) to \(dir.path). Check the folder and try again.")
+        }
     }
 
     func copyNote() { NoteExport.copyToClipboard(note) }
