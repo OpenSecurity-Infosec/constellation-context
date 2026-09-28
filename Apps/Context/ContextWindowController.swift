@@ -190,6 +190,18 @@ final class ContextWindowController {
         render(preservingFocus: true)
     }
 
+    /// Drag-reorder: moves one checklist row. IndexSet comes from SwiftUI
+    /// .onMove in display order, which matches body-line order from parse.
+    func moveChecklist(from: IndexSet, to: Int) {
+        guard let src = from.first else { return }
+        // SwiftUI reports `to` post-removal; domain move takes a final index.
+        var dst = to
+        if to > src { dst -= 1 }
+        let next = ChecklistItem.move(text: note.text, from: src, to: dst)
+        store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
     /// Current checklist row id under the caret in the plain text buffer.
     func rowIDForCaret(_ caret: Int) -> Int {
         let text = note.text

@@ -202,8 +202,7 @@ struct ContextEditorRoot: View {
     private var checklistView: some View {
         List {
             ForEach(checklist) { item in
-                HStack {
-                    Button(item.checked ? "☑" : "☐") { controller?.toggleChecklist(id: item.id) }
+                HStack {                    Button(item.checked ? "☑" : "☐") { controller?.toggleChecklist(id: item.id) }
                         .buttonStyle(.plain)
                     Text(markerPrefix(item))
                         .font(.system(size: ContextSettings.shared.fontSize).monospaced())
@@ -224,6 +223,7 @@ struct ContextEditorRoot: View {
                     Button("Cycle marker (⌘⇧M)") { controller?.cycleChecklistMarker(id: item.id) }
                 }
             }
+            .onMove { from, to in controller?.moveChecklist(from: from, to: to) }
             .onDelete { _ in }
         }
         .listStyle(.plain)

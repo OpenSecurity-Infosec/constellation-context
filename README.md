@@ -28,7 +28,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Reactive variables (`name = expr`, recalculates down the note) | Partial |
 | `sum` / `avg` totals | Partial |
 | `count` lines/words/chars with `//` comments | Partial |
-| `list` checklists with tick-off | Partial (nesting + marker cycling work; Antinote drag-reorder missing) |
+| `list` checklists with tick-off | Partial (nesting + marker cycling + drag-reorder with order persisted; subtree-follow and live-drag human verification still open) |
 | `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |
 | `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen display with progress and finish beep; no Antinote-grade fullscreen scene polish yet) |
 | `paste` AutoPaste collection | Partial |

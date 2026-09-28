@@ -52,4 +52,38 @@ import Testing
         let items = ChecklistItem.parse(text)
         #expect(ChecklistItem.serialize(items, trigger: true) == text)
     }
+
+    @Test func moveReordersLines() {
+        let text = "list\n[ ] milk\n- eggs\n1. bread"
+        #expect(ChecklistItem.move(text: text, from: 0, to: 2) == "list\n- eggs\n1. bread\n[ ] milk")
+    }
+
+    @Test func moveUpReordersLines() {
+        let text = "list\n[ ] milk\n- eggs\n1. bread"
+        #expect(ChecklistItem.move(text: text, from: 2, to: 0) == "list\n1. bread\n[ ] milk\n- eggs")
+    }
+
+    @Test func moveKeepsTickNestAndMarkers() {
+        let text = "list\n[x] done\n  - nested\n2. second"
+        let moved = ChecklistItem.move(text: text, from: 1, to: 0)
+        #expect(moved == "list\n  - nested\n[x] done\n2. second")
+        let items = ChecklistItem.parse(moved)
+        #expect(items[0].indent == 1 && items[0].marker == .bullet)
+        #expect(items[1].checked)
+        #expect(items[2].marker == .numbered(2))
+    }
+
+    @Test func moveWithoutTrigger() {
+        #expect(ChecklistItem.move(text: "[ ] a\n[ ] b", from: 1, to: 0) == "[ ] b\n[ ] a")
+    }
+
+    @Test func moveSameSpotIsNoop() {
+        let text = "list\n[ ] a\n[ ] b"
+        #expect(ChecklistItem.move(text: text, from: 1, to: 1) == text)
+    }
+
+    @Test func moveOutOfRangeIsNoop() {
+        let text = "list\n[ ] a"
+        #expect(ChecklistItem.move(text: text, from: 9, to: 0) == text)
+    }
 }

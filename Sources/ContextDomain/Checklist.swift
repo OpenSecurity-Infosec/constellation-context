@@ -74,6 +74,21 @@ public struct ChecklistItem: Equatable, Sendable, Identifiable {
         return lines.joined(separator: "\n")
     }
 
+    /// Drag-reorders one checklist line: moves the body line at `from` to
+    /// `to` (both body-relative ids, as produced by parse). The `list`
+    /// trigger line never moves. Tick, indent, and markers ride along
+    /// because lines move verbatim.
+    public static func move(text: String, from: Int, to: Int) -> String {
+        var lines = text.components(separatedBy: .newlines)
+        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
+        let src = from + offset, dst = to + offset
+        guard lines.indices.contains(src), src != dst else { return text }
+        let line = lines.remove(at: src)
+        let clamped = max(offset, min(dst, lines.count))
+        lines.insert(line, at: clamped)
+        return lines.joined(separator: "\n")
+    }
+
     public static func toggle(text: String, id: Int) -> String {
         var lines = text.components(separatedBy: .newlines)
         let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
