@@ -120,6 +120,36 @@ import Testing
     }
 }
 
+@Suite struct TimerSceneTests {
+    @Test func runningCountdownLine() {
+        #expect(TimerScene.statusLine(elapsed: 450, remaining: 750, running: true) == "7:30 in · 12:30 left")
+    }
+
+    @Test func pausedCountdownLine() {
+        #expect(TimerScene.statusLine(elapsed: 60, remaining: 540, running: false) == "Paused · 9:00 left")
+    }
+
+    @Test func stopwatchLine() {
+        #expect(TimerScene.statusLine(elapsed: 5, remaining: nil, running: true) == "0:05 up")
+        #expect(TimerScene.statusLine(elapsed: 0, remaining: nil, running: false) == "")
+    }
+
+    @Test func finishedHasNoStatusLine() {
+        #expect(TimerScene.statusLine(elapsed: 1200, remaining: 0, running: false) == "")
+    }
+
+    @Test func finishLine() {
+        #expect(TimerScene.finishLine(total: 1200) == "Done in 20:00")
+        #expect(TimerScene.finishLine(total: nil) == "Done")
+    }
+
+    @Test func ringLabel() {
+        #expect(TimerScene.ringLabel(fraction: 0.362) == "36%")
+        #expect(TimerScene.ringLabel(fraction: 0) == "0%")
+        #expect(TimerScene.ringLabel(fraction: 1.5) == "100%")
+    }
+}
+
 @Suite struct VoidExpiryTests {    @Test func liveNotesHaveNoCountdown() {
         #expect(NoteExpiry.daysLeft(for: ContextNote(text: "hi")) == nil)
         #expect(NoteExpiry.label(for: ContextNote(text: "hi")) == nil)

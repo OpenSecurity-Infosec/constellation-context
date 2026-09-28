@@ -401,7 +401,8 @@ final class ContextWindowController {
         }
         return TimerSnapshot(
             name: name, display: display, fraction: timer.fractionDone,
-            running: timer.isRunning, modeLabel: label, finished: finished
+            running: timer.isRunning, modeLabel: label, finished: finished,
+            elapsed: timer.elapsed, total: timer.totalDuration
         )
     }
 

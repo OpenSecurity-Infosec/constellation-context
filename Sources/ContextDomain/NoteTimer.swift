@@ -86,7 +86,36 @@ public final class NoteTimer: @unchecked Sendable {
         guard let durationSeconds, durationSeconds > 0 else { return nil }
         return min(1, max(0, elapsed / durationSeconds))
     }
+}
 
+/// Fullscreen scene copy: pure status/finish lines so the timer display
+/// and tests share one source of truth.
+public enum TimerScene: Sendable {
+    /// "7:30 in · 12:30 left" while running, "Paused · 12:30 left" when
+    /// stopped mid-countdown, "0:05 up" for stopwatches, "" when idle.
+    public static func statusLine(elapsed: TimeInterval, remaining: TimeInterval?, running: Bool) -> String {
+        if let remaining {
+            if remaining <= 0 { return "" }
+            let tail = "\(NoteTimer.format(elapsed)) in · \(NoteTimer.format(remaining)) left"
+            return running ? tail : "Paused · \(NoteTimer.format(remaining)) left"
+        }
+        if elapsed > 0 || running { return "\(NoteTimer.format(elapsed)) up" }
+        return ""
+    }
+
+    /// "Done in 20:00" for the finish state.
+    public static func finishLine(total: TimeInterval?) -> String {
+        guard let total else { return "Done" }
+        return "Done in \(NoteTimer.format(total))"
+    }
+
+    /// "36%" ring label for a 0...1 fraction.
+    public static func ringLabel(fraction: Double) -> String {
+        "\(Int((min(1, max(0, fraction)) * 100).rounded()))%"
+    }
+}
+
+extension NoteTimer {
     /// Timer name from the note: first non-empty body line that is not a
     /// duration spec (e.g. "25m", "10:00", "pomodoro 25m"). Empty when none.
     public static func name(from text: String) -> String {

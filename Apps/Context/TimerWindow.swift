@@ -10,6 +10,8 @@ struct TimerSnapshot {
     var running: Bool
     var modeLabel: String
     var finished: Bool
+    var elapsed: TimeInterval
+    var total: TimeInterval?
 }
 
 /// Named fullscreen timer for `timer` notes: big time, note name,
@@ -105,7 +107,8 @@ final class TimerWindowController: NSObject, NSWindowDelegate {
 final class TimerViewModel: ObservableObject {
     @Published var snapshot = TimerSnapshot(
         name: "Timer", display: "0:00", fraction: nil,
-        running: false, modeLabel: "", finished: false
+        running: false, modeLabel: "", finished: false,
+        elapsed: 0, total: nil
     )
 }
 
@@ -125,12 +128,39 @@ private struct TimerFullscreenView: View {
             }
             Text(vm.snapshot.name)
                 .font(.largeTitle.weight(.semibold))
-            Text(vm.snapshot.finished ? "Done" : vm.snapshot.display)
-                .font(.system(size: 120, weight: .bold).monospaced())
-                .foregroundStyle(vm.snapshot.finished ? Color.ctxAccent : .primary)
-            if let fraction = vm.snapshot.fraction {
-                ProgressView(value: fraction)
-                    .frame(maxWidth: 480)
+            if vm.snapshot.finished {
+                Text("Done")
+                    .font(.system(size: 120, weight: .bold).monospaced())
+                    .foregroundStyle(Color.ctxAccent)
+                Text(TimerScene.finishLine(total: vm.snapshot.total))
+                    .font(.title2).foregroundStyle(.secondary)
+            } else {
+                HStack(alignment: .center, spacing: 32) {
+                    if let fraction = vm.snapshot.fraction {
+                        ZStack {
+                            ProgressView(value: fraction)
+                                .progressViewStyle(.circular)
+                                .scaleEffect(3)
+                                .frame(width: 120, height: 120)
+                            Text(TimerScene.ringLabel(fraction: fraction))
+                                .font(.title3.monospaced())
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(vm.snapshot.display)
+                            .font(.system(size: 120, weight: .bold).monospaced())
+                        let remaining = vm.snapshot.total.map { max(0, $0 - vm.snapshot.elapsed) }
+                        let line = TimerScene.statusLine(
+                            elapsed: vm.snapshot.elapsed,
+                            remaining: vm.snapshot.total == nil ? nil : remaining,
+                            running: vm.snapshot.running
+                        )
+                        if !line.isEmpty {
+                            Text(line)
+                                .font(.title3).foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
             HStack(spacing: 16) {
                 Button(vm.snapshot.running ? "Stop" : "Start") {
