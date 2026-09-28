@@ -101,6 +101,10 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        main?.flushNow()
+    }
+
     @objc func toggleWindow(_ sender: Any?) { main?.toggle() }
     @objc func newNote(_ sender: Any?) { main?.newNote() }
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }

@@ -20,6 +20,8 @@ final class ContextWindowController {
     private var timerMode: NoteTimer.Mode = .stopwatch
     private var tickTimer: Timer?
     private var hosting: NSHostingView<ContextEditorRoot>?
+    private var lastMathBody = ""
+    private var lastMathResults: [MathEngine.LineOutcome] = []
 
     init() {
         store.collectGarbage()
@@ -46,11 +48,13 @@ final class ContextWindowController {
 
     private func refreshRates() {
         if let snap = rates.current { math = MathEngine(rates: snap) }
+        lastMathBody = ""
         Task { [weak self] in
             await self?.rates.refreshIfNeeded()
             await MainActor.run {
                 if let snap = self?.rates.current {
                     self?.math = MathEngine(rates: snap)
+                    self?.lastMathBody = ""
                     self?.render(preservingFocus: true)
                 }
             }
@@ -99,6 +103,7 @@ final class ContextWindowController {
     // MARK: - Note ops
 
     func newNote() {
+        flushNow()
         let n = store.create()
         noteID = n.id
         autoPaste.stop()
@@ -129,6 +134,7 @@ final class ContextWindowController {
     }
 
     private func afterNavigate() {
+        flushNow()
         autoPaste.stop()
         timer = NoteTimer()
         render()
@@ -146,7 +152,8 @@ final class ContextWindowController {
     }
 
     func onTextChange(_ text: String) {
-        store.update(id: noteID, text: text)
+        store.stage(id: noteID, text: text)
+        scheduleFlush()
         let kind = ContextNote(text: text).kind
         // Arm/disarm AutoPaste with the `paste` trigger.
         if kind == .paste, !autoPaste.isArmed {
@@ -229,6 +236,26 @@ final class ContextWindowController {
 
     func cycleMarkerAtCaret() {
         cycleChecklistMarker(id: rowIDForCaret(lastCaret))
+    }
+
+    // MARK: - Coalesced persistence
+
+    private var flushWork: DispatchWorkItem?
+
+    /// Coalesces per-keystroke disk writes: memory + gutter update now,
+    /// JSON encode + atomic write at most ~0.6s after typing pauses.
+    private func scheduleFlush() {
+        flushWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.store.flush() }
+        flushWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: work)
+    }
+
+    /// Immediate flush for navigate/new/terminate paths.
+    func flushNow() {
+        flushWork?.cancel()
+        flushWork = nil
+        store.flush()
     }
 
     // MARK: - Extensions
@@ -593,7 +620,18 @@ final class ContextWindowController {
 
     private func render(preservingFocus: Bool = false) {
         let current = note
-        let results = current.kind == .math ? math.evaluateLines(note: current.bodyWithoutTrigger) : []
+        // Math memo: the 0.25s timer tick re-renders constantly; skip the
+        // full re-eval when the math body is byte-identical so idle notes
+        // cost nothing and typing only pays for real changes.
+        let mathBody = current.kind == .math ? current.bodyWithoutTrigger : ""
+        let results: [MathEngine.LineOutcome]
+        if mathBody == lastMathBody {
+            results = lastMathResults
+        } else {
+            results = current.kind == .math ? math.evaluateLines(note: mathBody) : []
+            lastMathBody = mathBody
+            lastMathResults = results
+        }
         let sumAvg: Double? = {
             switch current.kind {
             case .sum: return math.aggregate(current.bodyWithoutTrigger, mode: .sum)

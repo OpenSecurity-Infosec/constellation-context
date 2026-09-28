@@ -23,5 +23,6 @@ let package = Package(
         ),
         .testTarget(name: "ContextDomainTests", dependencies: ["ContextDomain", "ContextExport"], path: "Tests/ContextDomainTests"),
         .testTarget(name: "ContextMathTests", dependencies: ["ContextMath", "ContextDomain"], path: "Tests/ContextMathTests"),
+        .testTarget(name: "ContextStoreTests", dependencies: ["ContextStore", "ContextDomain"], path: "Tests/ContextStoreTests"),
     ]
 )

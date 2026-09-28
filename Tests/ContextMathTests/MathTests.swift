@@ -107,3 +107,52 @@ import Testing
         #expect(engine.evaluate(note: "2 + 2").first??.display == "4")
     }
 }
+
+@Suite struct MathPerfTests {
+    private func bigNote(lines: Int) -> String {
+        var out: [String] = []
+        out.reserveCapacity(lines)
+        for i in 0..<lines {
+            switch i % 6 {
+            case 0: out.append("v\(i) = \(i) * 1.5")
+            case 1: out.append("oats \(i) + \(i)")
+            case 2: out.append("\(i) km in mi")
+            case 3: out.append("just some prose words here")
+            case 4: out.append("\(i)/0")
+            default: out.append("total = v0 + \(i)")
+            }
+        }
+        return out.joined(separator: "\n")
+    }
+
+    @Test func twoThousandLinesStaysResponsive() {
+        let engine = MathEngine()
+        let note = bigNote(lines: 2000)
+        let start = Date()
+        let out = engine.evaluateLines(note: note)
+        let elapsed = Date().timeIntervalSince(start)
+        #expect(out.count == 2000)
+        print("PERF full 2000-line eval: \(elapsed)s")
+        #expect(elapsed < 1.0)
+    }
+
+    @Test func tenThousandLinesStaysBounded() {
+        let engine = MathEngine()
+        let note = bigNote(lines: 10_000)
+        let start = Date()
+        let out = engine.evaluateLines(note: note)
+        let elapsed = Date().timeIntervalSince(start)
+        #expect(out.count == 10_000)
+        print("PERF full 10000-line eval: \(elapsed)s")
+        #expect(elapsed < 5.0)
+    }
+
+    @Test func largeNoteKeepsErrorsAndValues() {
+        let engine = MathEngine()
+        let out = engine.evaluateLines(note: bigNote(lines: 12))
+        // Spot-check the 6-line cycle: assign, suffix, conversion, prose, div0, assign.
+        #expect(out[3] == .blank)
+        #expect(out[4] == .error(.divideByZero))
+        if case .value = out[0] {} else { Issue.record("expected value at line 0, got \(out[0])") }
+    }
+}

@@ -68,6 +68,23 @@ public final class NoteStore: @unchecked Sendable {
         }
     }
 
+    /// Memory-only text update for the keystroke path. The caller coalesces
+    /// disk writes via flush() so typing never blocks on JSON encode + I/O.
+    /// Reads see the new text immediately; crash-window data loss is bounded
+    /// by the flush interval plus terminate/navigate flushes.
+    public func stage(id: UUID, text: String) {
+        lock.withLock {
+            guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
+            notes[i].text = text
+            notes[i].updatedAt = Date()
+        }
+    }
+
+    /// Writes staged changes to disk. Safe to call redundantly.
+    public func flush() {
+        lock.withLock { save() }
+    }
+
     public func trash(id: UUID) {
         lock.withLock {
             guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
