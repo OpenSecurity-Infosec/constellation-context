@@ -61,19 +61,37 @@ public enum NoteExport: Sendable {
     /// missing or the script fails so the UI can show a graceful alert.
     @MainActor
     public static func sendToAppleNotes(_ note: ContextNote) throws {
+        if Handoff.checkNotes(env: Handoff.Environment.live()) != nil {
+            throw ExportError.handoffFailed(Handoff.UnavailableReason.notesMissing.message)
+        }
         let (title, body) = Handoff.titleAndBody(for: note)
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         proc.arguments = ["-e", Handoff.appleNotesScript(title: title, body: body)]
-        try proc.run()
+        do {
+            try proc.run()
+        } catch {
+            throw ExportError.handoffFailed(Handoff.UnavailableReason.notesScriptFailed.message)
+        }
         proc.waitUntilExit()
-        guard proc.terminationStatus == 0 else { throw ExportError.handoffFailed("Apple Notes did not accept the note.") }
+        guard proc.terminationStatus == 0 else {
+            throw ExportError.handoffFailed(Handoff.UnavailableReason.notesScriptFailed.message)
+        }
     }
 
     /// Writes the note as Markdown into the Obsidian vault folder.
+    /// Refuses bad vault paths instead of creating a fake vault there;
+    /// pass createIfMissing only after the user explicitly picks the folder.
     @MainActor
-    public static func sendToObsidian(_ note: ContextNote, vault: URL) throws {
-        try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+    public static func sendToObsidian(_ note: ContextNote, vault: URL, createIfMissing: Bool = false) throws {
+        var env = Handoff.Environment.live()
+        if createIfMissing, Handoff.checkVault(path: vault.path, env: env) == .vaultMissing(path: vault.path) {
+            try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            env = Handoff.Environment.live()
+        }
+        if let reason = Handoff.checkVault(path: vault.path, env: env) {
+            throw ExportError.handoffFailed(reason.message)
+        }
         let dest = Handoff.obsidianFileURL(for: note, vault: vault)
         // Avoid clobbering an existing vault note with the same title.
         var final = dest
@@ -88,10 +106,15 @@ public enum NoteExport: Sendable {
 
     /// Opens Bear's x-callback-url to create the note.
     @MainActor
-    public static func sendToBear(_ note: ContextNote) throws {
+    public static func sendToBear(_ note: ContextNote, schemeOpenable: Bool? = nil) throws {
+        let openable = schemeOpenable
+            ?? (NSWorkspace.shared.urlForApplication(toOpen: URL(string: "bear://")!) != nil)
+        if !openable {
+            throw ExportError.handoffFailed(Handoff.UnavailableReason.bearMissing.message)
+        }
         guard let url = Handoff.bearURL(for: note) else { throw ExportError.handoffFailed("Could not build the Bear URL.") }
         if !NSWorkspace.shared.open(url) {
-            throw ExportError.handoffFailed("Bear is not installed or did not open.")
+            throw ExportError.handoffFailed(Handoff.UnavailableReason.bearMissing.message)
         }
     }
 
@@ -99,5 +122,12 @@ public enum NoteExport: Sendable {
     public enum ExportError: Error {
         case renderFailed
         case handoffFailed(String)
+
+        public var message: String {
+            switch self {
+            case .renderFailed: return "Context could not render that export."
+            case .handoffFailed(let m): return m
+            }
+        }
     }
 }

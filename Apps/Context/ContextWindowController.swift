@@ -514,21 +514,35 @@ final class ContextWindowController {
     func sendToAppleNotes() {
         do {
             try NoteExport.sendToAppleNotes(note)
+        } catch let e as NoteExport.ExportError {
+            alert(e.message)
         } catch {
-            alert("Apple Notes is not available right now.")
+            alert(Handoff.UnavailableReason.notesScriptFailed.message)
         }
     }
 
     func sendToObsidian() {
-        if let path = ContextSettings.shared.obsidianVaultPath, !path.isEmpty {
+        let env = Handoff.Environment.live()
+        let path = ContextSettings.shared.obsidianVaultPath
+        let reason = Handoff.checkVault(path: path, env: env)
+        switch reason {
+        case nil:
             do {
-                try NoteExport.sendToObsidian(note, vault: URL(fileURLWithPath: path))
+                try NoteExport.sendToObsidian(note, vault: URL(fileURLWithPath: path!))
+            } catch let e as NoteExport.ExportError {
+                alert(e.message)
             } catch {
                 alert("Could not write to the Obsidian vault folder.")
             }
-            return
+        case .vaultUnset, .vaultMissing:
+            // No usable vault: offer the picker once, then send.
+            pickVaultAndSend()
+        case .some(let r):
+            alert(r.message)
         }
-        // No vault configured yet: prompt once, then send.
+    }
+
+    private func pickVaultAndSend() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -538,7 +552,9 @@ final class ContextWindowController {
         ContextSettings.shared.obsidianVaultPath = url.path
         ContextSettings.shared.save()
         do {
-            try NoteExport.sendToObsidian(note, vault: url)
+            try NoteExport.sendToObsidian(note, vault: url, createIfMissing: true)
+        } catch let e as NoteExport.ExportError {
+            alert(e.message)
         } catch {
             alert("Could not write to the Obsidian vault folder.")
         }
@@ -547,8 +563,10 @@ final class ContextWindowController {
     func sendToBear() {
         do {
             try NoteExport.sendToBear(note)
+        } catch let e as NoteExport.ExportError {
+            alert(e.message)
         } catch {
-            alert("Bear is not installed or did not open.")
+            alert(Handoff.UnavailableReason.bearMissing.message)
         }
     }
 

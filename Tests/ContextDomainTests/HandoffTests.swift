@@ -34,3 +34,64 @@ import Testing
         #expect(script.contains("\\\"hi\\\""))
     }
 }
+
+@Suite struct HandoffAvailabilityTests {
+    private func env(
+        notes: Bool = true, bear: Bool = true,
+        files: Set<String> = [], dirs: Set<String> = [], writable: Set<String> = []
+    ) -> Handoff.Environment {
+        Handoff.Environment(
+            notesAppPresent: notes, bearSchemeOpenable: bear,
+            fileExists: { files.contains($0) || dirs.contains($0) },
+            isDirectory: { dirs.contains($0) },
+            isWritable: { writable.contains($0) }
+        )
+    }
+
+    @Test func notesCheck() {
+        #expect(Handoff.checkNotes(env: env()) == nil)
+        #expect(Handoff.checkNotes(env: env(notes: false)) == .notesMissing)
+        #expect(Handoff.UnavailableReason.notesMissing.message.contains("not installed"))
+    }
+
+    @Test func bearCheck() {
+        #expect(Handoff.checkBear(env: env()) == nil)
+        #expect(Handoff.checkBear(env: env(bear: false)) == .bearMissing)
+        #expect(Handoff.UnavailableReason.bearMissing.message.contains("Bear is not installed"))
+    }
+
+    @Test func vaultUnsetAndBlank() {
+        #expect(Handoff.checkVault(path: nil, env: env()) == .vaultUnset)
+        #expect(Handoff.checkVault(path: "   ", env: env()) == .vaultUnset)
+        #expect(Handoff.UnavailableReason.vaultUnset.message.contains("Pick your vault"))
+    }
+
+    @Test func vaultMissing() {
+        let r = Handoff.checkVault(path: "/nope/vault", env: env())
+        #expect(r == .vaultMissing(path: "/nope/vault"))
+        #expect(r?.message.contains("missing") == true)
+    }
+
+    @Test func vaultFileInsteadOfDir() {
+        let e = env(files: ["/x/file.md"])
+        #expect(Handoff.checkVault(path: "/x/file.md", env: e) == .vaultNotDirectory(path: "/x/file.md"))
+    }
+
+    @Test func vaultUnwritable() {
+        let e = env(dirs: ["/x/vault"])
+        let r = Handoff.checkVault(path: "/x/vault", env: e)
+        #expect(r == .vaultUnwritable(path: "/x/vault"))
+        #expect(r?.message.contains("permissions") == true)
+    }
+
+    @Test func goodVaultPasses() {
+        let e = env(dirs: ["/x/vault"], writable: ["/x/vault"])
+        #expect(Handoff.checkVault(path: "/x/vault", env: e) == nil)
+    }
+
+    @Test func obsidianRefusesMissingVault() {
+        // Pure check layer: a missing vault never reaches directory creation.
+        let e = env()
+        #expect(Handoff.checkVault(path: "/nope", env: e) != nil)
+    }
+}

@@ -36,7 +36,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
-| Apple Notes / Obsidian / Bear direct export | Partial (all three wired; clean-Mac missing-app paths thinly tested) |
+| Apple Notes / Obsidian / Bear direct export | Partial (all three wired; missing-app paths now specific — Notes/Bear install prompts, vault unset/missing/not-a-folder/unwritable each named, picker only when no usable vault, no fake vault creation) |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Partial |
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
