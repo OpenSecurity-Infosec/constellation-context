@@ -5,7 +5,7 @@ public final class NoteTimer: @unchecked Sendable {
     private let lock = NSLock()
     private var startDate: Date?
     private var accumulated: TimeInterval = 0
-    private var duration: TimeInterval?
+    private var durationSeconds: TimeInterval?
     private var running = false
 
     public init() {}
@@ -41,9 +41,9 @@ public final class NoteTimer: @unchecked Sendable {
 
     public func start(mode: Mode) {
         lock.withLock {
-            if case .countdown(let s) = mode { duration = s }
-            else if case .pomodoro(let s) = mode { duration = s }
-            else { duration = nil }
+            if case .countdown(let s) = mode { durationSeconds = s }
+            else if case .pomodoro(let s) = mode { durationSeconds = s }
+            else { durationSeconds = nil }
             startDate = Date()
             running = true
         }
@@ -72,11 +72,38 @@ public final class NoteTimer: @unchecked Sendable {
     }
 
     public var remaining: TimeInterval? {
-        guard let duration else { return nil }
-        return max(0, duration - elapsed)
+        guard let durationSeconds else { return nil }
+        return max(0, durationSeconds - elapsed)
     }
 
     public var isRunning: Bool { lock.withLock { running } }
+
+    /// Total duration for countdown/pomodoro modes, nil for stopwatch.
+    public var totalDuration: TimeInterval? { lock.withLock { durationSeconds } }
+
+    /// Fraction of the countdown elapsed (0...1), nil for stopwatch.
+    public var fractionDone: Double? {
+        guard let durationSeconds, durationSeconds > 0 else { return nil }
+        return min(1, max(0, elapsed / durationSeconds))
+    }
+
+    /// Timer name from the note: first non-empty body line that is not a
+    /// duration spec (e.g. "25m", "10:00", "pomodoro 25m"). Empty when none.
+    public static func name(from text: String) -> String {
+        let lines = text.components(separatedBy: .newlines).dropFirst()
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty { continue }
+            let lower = trimmed.lowercased()
+            let bare = lower
+                .replacingOccurrences(of: "pomodoro", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            if bare.isEmpty { continue }
+            if bare.range(of: #"^(\d+\s*[ms]?|\d+:\d+)$"#, options: .regularExpression) != nil { continue }
+            return trimmed
+        }
+        return ""
+    }
 
     public static func format(_ interval: TimeInterval) -> String {
         let total = max(0, Int(interval.rounded()))

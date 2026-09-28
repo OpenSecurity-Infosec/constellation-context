@@ -311,6 +311,60 @@ final class ContextWindowController {
     func timerStop() { timer.stop() }
     func timerReset() { timer.reset() }
 
+    // MARK: - Fullscreen timer
+
+    private var timerWindow: TimerWindowController?
+
+    /// Named fullscreen display for the current `timer` note. Nil unless
+    /// the note is a timer note.
+    func timerSnapshot() -> TimerSnapshot? {
+        guard note.kind == .timer else { return nil }
+        let mode = NoteTimer.parseMode(from: note.text)
+        let raw = NoteTimer.name(from: note.text)
+        let name = raw.isEmpty ? "Timer" : raw
+        let label: String = switch mode {
+        case .stopwatch: "stopwatch"
+        case .countdown: "countdown"
+        case .pomodoro: "pomodoro"
+        }
+        let display: String
+        let finished: Bool
+        switch mode {
+        case .stopwatch:
+            display = NoteTimer.format(timer.elapsed)
+            finished = false
+        case .countdown, .pomodoro:
+            let left = timer.remaining ?? {
+                if case .countdown(let s) = mode { return s }
+                if case .pomodoro(let s) = mode { return s }
+                return 0
+            }()
+            display = NoteTimer.format(left)
+            finished = timer.totalDuration != nil && left <= 0
+        }
+        return TimerSnapshot(
+            name: name, display: display, fraction: timer.fractionDone,
+            running: timer.isRunning, modeLabel: label, finished: finished
+        )
+    }
+
+    func openTimerFullscreen() {
+        guard note.kind == .timer else { return }
+        if let open = timerWindow {
+            open.show()
+            return
+        }
+        let wc = TimerWindowController(
+            read: { [weak self] in self?.timerSnapshot() },
+            onStart: { [weak self] in self?.timerStart() },
+            onStop: { [weak self] in self?.timerStop() },
+            onReset: { [weak self] in self?.timerReset() },
+            onClose: { [weak self] in self?.timerWindow = nil }
+        )
+        timerWindow = wc
+        wc.show()
+    }
+
     // MARK: - OCR
 
     func handleImageDrop(_ image: NSImage) {

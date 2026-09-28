@@ -1,4 +1,5 @@
 import ContextDomain
+import Foundation
 import Testing
 
 @Suite struct NoteTests {
@@ -28,5 +29,42 @@ import Testing
     @Test func checklistToggle() {
         let toggled = ChecklistItem.toggle(text: "list\n[ ] milk", id: 0)
         #expect(toggled.contains("[x] milk"))
+    }
+}
+
+@Suite struct TimerDisplayTests {
+    @Test func nameSkipsDurationSpecs() {
+        #expect(NoteTimer.name(from: "timer\n25m\nDeep work") == "Deep work")
+        #expect(NoteTimer.name(from: "timer\npomodoro") == "")
+        #expect(NoteTimer.name(from: "timer\n10:00\nStandup") == "Standup")
+        #expect(NoteTimer.name(from: "timer") == "")
+    }
+
+    @Test func nameUsesFirstDescriptiveLine() {
+        #expect(NoteTimer.name(from: "timer\nBread") == "Bread")
+        #expect(NoteTimer.name(from: "timer\n\n  Laundry  \n25m") == "Laundry")
+    }
+
+    @Test func fractionTracksCountdown() {
+        let t = NoteTimer()
+        t.start(mode: .countdown(seconds: 100))
+        #expect(t.totalDuration == 100)
+        let f = t.fractionDone ?? -1
+        #expect(f >= 0 && f <= 0.05)
+        t.stop()
+    }
+
+    @Test func stopwatchHasNoFraction() {
+        let t = NoteTimer()
+        t.start(mode: .stopwatch)
+        #expect(t.totalDuration == nil)
+        #expect(t.fractionDone == nil)
+        t.stop()
+    }
+
+    @Test func formatHandlesHours() {
+        #expect(NoteTimer.format(90) == "1:30")
+        #expect(NoteTimer.format(3661) == "1:01:01")
+        #expect(NoteTimer.format(0) == "0:00")
     }
 }

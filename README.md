@@ -30,7 +30,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | `count` lines/words/chars with `//` comments | Partial |
 | `list` checklists with tick-off | Partial (nesting + marker cycling work; Antinote drag-reorder missing) |
 | `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |
-| `timer` stopwatch / countdown / pomodoro | Partial (inline controls work; no named fullscreen timer polish) |
+| `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen display with progress and finish beep; no Antinote-grade fullscreen scene polish yet) |
 | `paste` AutoPaste collection | Partial |
 | Screenshot-to-text OCR (on-device) | Partial (image drop via Apple Vision works; screenshot hotkey flow missing) |
 | One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |

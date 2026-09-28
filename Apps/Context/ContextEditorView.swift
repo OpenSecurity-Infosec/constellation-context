@@ -288,6 +288,7 @@ struct ContextEditorRoot: View {
                     timerRunning ? controller?.timerStop() : controller?.timerStart()
                 }
                 Button("Reset") { controller?.timerReset() }
+                Button("Full screen") { controller?.openTimerFullscreen() }
             case .paste:
                 Text(autoPasteArmed ? "Everything you copy lands here as plain text." : "Type paste + Return to collect copies.")
                     .font(.caption).foregroundStyle(.secondary)
