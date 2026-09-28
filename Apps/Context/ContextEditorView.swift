@@ -7,7 +7,7 @@ struct ContextEditorRoot: View {
     weak var controller: ContextWindowController?
     var note: ContextNote
     var liveCount: Int
-    var mathResults: [MathEngine.LineResult?]
+    var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
     var stats: NoteStats?
     var checklist: [ChecklistItem]
@@ -174,10 +174,21 @@ struct ContextEditorRoot: View {
             // Offset past the trigger line.
             if note.kind == .math { Color.clear.frame(height: lineHeight) }
             ForEach(mathResults.indices, id: \.self) { i in
-                Text(mathResults[i]?.display ?? "")
-                    .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                    .foregroundStyle(Color.ctxAccent)
-                    .frame(height: lineHeight)
+                switch mathResults[i] {
+                case .value(let r):
+                    Text(r.display)
+                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                        .foregroundStyle(Color.ctxAccent)
+                        .frame(height: lineHeight)
+                case .error(let e):
+                    Text(e.message)
+                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                        .foregroundStyle(Color.ctxWarning)
+                        .frame(height: lineHeight)
+                case .blank:
+                    Text("")
+                        .frame(height: lineHeight)
+                }
             }
             Spacer()
         }

@@ -117,4 +117,6 @@ extension Color {
     static var ctxEditorBackground: Color { Color(nsColor: ContextTheme.editorBackground) }
     static var ctxPanelBackground: Color { Color(nsColor: ContextTheme.panelBackground) }
     static var ctxAccent: Color { Color(nsColor: ContextTheme.accent) }
+    /// Warning tint for math error text. Fixed amber reads on every theme.
+    static var ctxWarning: Color { Color(nsColor: NSColor.systemOrange) }
 }

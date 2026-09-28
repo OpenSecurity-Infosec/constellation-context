@@ -15,46 +15,133 @@ public struct MathEngine: Sendable {
     public struct LineResult: Equatable, Sendable {
         public var value: Double
         public var display: String
+
+        public init(value: Double, display: String) {
+            self.value = value
+            self.display = display
+        }
+    }
+
+    /// Per-line outcome: blank prose, a computed value, or a recoverable
+    /// error with a short gutter message. One bad line never blanks others.
+    public enum LineOutcome: Equatable, Sendable {
+        case blank
+        case value(LineResult)
+        case error(LineError)
+    }
+
+    public enum LineError: Equatable, Sendable {
+        case syntax
+        case divideByZero
+        case unknownUnit(String)
+        case unknownCurrency(String)
+        case noRates
+        case unknownVariable(String)
+
+        /// Short gutter text, never a number that could read as a result.
+        public var message: String {
+            switch self {
+            case .syntax: return "syntax?"
+            case .divideByZero: return "÷ by 0"
+            case .unknownUnit(let u): return "unknown unit \(u)"
+            case .unknownCurrency(let c): return "unknown \(c)"
+            case .noRates: return "no rates — offline?"
+            case .unknownVariable(let n): return "unknown \(n)"
+            }
+        }
     }
 
     /// Evaluates each line in order, threading variables forward.
     public func evaluate(note text: String) -> [LineResult?] {
-        var variables: [String: Double] = [:]
-        return text.components(separatedBy: .newlines).map { line in
-            evaluateLine(line, variables: &variables)
+        evaluateLines(note: text).map {
+            if case .value(let r) = $0 { return r }
+            return nil
         }
     }
 
-    private func evaluateLine(_ line: String, variables: inout [String: Double]) -> LineResult? {
-        var work = line.trimmingCharacters(in: .whitespaces)
-        if work.isEmpty || work.hasPrefix("//") { return nil }
-        // Strip descriptive text around `=` assignments is handled by the parser:
-        // find a `name = expr` shape first.
+    /// Evaluates each line with per-line error classification.
+    public func evaluateLines(note text: String) -> [LineOutcome] {
+        var variables: [String: Double] = [:]
+        return text.components(separatedBy: .newlines).map { line in
+            evaluateOutcome(line, variables: &variables)
+        }
+    }
+
+    private func evaluateOutcome(_ line: String, variables: inout [String: Double]) -> LineOutcome {
+        let work = line.trimmingCharacters(in: .whitespaces)
+        if work.isEmpty || work.hasPrefix("//") { return .blank }
         if let assign = parseAssignment(work, variables: variables) {
             variables[assign.name] = assign.value
-            return LineResult(value: assign.value, display: format(assign.value))
+            return .value(LineResult(value: assign.value, display: format(assign.value)))
         }
-        // Unit conversion: "<expr> in|to <unit>".
+        if let bad = parseAssignmentError(work, variables: variables) { return .error(bad) }
         if isConversionLine(work) {
-            return parseConversion(work, variables: &variables)
+            return parseConversionOutcome(work, variables: &variables)
         }
-        // Otherwise evaluate trailing expression: take the longest evaluable
-        // suffix so "oats 2 + 2" still yields 4. Bare names count as
-        // expressions when they resolve to a variable.
+        // Longest evaluable suffix so "oats 2 + 2" still yields 4.
+        // A divide-by-zero on the whole line is never rescued by a suffix.
         let tokens = work.split(separator: " ")
+        if !tokens.isEmpty {
+            do {
+                _ = try parseExpression(work, variables: variables)
+            } catch let e as MathError {
+                if e == .divideByZero { return .error(.divideByZero) }
+            } catch {}
+        }
+        var sawDivideByZero = false
         for start in tokens.indices {
             let candidate = tokens[start...].joined(separator: " ")
-            if let value = try? parseExpression(candidate, variables: variables),
-               candidate.rangeOfCharacter(from: .decimalDigits) != nil || variables[candidate] != nil
-            {
-                return LineResult(value: value, display: format(value))
-            }
+            do {
+                let value = try parseExpression(candidate, variables: variables)
+                if candidate.rangeOfCharacter(from: .decimalDigits) != nil || variables[candidate] != nil {
+                    return .value(LineResult(value: value, display: format(value)))
+                }
+            } catch let e as MathError {
+                if e == .divideByZero { sawDivideByZero = true }
+            } catch {}
         }
-        // Final fallback: the whole line is a single variable name.
         if let value = variables[work] {
-            return LineResult(value: value, display: format(value))
+            return .value(LineResult(value: value, display: format(value)))
         }
-        return nil
+        // Looks like math but nothing evaluated: classify, else blank prose.
+        // A lone undefined name is a bad reactive ref, not prose.
+        if isBareName(work) { return .error(.unknownVariable(work)) }
+        if looksLikeMath(work) {
+            if sawDivideByZero { return .error(.divideByZero) }
+            return .error(.syntax)
+        }
+        return .blank
+    }
+
+    private func parseAssignmentError(_ line: String, variables: [String: Double]) -> LineError? {
+        guard let eq = line.firstIndex(of: "="), !line.contains("==") else { return nil }
+        let name = line[line.startIndex..<eq].trimmingCharacters(in: .whitespaces)
+        guard name.range(of: #"^[A-Za-z_][A-Za-z0-9_]*$"#, options: .regularExpression) != nil else { return nil }
+        let expr = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+        if expr.isEmpty { return .syntax }
+        do {
+            _ = try parseExpression(String(expr), variables: variables)
+            return nil
+        } catch let e as MathError {
+            return e == .divideByZero ? .divideByZero : .syntax
+        } catch {
+            return .syntax
+        }
+    }
+
+    /// A line with digits, operators, or conversion words is a math attempt;
+    /// plain prose stays blank.
+    private func looksLikeMath(_ line: String) -> Bool {
+        if line.rangeOfCharacter(from: .decimalDigits) != nil { return true }
+        if line.contains("=") && !line.contains("==") { return true }
+        let ops: Set<Character> = ["+", "-", "*", "/", "%", "^", "(", ")"]
+        if line.contains(where: { ops.contains($0) }) { return true }
+        let lower = " " + line.lowercased() + " "
+        return lower.contains(" in ") || lower.contains(" to ")
+    }
+
+    private func isBareName(_ line: String) -> Bool {
+        line.range(of: #"^[A-Za-z_][A-Za-z0-9_]*$"#, options: .regularExpression) != nil
     }
 
     private func parseAssignment(_ line: String, variables: [String: Double]) -> (name: String, value: Double)? {
@@ -62,7 +149,8 @@ public struct MathEngine: Sendable {
         let name = line[line.startIndex..<eq].trimmingCharacters(in: .whitespaces)
         guard name.range(of: #"^[A-Za-z_][A-Za-z0-9_]*$"#, options: .regularExpression) != nil else { return nil }
         let expr = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
-        guard let value = try? parseExpression(String(expr), variables: variables) else { return nil }
+        guard let value = try? parseExpression(String(expr), variables: variables),
+              value.isFinite else { return nil }
         return (name, value)
     }
 
@@ -75,26 +163,35 @@ public struct MathEngine: Sendable {
         return parts.count >= 3
     }
 
-    private func parseConversion(_ line: String, variables: inout [String: Double]) -> LineResult? {
-        guard let range = line.range(of: #"\b(in|to)\b"#, options: .regularExpression) else { return nil }
+    private func parseConversionOutcome(_ line: String, variables: inout [String: Double]) -> LineOutcome {
+        guard let range = line.range(of: #"\b(in|to)\b"#, options: .regularExpression) else { return .error(.syntax) }
         let lhs = line[line.startIndex..<range.lowerBound].trimmingCharacters(in: .whitespaces)
         let rhs = line[range.upperBound...].trimmingCharacters(in: .whitespaces).lowercased()
-        // lhs is "<number expr> <from-unit>"
-        guard let split = lhs.lastIndex(where: { $0.isWhitespace }) else { return nil }
+        guard let split = lhs.lastIndex(where: { $0.isWhitespace }) else { return .error(.syntax) }
         let expr = lhs[lhs.startIndex..<split].trimmingCharacters(in: .whitespaces)
         let from = lhs[lhs.index(after: split)...].trimmingCharacters(in: .whitespaces).lowercased()
-        guard let amount = try? parseExpression(String(expr), variables: variables) else { return nil }
+        let amount: Double
+        do {
+            guard let value = try? parseExpression(String(expr), variables: variables) else {
+                if isBareName(String(expr)) { return .error(.unknownVariable(String(expr))) }
+                return .error(.syntax)
+            }
+            amount = value
+        }
         if let physical = UnitConvert.convert(amount: amount, from: from, to: rhs) {
-            return LineResult(value: physical, display: format(physical))
+            return .value(LineResult(value: physical, display: format(physical)))
         }
-        // Currency/crypto via the injected rate table; nil offline.
-        if let rates, CurrencyRates.isCurrency(from), CurrencyRates.isCurrency(rhs),
-           let converted = CurrencyRates.convert(amount: amount, from: from, to: rhs, rates: rates)
-        {
-            return LineResult(value: converted, display: format(converted))
+        if CurrencyRates.isCurrency(from) || CurrencyRates.isCurrency(rhs) {
+            guard CurrencyRates.isCurrency(from), CurrencyRates.isCurrency(rhs) else {
+                return .error(.unknownCurrency(CurrencyRates.isCurrency(from) ? rhs : from))
+            }
+            guard let rates else { return .error(.noRates) }
+            if let converted = CurrencyRates.convert(amount: amount, from: from, to: rhs, rates: rates) {
+                return .value(LineResult(value: converted, display: format(converted)))
+            }
+            return .error(.unknownCurrency(from))
         }
-        // Conversion-shaped but unresolvable: blank gutter, never a crash.
-        return nil
+        return .error(.unknownUnit(rhs.isEmpty ? from : rhs))
     }
 
     // MARK: - Expression parser (recursive descent)
@@ -108,6 +205,7 @@ public struct MathEngine: Sendable {
     }
 
     public func format(_ value: Double) -> String {
+        guard value.isFinite else { return "—" }
         if value.truncatingRemainder(dividingBy: 1) == 0, abs(value) < 1e15 {
             return String(Int(value))
         }
@@ -137,7 +235,7 @@ public struct MathEngine: Sendable {
     }
 
     public enum AggregateMode { case sum, avg }
-    enum MathError: Error { case syntax }
+    enum MathError: Error { case syntax, divideByZero }
 }
 
 private struct ExprParser {
@@ -169,8 +267,13 @@ private struct ExprParser {
             if consume("*") { value *= try parsePower() }
             else if consume("/") {
                 let rhs = try parsePower()
+                guard rhs != 0 else { throw MathEngine.MathError.divideByZero }
                 value /= rhs
-            } else if consume("%") { value = value.truncatingRemainder(dividingBy: try parsePower()) }
+            } else if consume("%") {
+                let rhs = try parsePower()
+                guard rhs != 0 else { throw MathEngine.MathError.divideByZero }
+                value = value.truncatingRemainder(dividingBy: rhs)
+            }
             else { return value }
         }
     }

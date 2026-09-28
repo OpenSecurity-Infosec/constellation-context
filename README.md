@@ -22,7 +22,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Global hotkey overlay (⌥A) | Shipped |
 | Plain-text notes, formatting stripped on paste | Partial (nested-list indent, tables, quotes, entities, smart punctuation, CRLF, image-to-OCR all strip clean; exotic word-processor layouts still unproven) |
 | Swipe/arrow navigation between notes, new note past the end | Partial (‹/› buttons and ⌘[/⌘] work; trackpad swipe untested across hardware) |
-| `math` inline evaluation with descriptive text | Partial (core eval works; error states and large-note polish missing) |
+| `math` inline evaluation with descriptive text | Partial (per-line errors in the gutter: syntax, ÷ by 0, unknown unit/variable; one bad line never blanks the note) |
 | Unit conversions (length, weight, temperature) | Partial (unit-tested; gutter edge cases unpolished) |
 | Currency + crypto conversions in `math` (cached rates, offline fallback) | Partial (live rates + 1h cache; outage keeps last cache with its age in the footnote, honest offline message with no cache, recovers on next refresh) |
 | Reactive variables (`name = expr`, recalculates down the note) | Partial |

@@ -581,7 +581,7 @@ final class ContextWindowController {
 
     private func render(preservingFocus: Bool = false) {
         let current = note
-        let results = current.kind == .math ? math.evaluate(note: current.bodyWithoutTrigger) : []
+        let results = current.kind == .math ? math.evaluateLines(note: current.bodyWithoutTrigger) : []
         let sumAvg: Double? = {
             switch current.kind {
             case .sum: return math.aggregate(current.bodyWithoutTrigger, mode: .sum)
