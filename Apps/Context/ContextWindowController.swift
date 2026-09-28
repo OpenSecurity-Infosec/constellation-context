@@ -39,6 +39,7 @@ final class ContextWindowController {
         ContextTheme.apply(mode: ContextSettings.shared.themeMode)
         refreshRates()
         render()
+        applyLook()
         startTimerTick()
         updatePin()
     }
@@ -81,6 +82,15 @@ final class ContextWindowController {
 
     func updatePin() {
         window.level = ContextSettings.shared.pinOnTop ? .screenSaver : .floating
+    }
+
+    func applyLook() {
+        render(preservingFocus: true)
+        ContextTheme.applyLook(
+            theme: ContextSettings.shared.colorTheme,
+            translucent: ContextSettings.shared.translucentWindow,
+            to: window
+        )
     }
 
     // MARK: - Note ops

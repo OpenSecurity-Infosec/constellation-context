@@ -14,6 +14,8 @@ public struct ContextSettings: Codable, Sendable {
     public var lastSyncAt: Date? = nil
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
+    public var colorTheme: ColorTheme = .mocha
+    public var translucentWindow: Bool = false
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
 
@@ -28,7 +30,9 @@ public struct ContextSettings: Codable, Sendable {
         iCloudSyncEnabled: Bool = false,
         lastSyncAt: Date? = nil,
         extensionsAllowNetwork: Bool = false,
-        showInDock: Bool = true
+        showInDock: Bool = true,
+        colorTheme: ColorTheme = .mocha,
+        translucentWindow: Bool = false
     ) {
         self.fontSize = fontSize
         self.showMenuBarExtra = showMenuBarExtra
@@ -41,6 +45,8 @@ public struct ContextSettings: Codable, Sendable {
         self.lastSyncAt = lastSyncAt
         self.extensionsAllowNetwork = extensionsAllowNetwork
         self.showInDock = showInDock
+        self.colorTheme = colorTheme
+        self.translucentWindow = translucentWindow
     }
 
     private static var fileURL: URL {
@@ -62,7 +68,7 @@ public struct ContextSettings: Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
         case obsidianVaultPath, themeMode, iCloudSyncEnabled, lastSyncAt
-        case extensionsAllowNetwork, showInDock
+        case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
     }
 
     public init(from decoder: Decoder) throws {
@@ -78,6 +84,8 @@ public struct ContextSettings: Codable, Sendable {
         lastSyncAt = try c.decodeIfPresent(Date.self, forKey: .lastSyncAt)
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
+        colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha
+        translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
     }
 
     public func save() {

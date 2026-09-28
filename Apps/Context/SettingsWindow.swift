@@ -9,8 +9,8 @@ final class SettingsWindowController {
 
     private init() {
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 260),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 560),
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered, defer: false
         )
         window.title = "Context Settings"
@@ -31,6 +31,8 @@ private struct SettingsView: View {
     @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
     @State private var theme: ThemeMode = ContextSettings.shared.themeMode
     @State private var showInDock: Bool = ContextSettings.shared.showInDock
+    @State private var colorTheme: ColorTheme = ContextSettings.shared.colorTheme
+    @State private var translucent: Bool = ContextSettings.shared.translucentWindow
 
     var body: some View {
         Form {
@@ -65,24 +67,30 @@ private struct SettingsView: View {
                 ContextSettings.shared.save()
                 ContextTheme.apply(mode: theme)
             }
+            Picker("Color theme", selection: $colorTheme) {
+                ForEach(ColorTheme.allCases, id: \.self) { t in
+                    Text(t.displayName).tag(t)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: colorTheme) {
+                ContextSettings.shared.colorTheme = colorTheme
+                ContextSettings.shared.save()
+                ThemeRelayer.lookChanged()
+            }
+            Toggle("Translucent window", isOn: $translucent)
+                .onChange(of: translucent) {
+                    ContextSettings.shared.translucentWindow = translucent
+                    ContextSettings.shared.save()
+                    ThemeRelayer.lookChanged()
+                }
             Slider(value: $fontSize, in: 11...22, step: 1) {
                 Text("Text size: \(Int(fontSize))")
             }.onChange(of: fontSize) {
                 ContextSettings.shared.fontSize = CGFloat(fontSize)
                 ContextSettings.shared.save()
+                ThemeRelayer.lookChanged()
             }
-            Toggle("Pin above other windows", isOn: $pinOnTop)
-                .onChange(of: pinOnTop) {
-                    ContextSettings.shared.pinOnTop = pinOnTop
-                    ContextSettings.shared.save()
-                    PinRelayer.pinOnTop = pinOnTop
-                }
-            Toggle("Show menu bar icon", isOn: $showMenuBar)
-                .onChange(of: showMenuBar) {
-                    ContextSettings.shared.showMenuBarExtra = showMenuBar
-                    ContextSettings.shared.save()
-                    PlacementRelayer.menuBarChanged()
-                }
             HStack {
                 TextField("Obsidian vault folder", text: $vaultPath)
                     .onChange(of: vaultPath) {
@@ -126,6 +134,12 @@ enum PinRelayer {
         didSet { onChange?(pinOnTop) }
     }
     nonisolated(unsafe) static var onChange: ((Bool) -> Void)?
+}
+
+/// Relays color-theme / translucency changes to the live overlay.
+@MainActor
+enum ThemeRelayer {
+    nonisolated(unsafe) static var lookChanged: () -> Void = {}
 }
 
 /// iCloud sync toggle + status. Uses the user's own iCloud; off by default.

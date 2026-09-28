@@ -17,36 +17,36 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 
 ## Features vs Antinote (antinote.io/features)
 
-| Antinote feature | Context MVP status |
+| Antinote feature | Context status (honest: Partial until proven feelable vs Antinote) |
 | --- | --- |
 | Global hotkey overlay (⌥A) | Shipped |
-| Plain-text notes, formatting stripped on paste | Shipped |
-| Swipe/arrow navigation between notes, new note past the end | Shipped (‹/› buttons, ⌘[/⌘]) |
-| `math` inline evaluation with descriptive text | Shipped |
-| Unit conversions (length, weight, temperature) | Shipped |
-| Currency + crypto conversions in `math` (cached rates, offline fallback) | Shipped |
-| Reactive variables (`name = expr`, recalculates down the note) | Shipped |
-| `sum` / `avg` totals | Shipped |
-| `count` lines/words/chars with `//` comments | Shipped |
-| `list` checklists with tick-off | Shipped |
-| `code` snippet buffer | Shipped (plain-text hold, no per-block highlighting yet) |
-| `timer` stopwatch / countdown / pomodoro | Shipped |
-| `paste` AutoPaste collection | Shipped |
-| Screenshot-to-text OCR (on-device) | Shipped (image drop, Apple Vision) |
-| One-click export (txt, Markdown, PDF) | Shipped |
+| Plain-text notes, formatting stripped on paste | Partial (paste-strip edge cases: nested lists, tables, rich images unproven) |
+| Swipe/arrow navigation between notes, new note past the end | Partial (‹/› buttons and ⌘[/⌘] work; trackpad swipe untested across hardware) |
+| `math` inline evaluation with descriptive text | Partial (core eval works; error states and large-note polish missing) |
+| Unit conversions (length, weight, temperature) | Partial (unit-tested; gutter edge cases unpolished) |
+| Currency + crypto conversions in `math` (cached rates, offline fallback) | Partial (live rates + 1h cache work; provider-outage UX thin) |
+| Reactive variables (`name = expr`, recalculates down the note) | Partial |
+| `sum` / `avg` totals | Partial |
+| `count` lines/words/chars with `//` comments | Partial |
+| `list` checklists with tick-off | Partial (nesting + marker cycling work; Antinote drag-reorder missing) |
+| `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |
+| `timer` stopwatch / countdown / pomodoro | Partial (inline controls work; no named fullscreen timer polish) |
+| `paste` AutoPaste collection | Partial |
+| Screenshot-to-text OCR (on-device) | Partial (image drop via Apple Vision works; screenshot hotkey flow missing) |
+| One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |
 | Copy to clipboard | Shipped |
-| Recoverable trash (The Void) with expiry | Shipped (30 days) |
-| Apple Notes / Obsidian / Bear direct export | Shipped |
-| Link shrink (shortened display, click expand, ⌘↩ open) | Shipped |
-| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Shipped (sandboxed .js in the Extensions folder; network toggle off by default) |
-| Checklist nesting (Tab) + marker cycling (⌘⇧M) | Shipped |
-| Two-finger swipe navigation | Shipped |
-| Note search pane (⌘F) | Shipped |
-| iCloud sync (your own iCloud, off by default, last-writer-wins) | Shipped (CloudKit private DB with key-value fallback) |
-| URL schemes (`context://`) | Shipped (open, new, search, append) |
-| Raycast/Alfred | Shipped via URL schemes (see Automation below) |
-| Themes (system / light / dark, instant switch) | Shipped |
-| Dock + menu bar + pin (dock / menu / both / neither) | Shipped |
+| Recoverable trash (The Void) with expiry | Partial (30-day expiry works; no auto-expiry countdown UX) |
+| Apple Notes / Obsidian / Bear direct export | Partial (all three wired; clean-Mac missing-app paths thinly tested) |
+| Link shrink (shortened display, click expand, ⌘↩ open) | Partial |
+| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
+| Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
+| Two-finger swipe navigation | Partial (same as swipe row above) |
+| Note search pane (⌘F) | Partial (title+body search works; no fuzzy match) |
+| iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
+| URL schemes (`context://`) | Partial (open/new/search/append parse + handle; real Raycast/Alfred flows untested) |
+| Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
+| Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
+| Dock + menu bar + pin (dock / menu / both / neither) | Partial (toggles live; menu-bar-only edge cases unproven) |
 
 ## Automation (URL schemes, Raycast, Alfred)
 

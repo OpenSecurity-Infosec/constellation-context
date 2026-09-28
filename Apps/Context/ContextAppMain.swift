@@ -43,6 +43,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         PlacementRelayer.dockChanged = { [weak self] in self?.applyPlacement() }
         PlacementRelayer.menuBarChanged = { [weak self] in self?.applyPlacement() }
         PinRelayer.onChange = { [weak controller] _ in controller?.updatePin() }
+        ThemeRelayer.lookChanged = { [weak controller] in controller?.applyLook() }
         applyPlacement()
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         controller.show()
