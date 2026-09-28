@@ -41,7 +41,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |
-| Note search pane (⌘F) | Partial (title+body search works; no fuzzy match) |
+| Note search pane (⌘F) | Partial (title+body search with fuzzy match for typos/partial tokens, exact ranked first; no saved searches) |
 | iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
 | URL schemes (`context://`) | Partial (open/new/search/append parse + handle; real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
