@@ -54,6 +54,29 @@ import Testing
         #expect(s.lines == 2)
     }
 
+    @Test func breakdownRows() {
+        let rows = NoteStats.breakdown(for: "one two\n// skip\n\nthree")
+        #expect(rows.count == 4)
+        #expect(rows[0] == NoteStats.LineRow(words: 2, characters: 7, ignored: false))
+        #expect(rows[1].ignored && rows[2].ignored)
+        #expect(rows[3] == NoteStats.LineRow(words: 1, characters: 5, ignored: false))
+    }
+
+    @Test func breakdownDisplay() {
+        #expect(NoteStats.LineRow(words: 3, characters: 18, ignored: false).display == "3w · 18c")
+        #expect(NoteStats.LineRow(words: 0, characters: 0, ignored: true).display == "—")
+    }
+
+    @Test func totalsAgreeWithBreakdown() {
+        let text = "one two\n// skip me\n\nthree four five"
+        let rows = NoteStats.breakdown(for: text)
+        let active = rows.filter { !$0.ignored }
+        let s = NoteStats.compute(for: text)
+        #expect(s.lines == active.count)
+        #expect(s.words == active.map(\.words).reduce(0, +))
+        #expect(s.characters == active.map(\.characters).reduce(0, +) + max(0, active.count - 1))
+    }
+
     @Test func checklistToggle() {
         let toggled = ChecklistItem.toggle(text: "list\n[ ] milk", id: 0)
         #expect(toggled.contains("[x] milk"))

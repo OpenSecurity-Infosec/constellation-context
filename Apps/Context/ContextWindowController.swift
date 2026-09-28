@@ -708,6 +708,13 @@ final class ContextWindowController {
             sumAvgLines = []
         }
         let stats = current.kind == .count ? NoteStats.compute(for: current.bodyWithoutTrigger) : nil
+        // Per-line count gutter so each line shows its contribution.
+        let countLines: [String]
+        if current.kind == .count {
+            countLines = NoteStats.breakdown(for: current.bodyWithoutTrigger).map(\.display)
+        } else {
+            countLines = []
+        }
         let items = current.kind == .list ? ChecklistItem.parse(current.text) : []
         let view = ContextEditorRoot(
             controller: self,
@@ -716,6 +723,7 @@ final class ContextWindowController {
             mathResults: results,
             aggregate: sumAvg.map(math.format),
             sumAvgLines: sumAvgLines,
+            countLines: countLines,
             stats: stats,
             checklist: items,
             autoPasteArmed: autoPaste.isArmed,

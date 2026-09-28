@@ -10,6 +10,7 @@ struct ContextEditorRoot: View {
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
     var sumAvgLines: [String] = []
+    var countLines: [String] = []
     var stats: NoteStats?
     var checklist: [ChecklistItem]
     var autoPasteArmed: Bool
@@ -178,10 +179,17 @@ struct ContextEditorRoot: View {
         // contributions for sum/avg notes.
         VStack(alignment: .trailing, spacing: 0) {
             // Offset past the trigger line.
-            if note.kind == .math || note.kind == .sum || note.kind == .avg {
+            if note.kind == .math || note.kind == .sum || note.kind == .avg || note.kind == .count {
                 Color.clear.frame(height: lineHeight)
             }
             switch note.kind {
+            case .count:
+                ForEach(countLines.indices, id: \.self) { i in
+                    Text(countLines[i])
+                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                        .foregroundStyle(.secondary)
+                        .frame(height: lineHeight)
+                }
             case .sum, .avg:
                 ForEach(sumAvgLines.indices, id: \.self) { i in
                     Text(sumAvgLines[i])

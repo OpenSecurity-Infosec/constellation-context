@@ -200,12 +200,43 @@ public struct NoteStats: Equatable, Sendable {
     public var characters: Int
 
     public static func compute(for text: String) -> NoteStats {
-        let activeLines = text.components(separatedBy: .newlines).filter { line in
-            let t = line.trimmingCharacters(in: .whitespaces)
-            return !t.isEmpty && !t.hasPrefix("//")
+        let rows = breakdown(for: text)
+        let active = rows.filter { !$0.ignored }
+        return NoteStats(
+            lines: active.count,
+            words: active.map(\.words).reduce(0, +),
+            characters: active.map(\.characters).reduce(0, +) + max(0, active.count - 1)
+        )
+    }
+
+    /// One row per body line: word/char counts plus whether the line is
+    /// ignored (blank or `//` comment). Totals derive from these rows so
+    /// the gutter and the mode bar can never disagree.
+    public struct LineRow: Equatable, Sendable {
+        public var words: Int
+        public var characters: Int
+        public var ignored: Bool
+
+        public init(words: Int, characters: Int, ignored: Bool) {
+            self.words = words
+            self.characters = characters
+            self.ignored = ignored
         }
-        let words = activeLines.flatMap { $0.split(whereSeparator: \.isWhitespace) }.count
-        let chars = activeLines.joined(separator: "\n").count
-        return NoteStats(lines: activeLines.count, words: words, characters: chars)
+
+        /// Gutter text: "3w · 18c" for counted lines, "—" for ignored ones.
+        public var display: String {
+            ignored ? "—" : "\(words)w · \(characters)c"
+        }
+    }
+
+    public static func breakdown(for text: String) -> [LineRow] {
+        text.components(separatedBy: .newlines).map { line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.isEmpty || t.hasPrefix("//") {
+                return LineRow(words: 0, characters: 0, ignored: true)
+            }
+            let words = line.split(whereSeparator: \.isWhitespace).count
+            return LineRow(words: words, characters: line.count, ignored: false)
+        }
     }
 }
