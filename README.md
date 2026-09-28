@@ -35,7 +35,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Screenshot-to-text OCR (on-device) | Partial (image drop via Apple Vision works; screenshot hotkey flow missing) |
 | One-click export (txt, Markdown, PDF) | Partial (works via save panel; not one-click) |
 | Copy to clipboard | Shipped |
-| Recoverable trash (The Void) with expiry | Partial (30-day expiry works; no auto-expiry countdown UX) |
+| Recoverable trash (The Void) with expiry | Partial (30-day expiry works; rows now show per-note days-left countdown) |
 | Apple Notes / Obsidian / Bear direct export | Partial (all three wired; clean-Mac missing-app paths thinly tested) |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Partial |
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |

@@ -68,3 +68,34 @@ import Testing
         #expect(NoteTimer.format(0) == "0:00")
     }
 }
+
+@Suite struct VoidExpiryTests {
+    @Test func liveNotesHaveNoCountdown() {
+        #expect(NoteExpiry.daysLeft(for: ContextNote(text: "hi")) == nil)
+        #expect(NoteExpiry.label(for: ContextNote(text: "hi")) == nil)
+    }
+
+    @Test func freshTrashShowsThirtyDays() {
+        let now = Date()
+        var n = ContextNote(text: "gone")
+        n.trashedAt = now
+        #expect(NoteExpiry.daysLeft(for: n, now: now) == 30)
+        #expect(NoteExpiry.label(for: n, now: now) == "30 days left")
+    }
+
+    @Test func oldTrashCountsDown() {
+        let now = Date()
+        var n = ContextNote(text: "gone")
+        n.trashedAt = now.addingTimeInterval(-29 * 24 * 3600)
+        #expect(NoteExpiry.daysLeft(for: n, now: now) == 1)
+        #expect(NoteExpiry.label(for: n, now: now) == "1 day left")
+    }
+
+    @Test func overdueTrashClampsAtZero() {
+        let now = Date()
+        var n = ContextNote(text: "gone")
+        n.trashedAt = now.addingTimeInterval(-40 * 24 * 3600)
+        #expect(NoteExpiry.daysLeft(for: n, now: now) == 0)
+        #expect(NoteExpiry.label(for: n, now: now) == "expires soon")
+    }
+}

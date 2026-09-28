@@ -57,8 +57,14 @@ private struct VoidListView: View {
             } else {
                 List(notes, id: \.id) { note in
                     HStack {
-                        Text(note.text.components(separatedBy: .newlines).first ?? "(empty)")
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(note.text.components(separatedBy: .newlines).first ?? "(empty)")
+                                .lineLimit(1)
+                            if let label = NoteExpiry.label(for: note) {
+                                Text(label)
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
                         Spacer()
                         Button("Restore") { onRestore(note.id) }
                         Button("Delete") { onDestroy(note.id) }
