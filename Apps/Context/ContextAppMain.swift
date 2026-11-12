@@ -169,7 +169,8 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
         file.addItem(withTitle: "Next Note", action: #selector(nextNote(_:)), keyEquivalent: "]")
         file.addItem(withTitle: "Previous Note", action: #selector(prevNote(_:)), keyEquivalent: "[")
         file.addItem(.separator())
-        file.addItem(withTitle: "The Void", action: #selector(showVoid(_:)), keyEquivalent: "")
+        let void = file.addItem(withTitle: "The Void", action: #selector(showVoid(_:)), keyEquivalent: "v")
+        void.keyEquivalentModifierMask = [.command, .option]
         file.addItem(withTitle: "Search Notes…", action: #selector(openSearch(_:)), keyEquivalent: "f")
         file.addItem(.separator())
         let shot = NSMenuItem(title: "Capture Screenshot to Text", action: #selector(captureScreenshot(_:)), keyEquivalent: "s")

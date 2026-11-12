@@ -35,12 +35,17 @@ import Testing
         defer { controller.window.orderOut(nil) }
 
         let canvas = controller.noteMenuItems(for: .canvas).map(\.title)
+        #expect(canvas.contains("New Note"))
+        #expect(canvas.contains("Search…"))
         #expect(canvas.contains("AI"))
         #expect(canvas.contains("Export"))
         #expect(canvas.contains("Move to Trash"))
         #expect(!canvas.contains("Settings…"), "the canvas menu stays about the note")
 
         let more = controller.noteMenuItems(for: .more).map(\.title)
+        #expect(more.contains("The Void"))
+        let export = controller.noteMenuItems(for: .menuBar).first { $0.title == "Export" }
+        #expect(export?.submenu?.items.first { $0.title == "Save Markdown As…" }?.keyEquivalent == "e")
         #expect(more.contains("Library"))
         #expect(more.contains("Settings…"))
     }

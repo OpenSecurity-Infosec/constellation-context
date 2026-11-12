@@ -4,7 +4,7 @@ import ContextStore
 import SwiftUI
 
 /// The zen canvas: full-bleed text and nothing else. A header (pad,
-/// new, search, ⋯) and the note-position dots live in hover bands at the
+/// More) and the note-position dots live in hover bands at the
 /// edges and fade in only when the pointer goes there. Every action is also
 /// in the menu bar and the right-click menu.
 struct ContextEditorRoot: View {
@@ -91,9 +91,7 @@ struct ContextEditorRoot: View {
             .foregroundStyle(.secondary)
             .accessibilityIdentifier("overlay.padMenu")
             Spacer(minLength: 0)
-            headerIcon("plus", help: "New note (⌘N)", id: "overlay.newNote") { controller?.newNote() }
-            headerIcon("magnifyingglass", help: "Search notes (⌘F)", id: "overlay.search") { controller?.openSearch() }
-            headerIcon("ellipsis", help: "More", id: "overlay.more") { controller?.showMoreMenu() }
+            headerText("More", help: "Note actions", id: "overlay.more") { controller?.showMoreMenu() }
         }
         .padding(.horizontal, 12)
         .frame(height: ZenMetrics.headerHeight)
@@ -105,9 +103,9 @@ struct ContextEditorRoot: View {
         }
     }
 
-    private func headerIcon(_ symbol: String, help: String, id: String, action: @escaping () -> Void) -> some View {
+    private func headerText(_ title: String, help: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
+            Text(title)
                 .font(.system(size: 12, weight: .regular))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())

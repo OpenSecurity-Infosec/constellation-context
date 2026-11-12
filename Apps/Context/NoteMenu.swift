@@ -18,7 +18,11 @@ extension ContextWindowController {
     }
 
     func noteMenuItems(for place: NoteMenuPlace) -> [NSMenuItem] {
-        var items: [NSMenuItem] = []
+        var items: [NSMenuItem] = [
+            ActionMenuItem("New Note", key: "n", identifier: "note.new") { [weak self] in self?.newNote() },
+            ActionMenuItem("Search…", key: "f", identifier: "note.search") { [weak self] in self?.openSearch() },
+            .separator(),
+        ]
         items.append(ActionMenuItem.submenu("AI", aiActions.map { action in
             ActionMenuItem(action.title) { [weak self] in self?.runAI(action) }
         }))
@@ -38,11 +42,10 @@ extension ContextWindowController {
             key: "i", modifiers: [.command, .option], identifier: "note.inspector"
         ) { [weak self] in self?.toggleInspector() })
         items.append(.separator())
-        items.append(ActionMenuItem("Move to Trash", identifier: "note.trash") { [weak self] in self?.trashCurrent() })
+        items.append(ActionMenuItem("Move to Trash", key: "\u{8}", modifiers: [.command], identifier: "note.trash") { [weak self] in self?.trashCurrent() })
         if place == .more {
             items.append(.separator())
-            items.append(ActionMenuItem("Search…") { [weak self] in self?.openSearch() })
-            items.append(ActionMenuItem("The Void") { [weak self] in self?.openVoid() })
+            items.append(ActionMenuItem("The Void", key: "v", modifiers: [.command, .option]) { [weak self] in self?.openVoid() })
             items.append(ActionMenuItem("Library") { [weak self] in self?.openLibrary() })
             items.append(ActionMenuItem("Settings…") { [weak self] in self?.openSettings() })
         }
@@ -100,7 +103,7 @@ extension ContextWindowController {
             ActionMenuItem("Quick Export PDF") { [weak self] in self?.quickExport(kind: .pdf) },
             .separator(),
             ActionMenuItem("Save .txt As…") { [weak self] in self?.export(kind: .txt) },
-            ActionMenuItem("Save Markdown As…") { [weak self] in self?.export(kind: .markdown) },
+            ActionMenuItem("Save Markdown As…", key: "e", modifiers: [.command, .shift]) { [weak self] in self?.export(kind: .markdown) },
             ActionMenuItem("Save PDF As…") { [weak self] in self?.export(kind: .pdf) },
             .separator(),
             ActionMenuItem("Send to Apple Notes") { [weak self] in self?.sendToAppleNotes() },

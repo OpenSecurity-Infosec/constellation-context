@@ -150,7 +150,7 @@ Gaps to close:
    - an index or cached listing instead of reading every file;
    - debounced search;
    - measured against "instant".
-5. **Less is more in the overlay:**
+5. **Less is more in the overlay (Partial):**
    - a text-only, quiet toolbar (no emoji buttons);
    - Void, Export, Search, New, and Trash moved behind menus and shortcuts;
    - Settings grouped.
@@ -273,3 +273,17 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     warm search measured 87 ms (200 ms debounce additionally); this does not
     prove the real-vault "instant" criterion. No real note bodies were read
     for benchmarking. Post-push CI/rebuild results reported separately.
+
+
+- **2026-11-12, gap 5 (Partial).** Existing hover header now uses pad text
+  and More text only; New and Search join Trash and Export in the shared
+  native action menu. Shortcuts: ⌘N, ⌘F, ⌘Delete, ⇧⌘E (Markdown export),
+  ⌥⌘V (Void). Settings uses grouped native form sections, including Appearance.
+  This supports Vision principle 1 by disclosing actions on command.
+  Owner manual checks (no GUI/VNC attempted): ⌥A opens ready to type;
+  hover reveals quiet text and typing hides it; More and right-click expose
+  New/Search/Trash/Export; exercise shortcuts, cancel export, restore trash
+  in Void; open Settings with ⌘, and check grouping, scrolling and persistence.
+  Installed interaction remains unproven.
+  Validation: cortex02 isolated suite passed, 361 tests / 57 suites.
+  CI and forced installation revision are reported in the turn close-out.

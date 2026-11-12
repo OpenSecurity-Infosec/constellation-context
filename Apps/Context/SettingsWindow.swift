@@ -56,40 +56,42 @@ private struct SettingsView: View {
                         PinRelayer.pinOnTop = pinOnTop
                     }
             }
-            Picker("Appearance", selection: $theme) {
-                Text("System").tag(ThemeMode.system)
-                Text("Light").tag(ThemeMode.light)
-                Text("Dark").tag(ThemeMode.dark)
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: theme) {
-                ContextSettings.shared.themeMode = theme
-                ContextSettings.shared.save()
-                ContextTheme.apply(mode: theme)
-            }
-            Picker("Color theme", selection: $colorTheme) {
-                ForEach(ColorTheme.allCases, id: \.self) { t in
-                    Text(t.displayName).tag(t)
+            Section("Appearance") {
+                Picker("Appearance", selection: $theme) {
+                    Text("System").tag(ThemeMode.system)
+                    Text("Light").tag(ThemeMode.light)
+                    Text("Dark").tag(ThemeMode.dark)
                 }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: colorTheme) {
-                ContextSettings.shared.colorTheme = colorTheme
-                ContextSettings.shared.save()
-                ThemeRelayer.lookChanged()
-            }
-            Toggle("Translucent window", isOn: $translucent)
-                .onChange(of: translucent) {
-                    ContextSettings.shared.translucentWindow = translucent
+                .pickerStyle(.segmented)
+                .onChange(of: theme) {
+                    ContextSettings.shared.themeMode = theme
+                    ContextSettings.shared.save()
+                    ContextTheme.apply(mode: theme)
+                }
+                Picker("Color theme", selection: $colorTheme) {
+                    ForEach(ColorTheme.allCases, id: \.self) { t in
+                        Text(t.displayName).tag(t)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: colorTheme) {
+                    ContextSettings.shared.colorTheme = colorTheme
                     ContextSettings.shared.save()
                     ThemeRelayer.lookChanged()
                 }
-            Slider(value: $fontSize, in: 11...22, step: 1) {
-                Text("Text size: \(Int(fontSize))")
-            }.onChange(of: fontSize) {
-                ContextSettings.shared.fontSize = CGFloat(fontSize)
-                ContextSettings.shared.save()
-                ThemeRelayer.lookChanged()
+                Toggle("Translucent window", isOn: $translucent)
+                    .onChange(of: translucent) {
+                        ContextSettings.shared.translucentWindow = translucent
+                        ContextSettings.shared.save()
+                        ThemeRelayer.lookChanged()
+                    }
+                Slider(value: $fontSize, in: 11...22, step: 1) {
+                    Text("Text size: \(Int(fontSize))")
+                }.onChange(of: fontSize) {
+                    ContextSettings.shared.fontSize = CGFloat(fontSize)
+                    ContextSettings.shared.save()
+                    ThemeRelayer.lookChanged()
+                }
             }
             BaseVaultSettingsRow()
             ClipboardSettingsRow()
@@ -99,6 +101,7 @@ private struct SettingsView: View {
             Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
         }
+        .formStyle(.grouped)
         .padding(20)
     }
 }
