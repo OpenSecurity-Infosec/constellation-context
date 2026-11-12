@@ -409,3 +409,18 @@ import Testing
         if case .value = out[0] {} else { Issue.record("expected value at line 0, got \(out[0])") }
     }
 }
+
+@Suite struct MathInlineCommentTests {
+    @Test func commentsDoNotCreateDependenciesOrAssignments() {
+        let result = MathEngine().evaluate(note: "price = 10 // total = price * 9\ntotal = price * 3 // total + missing\ntotal // = 999\n// ignored = total")
+        #expect(result.map { $0?.value } == [10, 30, 30, nil])
+    }
+
+    @Test func commentsPreserveConversionsDivisionAndErrors() {
+        let engine = MathEngine()
+        let result = engine.evaluate(note: "12 / 3 // portions\n2 km in m // distance\n5+2//tight")
+        #expect(result.map { $0?.value } == [4, 2000, 7])
+        #expect(engine.evaluateLines(note: "x = 4\nx = 1 / 0 // invalid\nx") [1] == .error(.divideByZero))
+        #expect(engine.evaluateLines(note: "x = 4\nx = 1 / 0 // invalid\nx") [2] == .error(.unknownVariable("x")))
+    }
+}

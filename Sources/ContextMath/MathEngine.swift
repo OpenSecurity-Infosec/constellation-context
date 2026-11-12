@@ -92,12 +92,18 @@ public struct MathEngine: Sendable {
     /// lines below, never lines above; a failed assignment clears the
     /// name so lines below see an error, not a stale value.
     public func evaluateLines(note text: String) -> [LineOutcome] {
-        let lines = text.components(separatedBy: .newlines)
+        let lines = text.components(separatedBy: .newlines).map(Self.withoutComment)
         let context = makeContext(lines: lines)
         var variables: [String: Double] = [:]
         return lines.enumerated().map { index, line in
             evaluateOutcome(line, lineIndex: index, context: context, variables: &variables)
         }
+    }
+
+    /// Math has no string literals: the first double slash starts a comment.
+    private static func withoutComment(_ line: String) -> String {
+        guard let marker = line.range(of: "//") else { return line }
+        return String(line[..<marker.lowerBound])
     }
 
     /// Note-wide facts gathered before the forward pass so a bad reference
