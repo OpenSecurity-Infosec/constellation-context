@@ -80,18 +80,20 @@ enum ContextTheme {
     }
 
     static var editorBackground: NSColor {
-        let theme = ContextSettings.shared.colorTheme
+        let settings = ContextSettings.shared
         return NSColor(name: "ContextEditorBackground") { appearance in
             let dark = appearance.bestMatch(from: [.darkAqua, .vibrantDark]) != nil
+            let theme = settings.colorTheme(systemDark: dark)
             let hex = dark ? theme.palette.dark : theme.palette.light
             return ContextTheme.hex(hex)
         }
     }
 
     static var panelBackground: NSColor {
-        let theme = ContextSettings.shared.colorTheme
+        let settings = ContextSettings.shared
         return NSColor(name: "ContextPanelBackground") { appearance in
             let dark = appearance.bestMatch(from: [.darkAqua, .vibrantDark]) != nil
+            let theme = settings.colorTheme(systemDark: dark)
             // Panel is a half-step toward the opposite pole for separation.
             if theme == .mocha {
                 if dark { return mochaMantle }
@@ -103,8 +105,11 @@ enum ContextTheme {
     }
 
     static var accent: NSColor {
-        let theme = ContextSettings.shared.colorTheme
-        return NSColor(name: "ContextAccent") { _ in ContextTheme.hex(theme.palette.accent) }
+        let settings = ContextSettings.shared
+        return NSColor(name: "ContextAccent") { appearance in
+            let dark = appearance.bestMatch(from: [.darkAqua, .vibrantDark]) != nil
+            return ContextTheme.hex(settings.colorTheme(systemDark: dark).palette.accent)
+        }
     }
 
     static var bodyFont: NSFont { .systemFont(ofSize: ContextSettings.shared.fontSize) }

@@ -45,7 +45,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
 | URL schemes (`context://`) | Partial (open/new/search/append parse + handle; single percent decode, Unicode, empty/missing parameters and invalid routes covered by unit tests; invalid requests show an alert; note IDs unsupported and rejected; packaged alerts and real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
-| Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
+| Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; separate persisted light/dark colour choices follow system appearance, migrating the previous accent to both; interactive appearance switching unverified; Antinote paper types, theme maker, app icon picker missing) |
 | Dock + menu bar + pin (dock / menu / both / neither) | Partial (toggles live; menu-bar-only edge cases unproven) |
 
 ## Automation (URL schemes, Raycast, Alfred)

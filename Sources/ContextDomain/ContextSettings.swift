@@ -15,6 +15,13 @@ public struct ContextSettings: Codable, Sendable {
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
     public var colorTheme: ColorTheme = .mocha
+    public var lightColorTheme: ColorTheme = .mocha
+    public var darkColorTheme: ColorTheme = .mocha
+
+    public func colorTheme(systemDark: Bool) -> ColorTheme {
+        themeMode.isDark(systemDark: systemDark) ? darkColorTheme : lightColorTheme
+    }
+
     public var translucentWindow: Bool = false
     public var lastExportDirectory: String? = nil
 
@@ -33,6 +40,8 @@ public struct ContextSettings: Codable, Sendable {
         extensionsAllowNetwork: Bool = false,
         showInDock: Bool = true,
         colorTheme: ColorTheme = .mocha,
+        lightColorTheme: ColorTheme? = nil,
+        darkColorTheme: ColorTheme? = nil,
         translucentWindow: Bool = false,
         lastExportDirectory: String? = nil
     ) {
@@ -48,6 +57,8 @@ public struct ContextSettings: Codable, Sendable {
         self.extensionsAllowNetwork = extensionsAllowNetwork
         self.showInDock = showInDock
         self.colorTheme = colorTheme
+        self.lightColorTheme = lightColorTheme ?? colorTheme
+        self.darkColorTheme = darkColorTheme ?? colorTheme
         self.translucentWindow = translucentWindow
         self.lastExportDirectory = lastExportDirectory
     }
@@ -72,6 +83,7 @@ public struct ContextSettings: Codable, Sendable {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
         case obsidianVaultPath, themeMode, iCloudSyncEnabled, lastSyncAt
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
+        case lightColorTheme, darkColorTheme
         case lastExportDirectory
     }
 
@@ -89,6 +101,8 @@ public struct ContextSettings: Codable, Sendable {
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha
+        lightColorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .lightColorTheme) ?? colorTheme
+        darkColorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .darkColorTheme) ?? colorTheme
         translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
         lastExportDirectory = try c.decodeIfPresent(String.self, forKey: .lastExportDirectory)
     }

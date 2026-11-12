@@ -41,4 +41,27 @@ import Testing
         #expect(settings.colorTheme == .mocha)
         #expect(!settings.translucentWindow)
     }
+
+    @Test func appearanceChoicesRoundTripAndResolve() throws {
+        var settings = ContextSettings(lightColorTheme: .paper, darkColorTheme: .forest)
+        settings = try JSONDecoder().decode(ContextSettings.self, from: JSONEncoder().encode(settings))
+        #expect(settings.colorTheme(systemDark: false) == .paper)
+        #expect(settings.colorTheme(systemDark: true) == .forest)
+        settings.themeMode = .light
+        #expect(settings.colorTheme(systemDark: true) == .paper)
+        settings.themeMode = .dark
+        #expect(settings.colorTheme(systemDark: false) == .forest)
+    }
+
+    @Test func legacyThemeMigratesToBothAppearances() throws {
+        for theme in ColorTheme.allCases {
+            let data = Data("{\"colorTheme\":\"\(theme.rawValue)\"}".utf8)
+            let settings = try JSONDecoder().decode(ContextSettings.self, from: data)
+            #expect(settings.lightColorTheme == theme)
+            #expect(settings.darkColorTheme == theme)
+        }
+        let defaults = try JSONDecoder().decode(ContextSettings.self, from: Data("{}".utf8))
+        #expect(defaults.lightColorTheme == .mocha)
+        #expect(defaults.darkColorTheme == .mocha)
+    }
 }

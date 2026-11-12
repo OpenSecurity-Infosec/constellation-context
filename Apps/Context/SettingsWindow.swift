@@ -31,7 +31,8 @@ private struct SettingsView: View {
     @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
     @State private var theme: ThemeMode = ContextSettings.shared.themeMode
     @State private var showInDock: Bool = ContextSettings.shared.showInDock
-    @State private var colorTheme: ColorTheme = ContextSettings.shared.colorTheme
+    @State private var lightColorTheme = ContextSettings.shared.lightColorTheme
+    @State private var darkColorTheme = ContextSettings.shared.darkColorTheme
     @State private var translucent: Bool = ContextSettings.shared.translucentWindow
 
     var body: some View {
@@ -67,17 +68,8 @@ private struct SettingsView: View {
                 ContextSettings.shared.save()
                 ContextTheme.apply(mode: theme)
             }
-            Picker("Color theme", selection: $colorTheme) {
-                ForEach(ColorTheme.allCases, id: \.self) { t in
-                    Text(t.displayName).tag(t)
-                }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: colorTheme) {
-                ContextSettings.shared.colorTheme = colorTheme
-                ContextSettings.shared.save()
-                ThemeRelayer.lookChanged()
-            }
+            colorThemePicker("Light color theme", selection: $lightColorTheme)
+            colorThemePicker("Dark color theme", selection: $darkColorTheme)
             Toggle("Translucent window", isOn: $translucent)
                 .onChange(of: translucent) {
                     ContextSettings.shared.translucentWindow = translucent
@@ -117,6 +109,21 @@ private struct SettingsView: View {
         }
         .padding(20)
     }
+    private func colorThemePicker(_ title: String, selection: Binding<ColorTheme>) -> some View {
+        Picker(title, selection: selection) {
+            ForEach(ColorTheme.allCases, id: \.self) { theme in
+                Text(theme.displayName).tag(theme)
+            }
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: selection.wrappedValue) {
+            ContextSettings.shared.lightColorTheme = lightColorTheme
+            ContextSettings.shared.darkColorTheme = darkColorTheme
+            ContextSettings.shared.save()
+            ThemeRelayer.lookChanged()
+        }
+    }
+
 }
 
 /// Relays Settings placement changes to the live app without a restart.
