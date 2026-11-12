@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "Constellation Context",
+  "description": "Constellation Context — open-source Mac-native Antinote-style scratchpad",
+  "surfaces": [
+    "cortex"
+  ],
+  "createdAt": "2026-11-12T19:58:51.710Z",
+  "updatedAt": "2026-11-12T19:58:51.710Z"
+}
