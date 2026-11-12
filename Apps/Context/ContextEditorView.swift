@@ -24,6 +24,7 @@ struct ContextEditorRoot: View {
 
     @State private var text: String = ""
     @State private var isEditing = false
+    @State private var codeCaret = 0
     @State private var slashFragment: String? = nil
     @State private var slashRange: NSRange = NSRange(location: 0, length: 0)
     @State private var slashSelected: Int = 0
@@ -33,7 +34,7 @@ struct ContextEditorRoot: View {
             toolbar
             Divider()
             editor
-            if note.kind != .plain { modeBar }
+            if note.kind != .plain || !CodeHighlight.blocks(in: text).isEmpty { modeBar }
             statusBar
         }
         .background(Color.ctxEditorBackground)
@@ -98,7 +99,7 @@ struct ContextEditorRoot: View {
             } else {
                 ZStack(alignment: .topLeading) {
                     mathGutter
-                    PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
+                    PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in codeCaret = caret; controller?.trackCaret(caret) }, onIndent: { direction in
                         controller?.indentRowAtCaret(direction: direction)
                     }, onSlash: { fragment, range in
                         slashFragment = fragment
@@ -403,14 +404,25 @@ struct ContextEditorRoot: View {
                     .help("Clear collected pastes (⌘⇧⌫)")
                     .disabled(itemCount == 0)
             case .code:
-                Text("Snippet buffer — syntax highlighting on; fence with ```swift / ```python / ```js / ```sh to pick a language.")
-                    .font(.caption).foregroundStyle(.secondary)
+                languageMenu
             default:
-                EmptyView()
+                if !CodeHighlight.blocks(in: text).isEmpty { languageMenu }
             }
             Spacer()
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+
+    private var languageMenu: some View {
+        Menu("Language") {
+            ForEach(CodeHighlight.Language.allCases, id: \.self) { language in
+                Button(language.rawValue.capitalized) {
+                    text = CodeHighlight.choosing(language, in: ContextNote(text: text), caret: codeCaret)
+                    controller?.onTextChange(text)
+                }
+            }
+        }
+        .help("Set the language of the code block at the caret, or the snippet note")
     }
 
     private var statusBar: some View {
@@ -746,6 +758,9 @@ final class ContextTextView: NSTextView {
         case .string: .systemGreen
         case .comment: .secondaryLabelColor
         case .number: .systemOrange
+        case .type: .systemTeal
+        case .function: .systemBlue
+        case .identifier: .labelColor
         }
     }
 

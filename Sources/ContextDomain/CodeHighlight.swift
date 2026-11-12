@@ -5,9 +5,8 @@ import Foundation
 /// Domain-pure tokenizer: the editor asks for the code blocks in a note and
 /// colors the returned spans. Blocks are fenced (```lang … ```) regions in
 /// any note, or — in a `code`-mode note with no fences — the whole body as a
-/// single block with an inferred language. Only keyword / string / comment /
-/// number spans are emitted; everything else stays plain. This is a lexer,
-/// not a parser: no type, function, or interpolation coloring.
+/// single block with an inferred language. Identifier roles are heuristic;
+/// this lexer does not parse types or interpolation.
 public enum CodeHighlight: Sendable {
     public enum Language: String, Equatable, Sendable, CaseIterable {
         case swift
@@ -77,6 +76,9 @@ public enum CodeHighlight: Sendable {
         case string
         case comment
         case number
+        case type
+        case function
+        case identifier
     }
 
     public struct Token: Equatable, Sendable {
@@ -149,6 +151,24 @@ public enum CodeHighlight: Sendable {
         let body = note.bodyWithoutTrigger
         guard !body.isEmpty, let start = note.text.range(of: body)?.lowerBound else { return [] }
         return [Block(range: start..<note.text.index(start, offsetBy: body.count), language: detect(body))]
+    }
+
+    /// Persist a language in the opening fence of the block under the source caret.
+    /// Unfenced code notes are wrapped, keeping the trigger and body intact.
+    public static func choosing(_ language: Language, in note: ContextNote, caret: Int) -> String {
+        let text = note.text
+        let blocks = blocks(in: text)
+        if let block = blocks.first(where: {
+            let range = NSRange($0.range, in: text)
+            return caret >= range.location && caret <= range.location + range.length
+        }) {
+            let prefix = text[..<block.range.lowerBound]
+            let end = prefix.index(before: prefix.endIndex)
+            let start = prefix[..<end].lastIndex(of: "\n").map { prefix.index(after: $0) } ?? prefix.startIndex
+            return text.replacingCharacters(in: start..<end, with: "```" + language.rawValue)
+        }
+        guard blocks.isEmpty, note.kind == .code else { return text }
+        return "code\n```" + language.rawValue + "\n" + note.bodyWithoutTrigger + "\n```"
     }
 
     /// All highlighted tokens for a note, in document order.
@@ -286,9 +306,12 @@ public enum CodeHighlight: Sendable {
             if ch.isLetter || ch == "_" {
                 let start = i
                 while i < range.upperBound, isIdentChar(text[i]) { i = text.index(after: i) }
-                if keywords.contains(String(text[start..<i])) {
-                    tokens.append(Token(kind: .keyword, range: start..<i))
-                }
+                let word = String(text[start..<i])
+                let next = text[i..<range.upperBound].drop(while: { $0 == " " || $0 == "\t" }).first
+                let kind: TokenKind = keywords.contains(word) ? .keyword
+                    : next == "(" ? .function
+                    : language != .shell && ch.isUppercase ? .type : .identifier
+                tokens.append(Token(kind: kind, range: start..<i))
                 continue
             }
 
