@@ -3,6 +3,7 @@ import ContextDomain
 import ContextExport
 import ContextMath
 import ContextStore
+import ContextVault
 import SwiftUI
 import Vision
 
@@ -11,7 +12,7 @@ import Vision
 @MainActor
 final class ContextWindowController {
     let window: ContextPanel
-    private let store = NoteStore()
+    private(set) var store: NoteStore
     private let rates = RateStore()
     private var math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
@@ -24,6 +25,7 @@ final class ContextWindowController {
     private var lastMathResults: [MathEngine.LineOutcome] = []
 
     init() {
+        store = Self.openStore()
         store.collectGarbage()
         let first = store.liveNotes.first ?? store.create()
         noteID = first.id
@@ -44,6 +46,29 @@ final class ContextWindowController {
         applyLook()
         startTimerTick()
         updatePin()
+    }
+
+    /// The base vault from Settings (default `~/Context`), after a one-time
+    /// move of legacy `notes.json` content into it.
+    static func openStore() -> NoteStore {
+        let vault = BaseVault(root: ContextSettings.shared.baseVaultPath.map {
+            URL(fileURLWithPath: $0, isDirectory: true)
+        } ?? BaseVault.defaultRoot)
+        if let legacy = NotesJSONMigration.legacyFile {
+            _ = try? NotesJSONMigration.run(from: legacy, into: vault)
+        }
+        return NoteStore(vault: vault)
+    }
+
+    /// Switches to another base-vault folder. Files in the old folder stay
+    /// where they are.
+    func switchVault(to url: URL) {
+        flushNow()
+        ContextSettings.shared.baseVaultPath = url.path
+        ContextSettings.shared.save()
+        store = Self.openStore()
+        noteID = store.liveNotes.first?.id ?? store.create().id
+        afterNavigate()
     }
 
     private func refreshRates() {
@@ -79,6 +104,13 @@ final class ContextWindowController {
     var note: ContextNote { store.note(id: noteID) ?? ContextNote(text: "") }
 
     func show() {
+        flushNow()
+        if store.reloadFromDisk() {
+            if store.note(id: noteID) == nil {
+                noteID = store.liveNotes.first?.id ?? store.create().id
+            }
+            render(preservingFocus: true)
+        }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
@@ -164,11 +196,6 @@ final class ContextWindowController {
             autoPaste.stop()
         }
         render(preservingFocus: true)
-        // Opportunistic push when sync is on; SyncManager no-ops when off.
-        Task { @MainActor in SyncManager.shared.sync(
-            localNotes: { [weak self] in self?.store.allNotes ?? [] },
-            applyMerged: { _ in }
-        ) }
     }
 
     private func appendAutoPaste(_ pasted: String) {
@@ -626,20 +653,6 @@ final class ContextWindowController {
         } else {
             vc.show()
         }
-    }
-
-    func syncNow() {
-        SyncManager.shared.sync(
-            localNotes: { [weak self] in self?.store.allNotes ?? [] },
-            applyMerged: { [weak self] merged in
-                guard let notes = merged as? [ContextNote] else { return }
-                self?.store.replaceAll(notes)
-                if let current = self?.noteID, !notes.contains(where: { $0.id == current }) {
-                    self?.noteID = notes.first?.id ?? self?.store.create().id ?? UUID()
-                }
-                self?.render(preservingFocus: true)
-            }
-        )
     }
 
     // MARK: - URL scheme actions

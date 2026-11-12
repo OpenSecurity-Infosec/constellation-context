@@ -10,8 +10,8 @@ public struct ContextSettings: Codable, Sendable {
     public var hotKeyModifiers: UInt32 = 0x0800 // optionKey
     public var obsidianVaultPath: String? = nil
     public var themeMode: ThemeMode = .system
-    public var iCloudSyncEnabled: Bool = false
-    public var lastSyncAt: Date? = nil
+    /// Base vault folder; nil means `~/Context` (ADR-0002).
+    public var baseVaultPath: String? = nil
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
     public var colorTheme: ColorTheme = .mocha
@@ -28,8 +28,7 @@ public struct ContextSettings: Codable, Sendable {
         hotKeyModifiers: UInt32 = 0x0800,
         obsidianVaultPath: String? = nil,
         themeMode: ThemeMode = .system,
-        iCloudSyncEnabled: Bool = false,
-        lastSyncAt: Date? = nil,
+        baseVaultPath: String? = nil,
         extensionsAllowNetwork: Bool = false,
         showInDock: Bool = true,
         colorTheme: ColorTheme = .mocha,
@@ -43,8 +42,7 @@ public struct ContextSettings: Codable, Sendable {
         self.hotKeyModifiers = hotKeyModifiers
         self.obsidianVaultPath = obsidianVaultPath
         self.themeMode = themeMode
-        self.iCloudSyncEnabled = iCloudSyncEnabled
-        self.lastSyncAt = lastSyncAt
+        self.baseVaultPath = baseVaultPath
         self.extensionsAllowNetwork = extensionsAllowNetwork
         self.showInDock = showInDock
         self.colorTheme = colorTheme
@@ -70,7 +68,7 @@ public struct ContextSettings: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
-        case obsidianVaultPath, themeMode, iCloudSyncEnabled, lastSyncAt
+        case obsidianVaultPath, themeMode, baseVaultPath
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
         case lastExportDirectory
     }
@@ -84,8 +82,7 @@ public struct ContextSettings: Codable, Sendable {
         hotKeyModifiers = try c.decodeIfPresent(UInt32.self, forKey: .hotKeyModifiers) ?? 0x0800
         obsidianVaultPath = try c.decodeIfPresent(String.self, forKey: .obsidianVaultPath)
         themeMode = try c.decodeIfPresent(ThemeMode.self, forKey: .themeMode) ?? .system
-        iCloudSyncEnabled = try c.decodeIfPresent(Bool.self, forKey: .iCloudSyncEnabled) ?? false
-        lastSyncAt = try c.decodeIfPresent(Date.self, forKey: .lastSyncAt)
+        baseVaultPath = try c.decodeIfPresent(String.self, forKey: .baseVaultPath)
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha

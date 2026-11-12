@@ -1,50 +1,78 @@
 import ContextDomain
+import ContextVault
 import Foundation
 
-/// Local JSON note store. No accounts, no servers — mirrors Antinote's
-/// local-first promise. SQLite migration can follow without changing callers.
+/// Scratch notes as Markdown files in the base vault (ADR-0001).
+///
+/// Live notes are files in `Scratch/`; The Void is the vault's `.trash/`.
+/// Ids, trash dates, and expiry live in the derived `.context/index.json`;
+/// losing it only resets ids and trash ages. File contents are exactly
+/// what the user typed — no frontmatter is added.
 public final class NoteStore: @unchecked Sendable {
+    public let vault: BaseVault
     private let lock = NSLock()
-    private var notes: [ContextNote] = []
-    private let fileURL: URL
+    private var entries: [UUID: Entry] = [:]
+    private var index = Index()
 
-    public init(fileURL: URL? = nil) {
-        if let fileURL {
-            self.fileURL = fileURL
-        } else {
-            let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("ConstellationContext", isDirectory: true)
-            try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
-            self.fileURL = base.appendingPathComponent("notes.json")
+    struct Entry {
+        var note: ContextNote
+        /// Nil until the note first has text; empty notes never litter disk.
+        var url: URL?
+        /// Modification date we last read or wrote, to spot external edits.
+        var diskDate: Date?
+        var dirty = false
+    }
+
+    struct Index: Codable {
+        var version = 1
+        var notes: [String: Record] = [:]
+
+        struct Record: Codable {
+            var id: UUID
+            var createdAt: Date?
+            var trashedAt: Date?
+            var expiresAt: Date?
         }
-        load()
+    }
+
+    public init(vault: BaseVault) {
+        self.vault = vault
+        try? vault.ensure()
+        lock.withLock {
+            loadIndex()
+            scan()
+        }
     }
 
     // MARK: - Reads
 
     public var liveNotes: [ContextNote] {
-        lock.withLock { notes.filter { !$0.isTrashed && !isExpired($0) }.sorted { $0.updatedAt > $1.updatedAt } }
+        lock.withLock {
+            entries.values.map(\.note)
+                .filter { !$0.isTrashed && !isExpired($0) }
+                .sorted { $0.updatedAt > $1.updatedAt }
+        }
     }
 
     public var voidNotes: [ContextNote] {
-        lock.withLock { notes.filter { $0.isTrashed }.sorted { ($0.trashedAt ?? .distantPast) > ($1.trashedAt ?? .distantPast) } }
+        lock.withLock {
+            entries.values.map(\.note)
+                .filter(\.isTrashed)
+                .sorted { ($0.trashedAt ?? .distantPast) > ($1.trashedAt ?? .distantPast) }
+        }
     }
 
     public func note(id: UUID) -> ContextNote? {
-        lock.withLock { notes.first { $0.id == id } }
+        lock.withLock { entries[id]?.note }
     }
 
     public var allNotes: [ContextNote] {
-        lock.withLock { notes }
+        lock.withLock { entries.values.map(\.note) }
     }
 
-    /// Replaces the full set (iCloud merge result). Last-writer-wins already
-    /// resolved by the caller.
-    public func replaceAll(_ merged: [ContextNote]) {
-        lock.withLock {
-            notes = merged
-            save()
-        }
+    /// File backing a note, once it has been written.
+    public func fileURL(id: UUID) -> URL? {
+        lock.withLock { entries[id]?.url }
     }
 
     // MARK: - Writes
@@ -53,53 +81,57 @@ public final class NoteStore: @unchecked Sendable {
     public func create(text: String = "") -> ContextNote {
         lock.withLock {
             let note = ContextNote(text: text)
-            notes.append(note)
-            save()
+            entries[note.id] = Entry(note: note)
+            if !text.isEmpty { write(note.id) }
             return note
         }
     }
 
     public func update(id: UUID, text: String) {
         lock.withLock {
-            guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
-            notes[i].text = text
-            notes[i].updatedAt = Date()
-            save()
+            guard entries[id] != nil else { return }
+            entries[id]?.note.text = text
+            entries[id]?.note.updatedAt = Date()
+            write(id)
         }
     }
 
     /// Memory-only text update for the keystroke path. The caller coalesces
-    /// disk writes via flush() so typing never blocks on JSON encode + I/O.
-    /// Reads see the new text immediately; crash-window data loss is bounded
-    /// by the flush interval plus terminate/navigate flushes.
+    /// disk writes via flush() so typing never blocks on file I/O.
     public func stage(id: UUID, text: String) {
         lock.withLock {
-            guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
-            notes[i].text = text
-            notes[i].updatedAt = Date()
+            guard entries[id] != nil else { return }
+            entries[id]?.note.text = text
+            entries[id]?.note.updatedAt = Date()
+            entries[id]?.dirty = true
         }
     }
 
     /// Writes staged changes to disk. Safe to call redundantly.
     public func flush() {
-        lock.withLock { save() }
+        lock.withLock {
+            for id in entries.keys where entries[id]?.dirty == true { write(id) }
+        }
     }
 
     public func trash(id: UUID) {
         lock.withLock {
-            guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
-            notes[i].trashedAt = Date()
-            save()
+            guard entries[id] != nil else { return }
+            if entries[id]?.dirty == true { write(id) }
+            let now = Date()
+            entries[id]?.note.trashedAt = now
+            guard let url = entries[id]?.url else {
+                // Never written: nothing to keep.
+                entries[id] = nil
+                return
+            }
+            move(id, from: url, to: vault.trash)
+            record(id) { $0.trashedAt = now }
         }
     }
 
     public func restore(id: UUID) {
-        lock.withLock {
-            guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
-            notes[i].trashedAt = nil
-            notes[i].updatedAt = Date()
-            save()
-        }
+        lock.withLock { restoreLocked(id: id, now: Date()) }
     }
 
     public struct BulkRestoreResult: Equatable, Sendable {
@@ -113,46 +145,120 @@ public final class NoteStore: @unchecked Sendable {
     }
 
     /// Restores several trashed notes in one action. Notes past `expiresAt`
-    /// are skipped (left for garbage collection) and counted, never
-    /// resurrected as live notes. Order of `ids` is preserved in the
-    /// restore pass; live ordering still follows updatedAt.
+    /// are skipped (left for garbage collection) and counted.
     public func restoreMany(ids: [UUID], now: Date = Date()) -> BulkRestoreResult {
         lock.withLock {
             var restored = 0, skipped = 0
             for id in ids {
-                guard let i = notes.firstIndex(where: { $0.id == id }),
-                      notes[i].isTrashed
-                else { continue }
-                if let exp = notes[i].expiresAt, exp <= now {
+                guard let note = entries[id]?.note, note.isTrashed else { continue }
+                if let exp = note.expiresAt, exp <= now {
                     skipped += 1
                     continue
                 }
-                notes[i].trashedAt = nil
-                notes[i].updatedAt = now
+                restoreLocked(id: id, now: now)
                 restored += 1
             }
-            if restored > 0 { save() }
             return BulkRestoreResult(restored: restored, skippedExpired: skipped)
         }
     }
 
-    public func destroy(id: UUID) {
+    /// Sets or clears a hard expiry on a note.
+    public func setExpiry(id: UUID, at date: Date?) {
         lock.withLock {
-            notes.removeAll { $0.id == id }
-            save()
+            guard entries[id] != nil else { return }
+            entries[id]?.note.expiresAt = date
+            record(id) { $0.expiresAt = date }
         }
+    }
+
+    public func destroy(id: UUID) {
+        lock.withLock { destroyLocked(id: id) }
     }
 
     /// Deletes trashed notes older than 30 days and notes past `expiresAt`.
     public func collectGarbage(now: Date = Date()) {
         lock.withLock {
-            notes.removeAll { note in
+            let doomed = entries.values.map(\.note).filter { note in
                 if let exp = note.expiresAt, exp <= now { return true }
                 if let t = note.trashedAt, now.timeIntervalSince(t) > 30 * 24 * 3600 { return true }
                 return false
             }
-            save()
+            for note in doomed { destroyLocked(id: note.id) }
         }
+    }
+
+    /// Picks up edits made by other apps (Obsidian, an editor, sync).
+    /// A file changed on disk replaces the in-memory note unless that note
+    /// has unsaved typing; then ours is written and the disk version is
+    /// kept beside it as a conflict copy, so nothing is lost.
+    @discardableResult
+    public func reloadFromDisk() -> Bool {
+        lock.withLock { scan() }
+    }
+
+    // MARK: - Private
+
+    private func restoreLocked(id: UUID, now: Date) {
+        guard let entry = entries[id], entry.note.isTrashed else { return }
+        entries[id]?.note.trashedAt = nil
+        entries[id]?.note.updatedAt = now
+        if let url = entry.url { move(id, from: url, to: vault.scratch) }
+        record(id) { $0.trashedAt = nil }
+    }
+
+    private func destroyLocked(id: UUID) {
+        if let url = entries[id]?.url {
+            try? FileManager.default.removeItem(at: url)
+            if let rel = vault.relativePath(of: url) { index.notes[rel] = nil }
+            saveIndex()
+        }
+        entries[id] = nil
+    }
+
+    private func write(_ id: UUID) {
+        guard var entry = entries[id] else { return }
+        entry.dirty = false
+        if entry.url == nil {
+            guard !entry.note.text.isEmpty else {
+                entries[id] = entry
+                return
+            }
+            let folder = entry.note.isTrashed ? vault.trash : vault.scratch
+            let url = NoteFileName.available(stem: NoteFileName.timestamp(entry.note.createdAt), in: folder)
+            entry.url = url
+            if let rel = vault.relativePath(of: url) {
+                index.notes[rel] = Index.Record(id: id, createdAt: entry.note.createdAt)
+                saveIndex()
+            }
+        }
+        if let url = entry.url {
+            try? entry.note.text.write(to: url, atomically: true, encoding: .utf8)
+            entry.diskDate = Self.modificationDate(url)
+        }
+        entries[id] = entry
+    }
+
+    private func move(_ id: UUID, from url: URL, to folder: URL) {
+        let stem = url.deletingPathExtension().lastPathComponent
+        let dest = NoteFileName.available(stem: stem, ext: url.pathExtension, in: folder)
+        do {
+            try FileManager.default.moveItem(at: url, to: dest)
+        } catch {
+            return
+        }
+        if let old = vault.relativePath(of: url), let new = vault.relativePath(of: dest) {
+            index.notes[new] = index.notes.removeValue(forKey: old)
+        }
+        entries[id]?.url = dest
+        saveIndex()
+    }
+
+    private func record(_ id: UUID, _ change: (inout Index.Record) -> Void) {
+        guard let url = entries[id]?.url, let rel = vault.relativePath(of: url) else { return }
+        var rec = index.notes[rel] ?? Index.Record(id: id)
+        change(&rec)
+        index.notes[rel] = rec
+        saveIndex()
     }
 
     private func isExpired(_ note: ContextNote) -> Bool {
@@ -160,17 +266,122 @@ public final class NoteStore: @unchecked Sendable {
         return false
     }
 
-    // MARK: - Persistence
-
-    private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        if let decoded = try? JSONDecoder().decode([ContextNote].self, from: data) {
-            notes = decoded
+    /// Reconciles memory with the Scratch and trash folders. Returns true
+    /// when anything changed.
+    @discardableResult
+    private func scan() -> Bool {
+        var changed = false
+        var seen = Set<UUID>()
+        var byPath: [String: UUID] = [:]
+        for (id, entry) in entries {
+            if let url = entry.url, let rel = vault.relativePath(of: url) { byPath[rel] = id }
         }
+        for (folder, trashed) in [(vault.scratch, false), (vault.trash, true)] {
+            for url in Self.markdownFiles(in: folder) {
+                guard let rel = vault.relativePath(of: url) else { continue }
+                let diskDate = Self.modificationDate(url)
+                if let id = byPath[rel], let entry = entries[id] {
+                    seen.insert(id)
+                    guard diskDate != entry.diskDate else { continue }
+                    guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                    if entry.dirty {
+                        keepConflictCopy(of: text, beside: url)
+                        write(id)
+                    } else if text != entry.note.text {
+                        entries[id]?.note.text = text
+                        entries[id]?.note.updatedAt = diskDate ?? Date()
+                        entries[id]?.diskDate = diskDate
+                    } else {
+                        entries[id]?.diskDate = diskDate
+                    }
+                    changed = true
+                    continue
+                }
+                guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                let rec = index.notes[rel]
+                let id = rec?.id ?? UUID()
+                let created = rec?.createdAt ?? Self.creationDate(url) ?? diskDate ?? Date()
+                let note = ContextNote(
+                    id: id,
+                    text: text,
+                    createdAt: created,
+                    updatedAt: diskDate ?? created,
+                    trashedAt: trashed ? (rec?.trashedAt ?? diskDate ?? Date()) : nil,
+                    expiresAt: rec?.expiresAt
+                )
+                if rec == nil { index.notes[rel] = Index.Record(id: id, createdAt: created) }
+                entries[id] = Entry(note: note, url: url, diskDate: diskDate)
+                seen.insert(id)
+                changed = true
+            }
+        }
+        // Files deleted by another app disappear, unless we hold unsaved
+        // text for them — then the note is written back.
+        for (id, entry) in entries where entry.url != nil && !seen.contains(id) {
+            if entry.dirty {
+                entries[id]?.url = nil
+                write(id)
+            } else {
+                entries[id] = nil
+            }
+            changed = true
+        }
+        let live = Set(entries.values.compactMap { $0.url.flatMap(vault.relativePath(of:)) })
+        let stale = index.notes.keys.filter { !live.contains($0) }
+        for key in stale { index.notes[key] = nil }
+        if changed || !stale.isEmpty { saveIndex() }
+        return changed
     }
 
-    private func save() {
-        guard let data = try? JSONEncoder().encode(notes) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+    private func keepConflictCopy(of text: String, beside url: URL) {
+        let stem = url.deletingPathExtension().lastPathComponent + " (conflict)"
+        let dest = NoteFileName.available(stem: stem, in: url.deletingLastPathComponent())
+        try? text.write(to: dest, atomically: true, encoding: .utf8)
+    }
+
+    private func loadIndex() {
+        guard let data = try? Data(contentsOf: vault.index),
+              let decoded = try? JSONDecoder.iso.decode(Index.self, from: data)
+        else { return }
+        index = decoded
+    }
+
+    private func saveIndex() {
+        guard let data = try? JSONEncoder.iso.encode(index) else { return }
+        try? data.write(to: vault.index, options: .atomic)
+    }
+
+    static func markdownFiles(in folder: URL) -> [URL] {
+        let items = (try? FileManager.default.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        return items.filter { $0.pathExtension.lowercased() == "md" }
+    }
+
+    static func modificationDate(_ url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
+    static func creationDate(_ url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.creationDateKey]).creationDate
+    }
+}
+
+extension JSONEncoder {
+    static var iso: JSONEncoder {
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .iso8601
+        e.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return e
+    }
+}
+
+extension JSONDecoder {
+    static var iso: JSONDecoder {
+        let d = JSONDecoder()
+        d.dateDecodingStrategy = .iso8601
+        return d
     }
 }

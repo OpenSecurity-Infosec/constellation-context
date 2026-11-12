@@ -1,4 +1,5 @@
 import ContextDomain
+import ContextVault
 import SwiftUI
 
 /// Settings: text size, float-on-top, menu bar extra.
@@ -110,9 +111,9 @@ private struct SettingsView: View {
                     }
                 }
             }
-            SyncSettingsRow()
+            BaseVaultSettingsRow()
             ExtensionSettingsRow()
-            Text("Toggle with ⌥A from anywhere. Notes stay on this Mac unless iCloud sync is on.")
+            Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(20)
@@ -142,33 +143,45 @@ enum ThemeRelayer {
     nonisolated(unsafe) static var lookChanged: () -> Void = {}
 }
 
-/// iCloud sync toggle + status. Uses the user's own iCloud; off by default.
-private struct SyncSettingsRow: View {
-    @State private var enabled: Bool = ContextSettings.shared.iCloudSyncEnabled
-    @State private var status: String = SyncManager.shared.statusText()
+/// Base vault location (ADR-0002). Context's own notes live here as
+/// Markdown; the folder opens in Obsidian as-is.
+private struct BaseVaultSettingsRow: View {
+    @State private var path: String = (ContextSettings.shared.baseVaultPath.map { URL(fileURLWithPath: $0) }
+        ?? BaseVault.defaultRoot).path
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Toggle("Sync notes with iCloud", isOn: $enabled)
-                .onChange(of: enabled) {
-                    SyncManager.shared.isEnabled = enabled
-                    status = SyncManager.shared.statusText()
+            HStack {
+                Text("Base vault")
+                Spacer()
+                Button("Reveal") {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                 }
-            Text(status)
-                .font(.caption).foregroundStyle(.secondary)
-            if enabled {
-                Button("Sync now") {
-                    SyncManager.shared.sync()
-                    status = SyncManager.shared.statusText()
+                .accessibilityIdentifier("settings.baseVault.reveal")
+                Button("Change…") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = false
+                    panel.canChooseDirectories = true
+                    panel.canCreateDirectories = true
+                    panel.message = "Choose a folder for Context's notes"
+                    guard panel.runModal() == .OK, let url = panel.url else { return }
+                    path = url.path
+                    VaultRelayer.baseVaultChanged(url)
                 }
-                .font(.caption)
+                .accessibilityIdentifier("settings.baseVault.change")
             }
-        }
-        .onAppear {
-            enabled = ContextSettings.shared.iCloudSyncEnabled
-            status = SyncManager.shared.statusText()
+            Text(path)
+                .font(.caption).foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .lineLimit(1).truncationMode(.middle)
         }
     }
+}
+
+/// Relays a base-vault change to the live store.
+@MainActor
+enum VaultRelayer {
+    nonisolated(unsafe) static var baseVaultChanged: (URL) -> Void = { _ in }
 }
 
 /// JS extension privacy + folder. Scripts run sandboxed with no network

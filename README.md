@@ -1,6 +1,12 @@
 # Constellation Context
 
-Open-source Mac-native scratchpad. Antinote-style instant notes with IDE-friendly plain text.
+Context is a minimalist, Mac-native, AI-first home for notes and memory, and part of the Constellation Project. It keeps plain Markdown files a keystroke away and curates them into the context your AI harnesses work from.
+
+- **Why and where it's going:** [Docs/Vision.md](Docs/Vision.md)
+- **Agents start here:** [Docs/Quickstart.md](Docs/Quickstart.md), then [AGENTS.md](AGENTS.md)
+- **Look and feel:** [Docs/Design-Guide.md](Docs/Design-Guide.md)
+
+Today the app is an Antinote-style instant scratchpad. Antinote parity work is closed; the table below records that baseline and is not the roadmap.
 
 ## Clone, build, run
 
@@ -42,7 +48,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |
 | Note search pane (⌘F) | Partial (title+body search with fuzzy match for typos/partial tokens, exact ranked first; no saved searches) |
-| iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
+| iCloud sync | Removed. Notes are Markdown files in the base vault; use iCloud Drive, Obsidian Sync, or git to sync the folder (ADR-0001) |
 | URL schemes (`context://`) | Partial (open/new/search/append parse + handle; real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
 | Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
@@ -82,6 +88,6 @@ unless you opt in.
 
 ## Notes
 
-- Notes live on this Mac: `~/Library/Application Support/ConstellationContext/notes.json`.
+- Notes live on this Mac as Markdown files in the base vault, `~/Context` by default (Settings → Base vault). It opens in Obsidian as-is. Legacy `notes.json` content moves there once, and the old file is kept as `notes.json.migrated-*`.
 - No accounts, no analytics, no network calls except future opt-in rate fetching.
 - License: MIT (see `LICENSE`).

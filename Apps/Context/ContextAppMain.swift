@@ -44,11 +44,11 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         PlacementRelayer.menuBarChanged = { [weak self] in self?.applyPlacement() }
         PinRelayer.onChange = { [weak controller] _ in controller?.updatePin() }
         ThemeRelayer.lookChanged = { [weak controller] in controller?.applyLook() }
+        VaultRelayer.baseVaultChanged = { [weak controller] url in controller?.switchVault(to: url) }
         applyPlacement()
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         ContextHotKeys.onCapture { [weak controller] in controller?.captureScreenshotToText() }
         controller.show()
-        SyncManager.shared.start()
         if let pending = pendingURL {
             pendingURL = nil
             handleSchemeURL(pending)
