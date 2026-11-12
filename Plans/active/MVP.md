@@ -43,7 +43,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - `ContextAI` OpenAI-compatible client: CXN router, `gpt-6.1-terra`, key in the Keychain.
   - Actions: summarize, tidy, extract-to-project, and compact.
   - Each result is shown as a proposal, accept or reject, and applies as one undoable edit.
-- [ ] **7. Library window**
+- [x] **7. Library window**
   - Sidebar: base vault, linked vaults, projects.
   - Note list and search across sources.
   - Canvas editor with images inline.
@@ -110,3 +110,15 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
     - ⌘↩ and Esc;
     - ⌘Z after Accept;
     - Extract with undo.
+- **2026-11-12, step 7, done** (`9ffc97a`).
+  - 244 tests pass.
+  - **Decision:** images render inline in **Read** mode; **Edit** mode (⌘E) is raw Markdown. Inline images inside the editable text view would mean injecting attachment characters into the text, which risks the byte-exact round-trip (ADR-0001). Live Bear-style styling while typing is not done.
+  - Two Library bugs were caught in review and fixed before commit:
+    - pending typing could save into the newly selected note;
+    - back-to-back linked saves could self-conflict.
+  - Unproven, needs a manual pass:
+    - the Library layout;
+    - ⌘E;
+    - search across sources;
+    - Add to Project for an Anytype note;
+    - image rendering from the real iCloud Obsidian vault.
