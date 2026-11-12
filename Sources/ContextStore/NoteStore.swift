@@ -73,6 +73,32 @@ public final class NoteStore: @unchecked Sendable {
         }
     }
 
+    public func rename(id: UUID, name: String) throws {
+        try lock.withLock {
+            guard var entry = entries[id], let old = entry.url,
+                  !entry.note.isTrashed, options.singleNoteStem == nil else {
+                throw WorkspaceError.noSuchNote
+            }
+            let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, !name.hasPrefix("."), !name.contains("/"),
+                  !name.contains(":") else { throw WorkspaceError.badRange }
+            let stem = name.hasSuffix(".md") ? String(name.dropLast(3)) : name
+            guard !stem.isEmpty else { throw WorkspaceError.badRange }
+            let destination = folder.appendingPathComponent(stem + ".md")
+            if old == destination { return }
+            guard !FileManager.default.fileExists(atPath: destination.path) else {
+                throw WorkspaceError.badRange
+            }
+            try FileManager.default.moveItem(at: old, to: destination)
+            if let oldKey = vault.relativePath(of: old), let newKey = vault.relativePath(of: destination) {
+                index.notes[newKey] = index.notes.removeValue(forKey: oldKey)
+            }
+            entry.url = destination
+            entries[id] = entry
+            saveIndex()
+        }
+    }
+
     // MARK: - Reads
 
     public var liveNotes: [ContextNote] {

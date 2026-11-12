@@ -77,6 +77,120 @@ final class LibraryModel {
         loadItems()
     }
 
+    var canRename: Bool {
+        if case .doc? = selection { return true }
+        guard case .note(let pad, _)? = selection else { return false }
+        if case .project = pad { return false }
+        return true
+    }
+
+    var canDelete: Bool {
+        guard let selection else { return false }
+        if case .linked = selection { return false }
+        return true
+    }
+
+    func createNote() {
+        saveNow()
+        do {
+            if case .note(let id) = try workspace().apply(.createNote(.scratch, text: "# Untitled\n")) {
+                source = .pad(.scratch)
+                query = ""
+                loadItems()
+                selection = .note(.scratch, id)
+                editing = true
+            }
+        } catch { status = "Couldn't create the note." }
+    }
+
+    func renameNote() {
+        guard canRename, let selected = selection else { return }
+        saveNow()
+        let alert = NSAlert()
+        alert.messageText = "Rename Note"
+        let field = NSTextField(string: selectedFile?.deletingPathExtension().lastPathComponent ?? "")
+        field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Rename")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        Task {
+            await lastSave?.value
+            do {
+                switch selected {
+                case .note(let pad, let id):
+                    try workspace().apply(.renameNote(pad, id: id, name: field.stringValue))
+                case .doc(let project, let file):
+                    try workspace().apply(.renameDocument(project: project, fileName: file, name: field.stringValue))
+                    let name = field.stringValue
+                    selection = .doc(project: project, fileName: name.hasSuffix(".md") ? name : name + ".md")
+                case .linked: return
+                }
+                loadItems()
+            } catch { status = "Couldn't rename the note. Check the name or an existing file." }
+        }
+    }
+
+    func deleteNote() {
+        guard let id = selection else { return }
+        saveNow()
+        Task {
+            await lastSave?.value
+            do {
+                switch id {
+                case .note(let pad, let note): try workspace().apply(.trash(pad, id: note))
+                case .doc(let project, let file): try workspace().apply(.removeDocument(project: project, fileName: file))
+                case .linked: return
+                }
+                if selection == id { selection = nil }
+                loadItems()
+            } catch { status = "Couldn't move the note to The Void." }
+        }
+    }
+
+    func followLink(_ target: String) {
+        let name = target.components(separatedBy: "|")[0].components(separatedBy: "#")[0]
+        guard !name.isEmpty else { return }
+        Task {
+            var matches: [LibraryItemID] = []
+            let ws = workspace()
+            for pad in ws.pads {
+                for item in padItems(pad) {
+                    let file: String
+                    switch item.id {
+                    case .note(let p, let id): file = ws.store(for: p).fileURL(id: id)?.deletingPathExtension().lastPathComponent ?? ""
+                    case .doc(_, let f): file = (f as NSString).deletingPathExtension
+                    case .linked: continue
+                    }
+                    let path: String
+                    switch item.id {
+                    case .note(let p, let id):
+                        path = ws.store(for: p).fileURL(id: id).flatMap { ws.vault.relativePath(of: $0) }.map { ($0 as NSString).deletingPathExtension } ?? ""
+                    case .doc(let project, let f): path = "Projects/\(project)/docs/" + (f as NSString).deletingPathExtension
+                    case .linked: path = ""
+                    }
+                    if file == name || path == name || item.title == name { matches.append(item.id) }
+                }
+            }
+            for key in connectors.keys.sorted() {
+                guard let connector = connectors[key] else { continue }
+                do {
+                    for item in try await connector.list() {
+                        let path = (item.ref.noteID as NSString).deletingPathExtension
+                        if path == name || (path as NSString).lastPathComponent == name || item.title == name {
+                            matches.append(.linked(item.ref))
+                        }
+                    }
+                } catch { status = "Couldn't search every linked vault."; return }
+            }
+            guard matches.count == 1, let match = matches.first else {
+                status = matches.isEmpty ? "Link target not found." : "More than one note matches this link."
+                return
+            }
+            selection = match
+        }
+    }
+
     // MARK: - Listing
 
     func loadItems() {
@@ -306,6 +420,7 @@ final class LibraryModel {
 struct CanvasReader: View {
     var text: String
     var imageURL: (String) -> URL?
+    var followLink: (String) -> Void = { _ in }
 
     var body: some View {
         let doc = MarkdownDocument(parsing: text)
@@ -327,6 +442,11 @@ struct CanvasReader: View {
                                 Self.title(line)
                             } else {
                                 Self.line(line)
+                                    .environment(\.openURL, OpenURLAction { url in
+                                        guard url.scheme == "context-wiki", let target = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "target" })?.value else { return .systemAction }
+                                        followLink(target)
+                                        return .handled
+                                    })
                             }
                         }
                     }
@@ -363,6 +483,26 @@ struct CanvasReader: View {
             .padding(.bottom, ContextSettings.shared.fontSize * CanvasTypography.titleSpacing)
     }
 
+    static func wikiTargets(_ line: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: #"(?<!!)\[\[([^\]]+)\]\]"#) else { return [] }
+        let string = line as NSString
+        return regex.matches(in: line, range: NSRange(location: 0, length: string.length))
+            .map { string.substring(with: $0.range(at: 1)) }
+    }
+
+    static func linkedMarkdown(_ text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"(?<!!)\[\[([^\]]+)\]\]"#) else { return text }
+        let result = NSMutableString(string: text)
+        for match in regex.matches(in: text, range: NSRange(location: 0, length: (text as NSString).length)).reversed() {
+            let target = (text as NSString).substring(with: match.range(at: 1))
+            let parts = target.components(separatedBy: "|")
+            let label = parts.last ?? target
+            let encoded = target.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+            result.replaceCharacters(in: match.range, with: "[\(label)](context-wiki://open?target=\(encoded))")
+        }
+        return result as String
+    }
+
     static func line(_ line: String) -> some View {
         var level = 0
         var rest = Substring(line)
@@ -370,7 +510,7 @@ struct CanvasReader: View {
         let isHeading = level > 0 && rest.hasPrefix(" ")
         let content = isHeading ? String(rest.dropFirst()) : line
         let attributed = (try? AttributedString(
-            markdown: content,
+            markdown: linkedMarkdown(content),
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         )) ?? AttributedString(content)
         let font: Font = switch isHeading ? level : 0 {

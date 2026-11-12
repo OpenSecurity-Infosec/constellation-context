@@ -7,6 +7,7 @@ import Foundation
 /// so there is exactly one mutation path (AGENTS.md).
 public enum ContextCommand: Equatable, Sendable {
     case createNote(Pad, text: String)
+    case renameNote(Pad, id: UUID, name: String)
     case openDailyNote(date: Date, timeZone: TimeZone)
     case createFromTemplate(String, date: Date, timeZone: TimeZone)
     /// Saves now. Use for discrete edits (commands, AI, checklist taps).
@@ -26,6 +27,7 @@ public enum ContextCommand: Equatable, Sendable {
     /// Overwrites a text file in the project's `docs/`.
     case writeDocument(project: String, fileName: String, text: String)
     /// Moves a `docs/` file to the vault trash.
+    case renameDocument(project: String, fileName: String, name: String)
     case removeDocument(project: String, fileName: String)
     case attachReference(project: String, ProjectReference)
     case detachReference(project: String, VaultNoteRef)
@@ -111,6 +113,9 @@ public final class Workspace: @unchecked Sendable {
             return .note(store(for: .scratch).create(text: NoteTemplate.expand(template, at: date, timeZone: zone)).id)
         case .createNote(let pad, let text):
             return .note(store(for: pad).create(text: text).id)
+        case .renameNote(let pad, let id, let name):
+            try existing(pad, id).rename(id: id, name: name)
+            return .note(id)
         case .setText(let pad, let id, let text):
             let s = try existing(pad, id)
             s.update(id: id, text: text)
@@ -163,6 +168,18 @@ public final class Workspace: @unchecked Sendable {
                 try text.write(to: url, atomically: true, encoding: .utf8)
             }
             return .project(name)
+        case .renameDocument(let project, let fileName, let name):
+            let p = try existingProject(project)
+            guard !fileName.contains("/"), !fileName.hasPrefix("."),
+                  !name.isEmpty, !name.contains("/"), !name.contains(":"),
+                  !name.hasPrefix(".") else { throw WorkspaceError.noSuchDocument }
+            let old = p.docs.appendingPathComponent(fileName)
+            let destination = p.docs.appendingPathComponent(name.hasSuffix(".md") ? name : name + ".md")
+            if old == destination { return .project(project) }
+            guard FileManager.default.fileExists(atPath: old.path),
+                  !FileManager.default.fileExists(atPath: destination.path) else { throw WorkspaceError.noSuchDocument }
+            try FileManager.default.moveItem(at: old, to: destination)
+            return .project(project)
         case .removeDocument(let name, let fileName):
             let p = try existingProject(name)
             let url = p.docs.appendingPathComponent(fileName)

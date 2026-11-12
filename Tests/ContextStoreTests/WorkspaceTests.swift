@@ -5,6 +5,24 @@ import Foundation
 import Testing
 
 @Suite struct WorkspaceTests {
+    @Test func renamePreservesBytesAndIdentityThenTrashRetainsFile() throws {
+        let vault = tempVault()
+        defer { try? FileManager.default.removeItem(at: vault.root) }
+        let ws = Workspace(vault: vault)
+        let text = "---\nunknown: yes\n---\n[[Other]] ![[image.png]]"
+        guard case .note(let id) = try ws.apply(.createNote(.scratch, text: text)) else { return }
+        try ws.apply(.renameNote(.scratch, id: id, name: "Renamed"))
+        let url = vault.scratch.appendingPathComponent("Renamed.md")
+        #expect(try String(contentsOf: url, encoding: .utf8) == text)
+        #expect(Workspace(vault: vault).store(for: .scratch).note(id: id)?.text == text)
+        #expect(throws: (any Error).self) {
+            try ws.apply(.renameNote(.scratch, id: id, name: "../escape"))
+        }
+        try ws.apply(.trash(.scratch, id: id))
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+        #expect(ws.store(for: .scratch).voidNotes.contains { $0.id == id })
+    }
+
     @Test func dailyNoteReopensWithoutOverwritingAndSurvivesReindex() throws {
         let vault = tempVault()
         defer { try? FileManager.default.removeItem(at: vault.root) }

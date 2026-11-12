@@ -82,11 +82,20 @@ struct LibraryView: View {
             }
             LibraryCanvas(model: model)
         }
+        .contextMenu {
+            Button("New Note") { model.createNote() }.keyboardShortcut("n")
+                .accessibilityIdentifier("library.context.new")
+            Button("Rename Note…") { model.renameNote() }.disabled(!model.canRename)
+                .accessibilityIdentifier("library.context.rename")
+            Button("Move to The Void") { model.deleteNote() }.disabled(!model.canDelete)
+                .accessibilityIdentifier("library.context.trash")
+        }
         .animation(.easeOut(duration: 0.2), value: model.reveal)
         .background(Color.ctxEditorBackground)
         .ignoresSafeArea()
         .frame(minWidth: 520, minHeight: 360)
         .background {
+            Button("New Note") { model.createNote() }.keyboardShortcut("n").accessibilityIdentifier("library.new").hidden()
             Button("Toggle Sidebar") { model.reveal.toggle() }
                 .keyboardShortcut("s", modifiers: [.command, .control])
                 .opacity(0)
@@ -206,7 +215,7 @@ struct LibraryCanvas: View {
                 .accessibilityIdentifier("library.editor")
         } else {
             ScrollView {
-                CanvasReader(text: model.text, imageURL: model.imageURL)
+                CanvasReader(text: model.text, imageURL: model.imageURL, followLink: model.followLink)
                     .padding(.horizontal, ZenMetrics.textInset.width)
                     .padding(.top, ZenMetrics.textInset.height)
                     .padding(.bottom, ZenMetrics.textInset.width)
@@ -232,6 +241,9 @@ struct LibraryCanvas: View {
                 .help(model.editing ? "Read (⌘E)" : "Edit (⌘E)")
                 .accessibilityIdentifier("library.mode")
                 Menu {
+                    Button("New Note") { model.createNote() }.keyboardShortcut("n").accessibilityIdentifier("library.new")
+                    Button("Rename Note…") { model.renameNote() }.disabled(!model.canRename).accessibilityIdentifier("library.rename")
+                    Button("Move to The Void") { model.deleteNote() }.disabled(!model.canDelete).accessibilityIdentifier("library.trash")
                     if !model.projects.isEmpty {
                         Menu("Add to Project") {
                             ForEach(model.projects, id: \.self) { p in Button(p) { model.addToProject(p) } }

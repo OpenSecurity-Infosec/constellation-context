@@ -233,3 +233,24 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   - Validation: isolated cortex02 suite passed, 358 tests in 56 suites.
     First run exposed URL normalization in daily lookup; fixed before commit.
     Post-push CI and installed revision are checked in this turn's report.
+
+- **2026-11-12, gap 3, Library note actions and links (Partial).**
+  - Plan/contracts: add a typed rename operation to Workspace, preserve file
+    bytes and derived identity, and use the existing Library menus for new,
+    rename and trash. New notes belong to Scratch (ADR-0002); project context
+    filenames remain fixed. No settings or additional sidebar chrome.
+  - Library reader links resolve across pads, project documents and linked
+    connectors; aliases and heading suffixes resolve to the target note.
+    Missing or ambiguous targets show a message. Embeds remain images.
+  - Delete moves base notes/documents to the existing vault trash.
+    Linked rename/delete remain unavailable;
+    folder browsing is deferred to avoid expanding the sidebar in this slice.
+    Project documents support rename through Workspace as well.
+  - Tests: temporary-vault rename/identity/trash coverage and reader-link
+    rendering coverage. Final isolated cortex02 run passed: 360 tests in 57 suites.
+    Local swift test could not run: this Linux host has no Swift toolchain.
+  - Manual GUI checks (not attempted): use New Note from an empty Library;
+    edit, switch notes, rename, restart and confirm text is intact; trash
+    and restore in The Void; click simple, aliased, folder-qualified and
+    heading links across base/linked sources; check missing/duplicate targets
+    and image embeds. Confirm keyboard shortcuts and menu availability.
