@@ -110,6 +110,46 @@ enum ContextTheme {
     }
 
     static var bodyFont: NSFont { .systemFont(ofSize: ContextSettings.shared.fontSize) }
+
+    /// A prose note's first line: the system serif (New York), larger.
+    static var titleFont: NSFont {
+        let size = (ContextSettings.shared.fontSize * CanvasTypography.titleScale).rounded()
+        let sans = NSFont.systemFont(ofSize: size, weight: .regular)
+        guard let serif = sans.fontDescriptor.withDesign(.serif) else { return sans }
+        return NSFont(descriptor: serif, size: size) ?? sans
+    }
+
+    /// The theme's text color, or the system label color.
+    static var ink: NSColor {
+        let theme = ContextSettings.shared.colorTheme
+        guard let ink = theme.ink else { return .labelColor }
+        return NSColor(name: "ContextInk") { appearance in
+            let dark = appearance.bestMatch(from: [.darkAqua, .vibrantDark]) != nil
+            return ContextTheme.hex(dark ? ink.dark : ink.light)
+        }
+    }
+
+    /// Body rhythm. Mode notes keep plain lines so gutters stay aligned.
+    static func bodyParagraph(prose: Bool) -> NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        guard prose else { return style }
+        let size = ContextSettings.shared.fontSize
+        style.lineSpacing = size * CanvasTypography.lineSpacing
+        style.paragraphSpacing = size * CanvasTypography.paragraphSpacing
+        return style
+    }
+
+    static var titleParagraph: NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.paragraphSpacing = ContextSettings.shared.fontSize * CanvasTypography.titleSpacing
+        return style
+    }
+
+    /// Changes when anything the typography depends on changes.
+    static var typographyKey: String {
+        let s = ContextSettings.shared
+        return "\(s.fontSize)|\(s.colorTheme.rawValue)"
+    }
     static var monoFont: NSFont {
         .monospacedSystemFont(ofSize: ContextSettings.shared.fontSize, weight: .regular)
     }

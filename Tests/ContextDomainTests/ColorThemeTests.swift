@@ -38,7 +38,7 @@ import Testing
         let settings = try JSONDecoder().decode(
             ContextSettings.self, from: "{}".data(using: .utf8)!
         )
-        #expect(settings.colorTheme == .mocha)
+        #expect(settings.colorTheme == .paper)
         #expect(!settings.translucentWindow)
     }
 }

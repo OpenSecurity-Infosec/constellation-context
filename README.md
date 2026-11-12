@@ -73,7 +73,7 @@ This is the pre-pivot parity record. Antinote parity work is closed, and the tab
 | iCloud sync | Removed. Notes are Markdown files in the base vault; use iCloud Drive, Obsidian Sync, or git to sync the folder (ADR-0001) |
 | URL schemes (`context://`) | Partial (open/new/search/append parse + handle; real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
-| Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
+| Themes (system / light / dark, instant switch) | Partial (Paper (default)/Mocha/Forest accents, zen canvas with serif first-line title + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
 | Dock + menu bar + pin (dock / menu / both / neither) | Partial (toggles live; menu-bar-only edge cases unproven) |
 
 ## Automation (URL schemes, Raycast, Alfred)

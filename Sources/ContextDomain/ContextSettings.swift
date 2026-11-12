@@ -19,7 +19,7 @@ public struct ContextSettings: Codable, Sendable {
     public var aiModel: String? = nil
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
-    public var colorTheme: ColorTheme = .mocha
+    public var colorTheme: ColorTheme = .paper
     public var translucentWindow: Bool = false
     public var lastExportDirectory: String? = nil
 
@@ -36,7 +36,7 @@ public struct ContextSettings: Codable, Sendable {
         baseVaultPath: String? = nil,
         extensionsAllowNetwork: Bool = false,
         showInDock: Bool = true,
-        colorTheme: ColorTheme = .mocha,
+        colorTheme: ColorTheme = .paper,
         translucentWindow: Bool = false,
         lastExportDirectory: String? = nil
     ) {
@@ -93,7 +93,7 @@ public struct ContextSettings: Codable, Sendable {
         aiModel = try c.decodeIfPresent(String.self, forKey: .aiModel)
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
-        colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha
+        colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .paper
         translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
         lastExportDirectory = try c.decodeIfPresent(String.self, forKey: .lastExportDirectory)
     }

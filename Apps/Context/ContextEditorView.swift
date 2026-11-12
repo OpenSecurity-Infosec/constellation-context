@@ -141,7 +141,7 @@ struct ContextEditorRoot: View {
             } else {
                 ZStack(alignment: .topLeading) {
                     mathGutter
-                    PlainTextEditor(text: note.text, noteID: note.id, onChange: { controller?.onTextChange($0) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
+                    PlainTextEditor(text: note.text, noteID: note.id, titlesFirstLine: pad != .clipboard, onChange: { controller?.onTextChange($0) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
                         controller?.indentRowAtCaret(direction: direction)
                     }, onSlash: { fragment, range in
                         slashFragment = fragment
@@ -480,6 +480,8 @@ struct ContextEditorRoot: View {
 private struct PlainTextEditor: NSViewRepresentable {
     var text: String
     var noteID: UUID
+    /// Clipboard entries are snippets, not documents, so they get no title.
+    var titlesFirstLine = true
     var onChange: (String) -> Void
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
@@ -499,11 +501,12 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.contextMenuItems = contextMenuItems
         tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
+        tv.titlesFirstLine = titlesFirstLine
         tv.isRichText = false
         tv.usesFontPanel = false
         tv.allowsUndo = true
         tv.backgroundColor = .clear
-        tv.insertionPointColor = .labelColor
+        tv.insertionPointColor = ContextTheme.ink
         tv.textContainerInset = ZenMetrics.textInset
         let scroll = NSScrollView()
         scroll.documentView = tv
@@ -513,8 +516,9 @@ private struct PlainTextEditor: NSViewRepresentable {
         context.coordinator.view = tv
         context.coordinator.onChange = onChange
         context.coordinator.noteID = noteID
+        context.coordinator.styleKey = ContextTheme.typographyKey
         tv.string = text
-        tv.refreshLinkAttributes()
+        tv.refreshStyling()
         return scroll
     }
 
@@ -522,9 +526,17 @@ private struct PlainTextEditor: NSViewRepresentable {
         guard let tv = scroll.documentView as? ContextTextView else { return }
         context.coordinator.onChange = onChange
         tv.contextMenuItems = contextMenuItems
-        if tv.font != ContextTheme.bodyFont { tv.font = ContextTheme.bodyFont }
         let switched = context.coordinator.noteID != noteID
         context.coordinator.noteID = noteID
+        // Restyle when the text size, theme, or pad changes. Renders run
+        // several times a second, so only on a real change.
+        let key = ContextTheme.typographyKey
+        if (context.coordinator.styleKey != key || tv.titlesFirstLine != titlesFirstLine), !tv.hasMarkedText() {
+            context.coordinator.styleKey = key
+            tv.titlesFirstLine = titlesFirstLine
+            tv.insertionPointColor = ContextTheme.ink
+            tv.refreshStyling()
+        }
         // Mid-composition the view holds provisional text the store
         // deliberately lacks; leave it alone until it resolves.
         guard switched || !tv.hasMarkedText(), tv.string != text else { return }
@@ -534,7 +546,7 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.setSelectedRange(switched
             ? NSRange(location: length, length: 0)
             : NSRange(location: min(caret.location, length), length: min(caret.length, max(0, length - caret.location))))
-        tv.refreshLinkAttributes()
+        tv.refreshStyling()
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -542,6 +554,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     final class Coordinator {
         var view: NSTextView?
         var noteID: UUID?
+        var styleKey: String?
         var onChange: ((String) -> Void)?
     }
 }
@@ -559,6 +572,8 @@ final class ContextTextView: NSTextView {
     var onImagePaste: ((NSImage) -> Void)?
     /// Note actions shown above the standard text items on right-click.
     var contextMenuItems: (() -> [NSMenuItem])?
+    /// Whether a prose note's first line is set as a title.
+    var titlesFirstLine = true
     private var slashCompletion: NSView?
     /// The overlay's text view, so accepted AI proposals can be applied
     /// as a native, undoable edit.
@@ -600,7 +615,7 @@ final class ContextTextView: NSTextView {
         // Marked text is provisional (an input method mid-composition or a
         // macOS inline prediction). Report only committed text.
         guard !hasMarkedText() else { return }
-        refreshLinkAttributes()
+        refreshStyling()
         onChange?(string)
         onCaret?(selectedRange().location)
         checkSlashTrigger()
@@ -629,6 +644,43 @@ final class ContextTextView: NSTextView {
     private func hideSlashCompletion() {
         slashCompletion?.removeFromSuperview()
         slashCompletion = nil
+    }
+
+    /// Re-applies display styling: typography, then links.
+    func refreshStyling() {
+        applyTypography()
+        refreshLinkAttributes()
+    }
+
+    /// Sets the title and body type. Display attributes only; the string,
+    /// and so the file, never changes.
+    private func applyTypography() {
+        guard let storage = textStorage else { return }
+        let prose = CanvasTypography.isProse(string)
+        let body: [NSAttributedString.Key: Any] = [
+            .font: ContextTheme.bodyFont,
+            .foregroundColor: ContextTheme.ink,
+            .paragraphStyle: ContextTheme.bodyParagraph(prose: prose),
+        ]
+        let title: [NSAttributedString.Key: Any] = body.merging([
+            .font: ContextTheme.titleFont,
+            .paragraphStyle: ContextTheme.titleParagraph,
+        ]) { _, new in new }
+        let titleRange = titlesFirstLine ? CanvasTypography.titleRange(in: string) : nil
+        storage.beginEditing()
+        if storage.length > 0 {
+            storage.setAttributes(body, range: NSRange(location: 0, length: storage.length))
+        }
+        if let titleRange {
+            storage.addAttributes(title, range: titleRange)
+        }
+        storage.endEditing()
+        defaultParagraphStyle = body[.paragraphStyle] as? NSParagraphStyle
+        // An empty note starts typing as a title, so the first word doesn't
+        // jump in size after it lands.
+        if storage.length == 0 {
+            typingAttributes = titlesFirstLine ? title : body
+        }
     }
 
     /// Shortens display of long URLs while keeping full text intact.

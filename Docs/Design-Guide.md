@@ -31,6 +31,13 @@ The canvas starts with text and nothing else. These rules turn "less is more" in
 - **Transient work floats.** AI proposals and the legacy mode readouts are floating material cards at the bottom of the canvas. They are not full-width bars, and they disappear when they are done.
 - **No hint text.** Shortcuts live in menus, not in the canvas.
 
+### Typography and paper
+
+- **The first line is the title.** In a prose note, the first line is set in the system serif (New York) at 1.85× the body size, with space under it. Clipboard entries and mode notes (`math`, `list`, …) get no title; mode notes keep uniform lines so their gutters align.
+- **Body rhythm.** System sans at the user's text size, with line spacing 0.3× and space after each line 0.45× (prose notes only).
+- **Display only.** Typography is attributes on the text view. The string, and so the Markdown file, never changes. The rules live in `CanvasTypography` (ContextDomain).
+- **Paper is the default theme.** Background `#F4F2EC` light and `#1F1D1A` dark, ink `#2B2925` and `#E9E4D8`, accent `#B57614`. Mocha and Forest keep the system label color for text.
+
 ## Surfaces
 
 - **Quick overlay.** One pad at a time, with full-bleed text. Switch pads by swipe or ⌘[ / ⌘]. The pad indicator stays minimal. The overlay opens ready to type.
@@ -40,7 +47,7 @@ The canvas starts with text and nothing else. These rules turn "less is more" in
 
 ## Existing themes
 
-The Mocha, Paper, and Forest accents, adjustable text size, and the translucent window option already exist. Consolidating them against the family rules is open work. Do not add new themes before that pass.
+The Paper (default), Mocha, and Forest themes, adjustable text size, and the translucent window option already exist. Consolidating them against the family rules is open work. Do not add new themes before that pass.
 
 ## References
 
