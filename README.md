@@ -65,7 +65,7 @@ This is the pre-pivot parity record. Antinote parity work is closed, and the tab
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
 | Apple Notes / Obsidian / Bear direct export | Partial. Send to Obsidian now uses the linked Obsidian vault (Settings → Linked vaults) |
-| Link shrink (shortened display, click expand, ⌘↩ open) | Partial |
+| Link shrink (shortened display, click expand, ⌘↩ open) | Partial (links are detected and clickable, with ⌘↩ open: scheme URLs, `mailto:`/`tel:`, bare domains, e-mail, localhost, IPv4, with punctuation and parenthesis trims. The note text is never rewritten, so long URLs show in full; the collapsed display and click-to-expand from the parity line are not ported because they rewrote the editor string) |
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |

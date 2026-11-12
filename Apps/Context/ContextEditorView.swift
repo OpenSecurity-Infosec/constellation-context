@@ -730,19 +730,10 @@ final class ContextTextView: NSTextView {
 
     /// ⌘↩ opens the URL under the caret in the default browser.
     func openURLAtCaret() -> Bool {
-        let caret = selectedRange().location
-        let text = string
-        for urlRange in LinkShrink.urlRanges(in: text) {
-            let ns = NSRange(urlRange, in: text)
-            if NSLocationInRange(caret, ns) || NSLocationInRange(max(0, caret - 1), ns) {
-                let raw = String(text[urlRange])
-                if let url = LinkShrink.openableURL(raw) {
-                    onOpenURL?(url)
-                    return true
-                }
-            }
-        }
-        return false
+        guard let url = LinkShrink.link(atUTF16Offset: selectedRange().location, in: string)?.url
+        else { return false }
+        onOpenURL?(url)
+        return true
     }
 
     override func mouseDown(with event: NSEvent) {
