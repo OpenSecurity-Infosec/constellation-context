@@ -25,7 +25,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Object to Markdown mapping: body, plus relations as frontmatter.
   - Keychain credential storage.
   - Link Anytype in Settings.
-- [ ] **3. Obsidian connector**
+- [x] **3. Obsidian connector**
   - A folder linked in place, passing conformance.
   - `.obsidian/` is never touched.
   - Link and unlink in Settings.
@@ -77,3 +77,9 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
     - the real markdown round-trip fidelity of Anytype's `markdown` field;
     - whether `last_modified_date` is present on list results.
   - Limits by design: edits that Anytype can't hold are refused with a message. That covers unknown keys, options not in Anytype, and non-numeric numbers. Clearing a number or date is refused.
+- **2026-11-12, step 3, done** (`1efcbc4`).
+  - 215 tests pass. That includes conformance and fixture snapshots proving no other files and nothing under `.obsidian/` are touched.
+  - No old Obsidian path was set, so the setting migration had nothing to move.
+  - Unproven, needs a manual pass: linking the user's real vault at `~/Library/Mobile Documents/iCloud~md~obsidian/Documents` (iCloud Drive). Two things to check:
+    - whether macOS prompts for iCloud Drive access;
+    - whether files evicted by "Optimize Mac Storage" list and download on read.
