@@ -51,6 +51,7 @@ public struct MathEngine: Sendable {
         /// Both units are known but measure different things.
         case incompatibleUnits(String, String)
         case unknownCurrency(String)
+        case belowAbsoluteZero
         case noRates
         case unknownVariable(String)
         /// Name is assigned, but only on a line below this one.
@@ -68,6 +69,7 @@ public struct MathEngine: Sendable {
             case .unknownUnit(let u): return "unknown unit \(u)"
             case .incompatibleUnits(let f, let t): return "can't convert \(f) to \(t)"
             case .unknownCurrency(let c): return "unknown \(c)"
+            case .belowAbsoluteZero: return "below absolute zero"
             case .noRates: return "no rates — offline?"
             case .unknownVariable(let n): return "unknown \(n)"
             case .forwardReference(let n): return "\(n) defined below"
@@ -738,6 +740,9 @@ public struct MathEngine: Sendable {
                 } catch {
                     return .failure(.syntax)
                 }
+                if UnitConversion.isBelowAbsoluteZero(amount: partAmount, unit: part.unit) {
+                    return .failure(.belowAbsoluteZero)
+                }
                 guard let converted = UnitConversion.convert(amount: partAmount, from: part.unit, to: toUnit) else {
                     return .failure(.incompatibleUnits(Self.lowerRaw(part.raw), parse.toRaw))
                 }
@@ -751,6 +756,9 @@ public struct MathEngine: Sendable {
         case .failure(let error): return .failure(error)
         }
         if let fromUnit = parse.fromUnit, let toUnit = parse.toUnit {
+            if UnitConversion.isBelowAbsoluteZero(amount: amount, unit: fromUnit) {
+                return .failure(.belowAbsoluteZero)
+            }
             if let converted = UnitConversion.convert(amount: amount, from: fromUnit, to: toUnit) {
                 return .success(converted)
             }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Physical-unit conversions for `math` notes: length, mass, temperature,
-/// volume, area, speed, time, and data size. Every unit maps to a base
+/// volume, area, speed, time, data size, pressure, and energy. Every unit maps to a base
 /// unit per dimension (metre, kilogram, litre, square metre, metre per
 /// second, second, byte); temperature converts through Celsius so the
 /// Fahrenheit/Kelvin offsets apply in both directions. Fluid measures
@@ -14,7 +14,7 @@ import Foundation
 /// vs `b` bit); all-lowercase `mb`/`kb` read as bytes, as usually typed.
 public enum UnitConversion {
     public enum Dimension: String, Equatable, Sendable {
-        case length, mass, temperature, volume, area, speed, time, data
+        case length, mass, temperature, volume, area, speed, time, data, pressure, energy
     }
 
     public struct Unit: Equatable, Sendable {
@@ -59,6 +59,7 @@ public enum UnitConversion {
     /// Converts between resolved units. Nil when dimensions differ.
     public static func convert(amount: Double, from: Unit, to: Unit) -> Double? {
         guard from.dimension == to.dimension else { return nil }
+        guard !isBelowAbsoluteZero(amount: amount, unit: from) else { return nil }
         if from.dimension == .temperature {
             return fromCelsius(toCelsius(amount, from: from.symbol), to: to.symbol)
         }
@@ -70,6 +71,17 @@ public enum UnitConversion {
     public static func convert(amount: Double, from: String, to: String) -> Double? {
         guard let f = unit(for: from), let t = unit(for: to) else { return nil }
         return convert(amount: amount, from: f, to: t)
+    }
+
+    /// Compare in the source scale to accept the exact Fahrenheit boundary
+    /// without Celsius offset rounding.
+    public static func isBelowAbsoluteZero(amount: Double, unit: Unit) -> Bool {
+        guard unit.dimension == .temperature else { return false }
+        switch unit.symbol {
+        case "k": return amount < 0
+        case "f": return amount < -459.67
+        default: return amount < -273.15
+        }
     }
 
     private static func toCelsius(_ amount: Double, from symbol: String) -> Double {
@@ -148,6 +160,21 @@ public enum UnitConversion {
         add("c", .temperature, 1, ["celsius", "centigrade"])
         add("f", .temperature, 1, ["fahrenheit"])
         add("k", .temperature, 1, ["kelvin"])
+        // Pressure, base pascal; conventional mmHg.
+        add("pa", .pressure, 1, ["pascal"])
+        add("kpa", .pressure, 1000, ["kilopascal"])
+        add("bar", .pressure, 100_000)
+        add("psi", .pressure, 6894.757293168, ["pounds per square inch"])
+        add("atm", .pressure, 101_325, ["atmosphere"])
+        add("mmhg", .pressure, 133.322387415, ["millimeter of mercury", "millimetre of mercury"])
+        // Energy, base joule; thermochemical calories and international-table BTU.
+        add("j", .energy, 1, ["joule"])
+        add("kj", .energy, 1000, ["kilojoule"])
+        add("cal", .energy, 4.184, ["calorie"])
+        add("kcal", .energy, 4184, ["kilocalorie"])
+        add("wh", .energy, 3600, ["watt hour"])
+        add("kwh", .energy, 3_600_000, ["kilowatt hour"])
+        add("btu", .energy, 1055.05585262, ["british thermal unit"])
         // Volume, base litre. US customary fluid measures.
         add("ml", .volume, 0.001, ["milliliter", "millilitre", "cc"])
         add("cl", .volume, 0.01, ["centiliter", "centilitre"])

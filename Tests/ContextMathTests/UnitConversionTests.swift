@@ -15,6 +15,35 @@ import Testing
         if let got { #expect(abs(got - expected) < tol) }
     }
 
+    @Test func pressureAndEnergy() {
+        for (unit, pascals) in [("Pa", 1.0), ("kPa", 1000), ("bar", 100000),
+                                 ("psi", 6894.757293168), ("atm", 101325), ("mmHg", 133.322387415)] {
+            expectApprox("1 \(unit) in Pa", pascals)
+            expectApprox("\(pascals) Pa to \(unit)", 1)
+        }
+        for (unit, joules) in [("J", 1.0), ("kJ", 1000), ("cal", 4.184),
+                                ("kcal", 4184), ("Wh", 3600), ("kWh", 3600000), ("BTU", 1055.05585262)] {
+            expectApprox("1\(unit) in J", joules)
+            expectApprox("\(joules) J to \(unit)", 1)
+        }
+        expectApprox("2 kilowatt hours in joules", 7200000)
+        expectApprox("p = 1 atm in kPa", 101.325)
+        #expect(engine.evaluateLines(note: "1 Pa in J") == [.error(.incompatibleUnits("pa", "j"))])
+    }
+
+    @Test func absoluteZeroValidation() {
+        for text in ["-1 K in C", "-273.16 C in F", "-459.68 F in K",
+                     "cold = -1 K in C", "-1 K in K"] {
+            #expect(engine.evaluateLines(note: text) == [.error(.belowAbsoluteZero)])
+        }
+        #expect(MathEngine.LineError.belowAbsoluteZero.message == "below absolute zero")
+        expectApprox("0 K in C", -273.15)
+        expectApprox("-273.15 C in K", 0)
+        expectApprox("-459.67 F in K", 0)
+        expectApprox("-10 C in F", 14)
+        #expect(UnitConversion.convert(amount: -1, from: "K", to: "C") == nil)
+    }
+
     // MARK: New dimensions
 
     @Test func volumeConversions() {
