@@ -57,6 +57,8 @@ rsync -a --exclude .git --exclude .build ./ crew-cortex01:~/constellation-contex
 ssh crew-cortex01 'cd ~/constellation-context && swift build'
 ```
 
+`.build/` is gitignored and untracked; never commit it.
+
 `swift build` works as-is on cortex. Plain `swift test` does not: cortex has
 Command Line Tools only (no Xcode), so SwiftPM cannot find the `Testing`
 module. Point it at the CLT frameworks (verified: 181 tests pass):
