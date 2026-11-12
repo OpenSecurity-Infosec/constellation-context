@@ -25,7 +25,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 
 ## MVP status
 
-"Partial" means automated tests pass, but the installed app has not been exercised by hand for that feature. "Shipped" means verified in the installed app.
+**The MVP is not met yet.** The gaps are listed in `Plans/active/MVP.md` § Status. "Partial" means automated tests pass, but the installed app has not been exercised by hand for that feature. "Shipped" means verified in the installed app.
 
 | MVP feature | Status |
 | --- | --- |

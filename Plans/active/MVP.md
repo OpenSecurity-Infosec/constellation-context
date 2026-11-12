@@ -125,7 +125,37 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
 - **2026-11-12, step 8, done.**
   - README has an honest MVP status table; the Antinote table is kept as a labeled historical baseline.
   - Quickstart, AGENTS module map, and Vision "where today's app stands" now match the code.
-  - **MVP complete in code.** Most rows are Partial until the manual pass below.
+  - ~~MVP complete in code.~~ **Retracted 2026-11-12.** See "Status: MVP not met" below.
+
+## Status: MVP not met (2026-11-12)
+
+The steps above produced code and passing tests, not the MVP. The exit test, "the user stops opening Obsidian for daily notes and feeds a project's context to Claude Code from Context", has not been met.
+
+Evidence:
+- The core editor shipped broken. Inline predictions and composing text were saved and written back after the caret; fixed in `61c1b13`.
+- No vault is linked. The Anytype connector has never run against real Anytype.
+- No project exists, the AI key is not set, and the Claude Code import has never been run.
+
+Gaps to close:
+
+1. **Verify by use, not by unit test.** "Done" means exercised in the installed app (UI automation or the owner). The agent needs Accessibility and Screen Recording permission for its terminal to do this itself.
+2. **Real Anytype link** (first connector): list, open, edit, attach. This needs the owner to enter the Anytype code once.
+3. **Obsidian replacement for daily notes:**
+   - daily notes;
+   - templates (at least date tokens);
+   - create, rename, and delete notes in the Library;
+   - folder browsing;
+   - following `[[wikilinks]]`.
+4. **Speed on the real vault (693 notes):**
+   - an index or cached listing instead of reading every file;
+   - debounced search;
+   - measured against "instant".
+5. **Less is more in the overlay:**
+   - a text-only, quiet toolbar (no emoji buttons);
+   - Void, Export, Search, New, and Trash moved behind menus and shortcuts;
+   - Settings grouped.
+6. **Editing quality:** Markdown styling as you type in the overlay and Library.
+7. **End-to-end Claude Code check:** create a project, paste the import line into a real `CLAUDE.md`, and confirm Claude Code uses the context.
 
 ## Manual check (owner, in the installed app)
 

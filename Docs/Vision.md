@@ -147,7 +147,7 @@ For syncing the base vault, rely on the user's existing file sync (iCloud Drive,
 
 ## Where today's app stands
 
-**The MVP is built.** Status is in `README.md` § MVP status. Each step's log, including what is still unproven by hand, is in `Plans/active/MVP.md`.
+**The MVP is not met yet.** Each item has code and tests, but the exit test has not been met. See `Plans/active/MVP.md` § Status for the gaps. Status is in `README.md` § MVP status. Each step's log, including what is still unproven by hand, is in `Plans/active/MVP.md`.
 
 The app now has:
 

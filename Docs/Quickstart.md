@@ -19,7 +19,7 @@ Read this first. It takes five minutes and gets you productive in this repo. The
 
 ## Where things stand
 
-The MVP in [Vision.md § MVP](Vision.md#mvp) is built. All eight steps are recorded in [`Plans/active/MVP.md`](../Plans/active/MVP.md), with commits and anything still unproven. Most features are **Partial**: tests pass, but the installed app hasn't been exercised by hand. The manual-check list is at the end of that plan, and the per-feature status is in `README.md` § MVP status.
+The MVP in [Vision.md § MVP](Vision.md#mvp) is **not met yet**. Each item has code and tests, but the exit test has not been met. The gap list is in `Plans/active/MVP.md` § Status; start there. All eight steps are recorded in [`Plans/active/MVP.md`](../Plans/active/MVP.md), with commits and anything still unproven. Most features are **Partial**: tests pass, but the installed app hasn't been exercised by hand. The manual-check list is at the end of that plan, and the per-feature status is in `README.md` § MVP status.
 
 The Antinote-parity era is over. The first-line modes (`math`, `list`, `timer`, …), OCR, The Void, and `::` commands still work in Scratch, but they get no new investment. Expect a "less is more" trim (Vision § Open questions).
 
