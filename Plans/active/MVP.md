@@ -29,7 +29,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - A folder linked in place, passing conformance.
   - `.obsidian/` is never touched.
   - Link and unlink in Settings.
-- [ ] **4. Pads and command path**
+- [x] **4. Pads and command path**
   - A `ContextCommand` enum and one apply path, used by the UI, and later by AI and CLI.
   - Scratch, Clipboard (history captured as editable files in `<base>/Clipboard/`), and project Context pads.
   - A pad switcher in the overlay.
@@ -83,3 +83,14 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Unproven, needs a manual pass: linking the user's real vault at `~/Library/Mobile Documents/iCloud~md~obsidian/Documents` (iCloud Drive). Two things to check:
     - whether macOS prompts for iCloud Drive access;
     - whether files evicted by "Optimize Mac Storage" list and download on read.
+- **2026-11-12, step 4, done** (`1f63b76`).
+  - 224 tests pass.
+  - Each pad has its own folder, trash subfolder (`.trash/Clipboard/`, `.trash/Projects/<name>/`), and index file, so pads never clobber each other.
+  - Known deviation: The Void window still calls `NoteStore.restore`, `restoreMany`, and `destroy` directly, not through `Workspace.apply`. Lazy empty placeholders (`store.create()` with no text) also bypass it, but those never touch disk.
+  - Unproven, needs a manual pass (the screenshot was refused because the terminal lacks Screen Recording permission):
+    - the pad menu rendering;
+    - ⌘1, ⌘2, and ⌘3 switching;
+    - New Project (⌘⇧N);
+    - a copy landing in the Clipboard pad;
+    - a 1Password copy being skipped.
+  - Search and Void work only on the current pad. The cross-source search arrives in step 7 (Library).
