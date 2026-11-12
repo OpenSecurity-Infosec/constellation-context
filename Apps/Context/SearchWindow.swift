@@ -127,7 +127,6 @@ private struct SearchListView: View {
                 .listStyle(.plain)
             }
         }
-        .id(revision)
         .alert("Rename saved search", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Name", text: $name)
             Button("Save") {
