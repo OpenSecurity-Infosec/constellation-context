@@ -18,6 +18,9 @@ final class ContextWindowController {
     /// `workspace.apply` (one mutation path).
     var store: NoteStore { workspace.store(for: pad) }
     private let clipboard = ClipboardWatcher()
+    let projects = ProjectContextService()
+    /// Cached `ProjectInfo` for the current pad; renders run 4× a second.
+    var projectInfoCache: (pad: Pad, info: ProjectInfo?)?
     private let rates = RateStore()
     private var math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
@@ -98,6 +101,7 @@ final class ContextWindowController {
         store.reloadFromDisk()
         noteID = store.liveNotes.first?.id ?? store.create().id
         afterNavigate()
+        refreshProjectFile()
         show()
     }
 
@@ -176,6 +180,8 @@ final class ContextWindowController {
 
     func show() {
         flushNow()
+        projectInfoCache = nil
+        refreshProjectFile()
         if store.reloadFromDisk() {
             if store.note(id: noteID) == nil {
                 noteID = store.liveNotes.first?.id ?? store.create().id
@@ -360,7 +366,10 @@ final class ContextWindowController {
     /// JSON encode + atomic write at most ~0.6s after typing pauses.
     private func scheduleFlush() {
         flushWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.workspace.flushAll() }
+        let work = DispatchWorkItem { [weak self] in
+            self?.workspace.flushAll()
+            self?.refreshProjectFile()
+        }
         flushWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: work)
     }
@@ -693,7 +702,7 @@ final class ContextWindowController {
         }
     }
 
-    private func alert(_ message: String) {
+    func alert(_ message: String) {
         let a = NSAlert()
         a.messageText = "Context"
         a.informativeText = message
@@ -756,7 +765,7 @@ final class ContextWindowController {
 
     // MARK: - Render
 
-    private func render(preservingFocus: Bool = false) {
+    func render(preservingFocus: Bool = false) {
         let current = note
         // Math memo: the 0.25s timer tick re-renders constantly; skip the
         // full re-eval when the math body is byte-identical so idle notes
@@ -802,6 +811,7 @@ final class ContextWindowController {
             note: current,
             pad: pad,
             pads: pads,
+            project: cachedProjectInfo,
             liveCount: store.liveNotes.count,
             mathResults: results,
             aggregate: sumAvg.map(math.format),

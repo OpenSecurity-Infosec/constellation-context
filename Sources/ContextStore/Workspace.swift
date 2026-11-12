@@ -19,6 +19,14 @@ public enum ContextCommand: Equatable, Sendable {
     case destroy(Pad, id: UUID)
     case createProject(name: String)
     case captureClip(text: String)
+    /// Copies a file into the project's `docs/`.
+    case addDocument(project: String, file: URL)
+    /// Moves a `docs/` file to the vault trash.
+    case removeDocument(project: String, fileName: String)
+    case attachReference(project: String, ProjectReference)
+    case detachReference(project: String, VaultNoteRef)
+    case setHarness(project: String, HarnessKind, enabled: Bool)
+    case setRouterSync(project: String, enabled: Bool)
 }
 
 public enum CommandResult: Equatable, Sendable {
@@ -31,6 +39,8 @@ public enum WorkspaceError: Error, Equatable, Sendable {
     case noSuchNote
     case badRange
     case badProjectName
+    case noSuchProject
+    case noSuchDocument
 }
 
 /// The base vault's pads and the single place commands are applied.
@@ -67,6 +77,10 @@ public final class Workspace: @unchecked Sendable {
 
     public func projectFolder(_ name: String) -> URL {
         vault.projects.appendingPathComponent(name, isDirectory: true)
+    }
+
+    public func project(_ name: String) -> ProjectFiles {
+        ProjectFiles(vault: vault, name: name)
     }
 
     /// Flushes every open pad's staged typing.
@@ -113,10 +127,60 @@ public final class Workspace: @unchecked Sendable {
             let s = store(for: .clipboard)
             if s.liveNotes.first?.text == text { return .none }
             return .note(s.create(text: text).id)
+        case .addDocument(let name, let file):
+            let p = try existingProject(name)
+            try FileManager.default.createDirectory(at: p.docs, withIntermediateDirectories: true)
+            let stem = file.deletingPathExtension().lastPathComponent
+            let ext = file.pathExtension.isEmpty ? "md" : file.pathExtension
+            let dest = NoteFileName.available(stem: stem, ext: ext, in: p.docs)
+            try FileManager.default.copyItem(at: file, to: dest)
+            return .project(name)
+        case .removeDocument(let name, let fileName):
+            let p = try existingProject(name)
+            let url = p.docs.appendingPathComponent(fileName)
+            guard !fileName.contains("/"), FileManager.default.fileExists(atPath: url.path) else {
+                throw WorkspaceError.noSuchDocument
+            }
+            let trash = vault.trash.appendingPathComponent("Projects/\(name)/docs", isDirectory: true)
+            try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+            let stem = url.deletingPathExtension().lastPathComponent
+            try FileManager.default.moveItem(at: url, to: NoteFileName.available(stem: stem, ext: url.pathExtension, in: trash))
+            return .project(name)
+        case .attachReference(let name, let reference):
+            try updateManifest(name) { m in
+                m.references.removeAll { $0.ref == reference.ref }
+                m.references.append(reference)
+            }
+            return .project(name)
+        case .detachReference(let name, let ref):
+            try updateManifest(name) { $0.references.removeAll { $0.ref == ref } }
+            return .project(name)
+        case .setHarness(let name, let kind, let enabled):
+            try updateManifest(name) { m in
+                m.harnesses.removeAll { $0 == kind }
+                if enabled { m.harnesses.append(kind) }
+            }
+            return .project(name)
+        case .setRouterSync(let name, let enabled):
+            try updateManifest(name) { $0.routerSync = enabled }
+            return .project(name)
         }
     }
 
     // MARK: - Private
+
+    private func existingProject(_ name: String) throws -> ProjectFiles {
+        let p = project(name)
+        guard projects.contains(name) else { throw WorkspaceError.noSuchProject }
+        return p
+    }
+
+    private func updateManifest(_ name: String, _ change: (inout ProjectManifest) -> Void) throws {
+        let p = try existingProject(name)
+        var m = p.manifest()
+        change(&m)
+        try p.save(m)
+    }
 
     private func existing(_ pad: Pad, _ id: UUID) throws -> NoteStore {
         let s = store(for: pad)

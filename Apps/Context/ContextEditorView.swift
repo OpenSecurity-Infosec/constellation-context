@@ -1,4 +1,5 @@
 import ContextDomain
+import ContextStore
 import SwiftUI
 
 /// SwiftUI editor surface: toolbar, trigger badge, text buffer with math
@@ -8,6 +9,7 @@ struct ContextEditorRoot: View {
     var note: ContextNote
     var pad: Pad = .scratch
     var pads: [Pad] = []
+    var project: ProjectInfo?
     var liveCount: Int
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
@@ -66,6 +68,19 @@ struct ContextEditorRoot: View {
             Button("›") { controller?.nextNote() }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
             Spacer()
+            if let project {
+                projectMenu(project)
+            } else if pads.contains(where: \.isProject) {
+                Menu("Send to Project") {
+                    ForEach(pads.filter(\.isProject), id: \.self) { p in
+                        Button(p.title) { controller?.sendToProject(p.title) }
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .font(.caption)
+                .accessibilityIdentifier("overlay.sendToProject")
+            }
             if let trigger = note.kind.triggerWord {
                 Text(trigger)
                     .font(.caption.weight(.semibold))
@@ -353,6 +368,45 @@ struct ContextEditorRoot: View {
             Spacer()
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+
+    private func projectMenu(_ info: ProjectInfo) -> some View {
+        Menu("Context") {
+            Button("Copy as Context") { controller?.copyProjectContext() }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+            Button("Copy Import Line") { controller?.copyImportLine() }
+            Button("Reveal Context File") { controller?.revealProjectFile() }
+            Divider()
+            Button("Add Document…") { controller?.addProjectDocument() }
+            if !info.documents.isEmpty || !info.references.isEmpty {
+                Menu("Remove") {
+                    ForEach(info.documents, id: \.self) { name in
+                        Button(name) { controller?.removeProjectDocument(name) }
+                    }
+                    ForEach(info.references, id: \.ref) { r in
+                        Button("\(r.title) (linked)") { controller?.detachProjectReference(r.ref) }
+                    }
+                }
+            }
+            Divider()
+            Menu("Deliver To") {
+                ForEach(HarnessKind.allCases, id: \.self) { kind in
+                    Toggle("\(kind.displayName) (not built yet)", isOn: Binding(
+                        get: { info.harnesses.contains(kind) },
+                        set: { _ in controller?.toggleHarness(kind) }
+                    ))
+                }
+                Toggle("Constellation Router (not built yet)", isOn: Binding(
+                    get: { info.routerSync },
+                    set: { _ in controller?.toggleRouterSync() }
+                ))
+            }
+            Button("Deliver Now") { controller?.deliverNow() }
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .font(.caption)
+        .accessibilityIdentifier("overlay.projectMenu")
     }
 
     private var statusBar: some View {
