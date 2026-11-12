@@ -5,9 +5,10 @@ import Foundation
 /// Supports + - * / % ^, parentheses, unary minus, reactive
 /// `name = expr` assignment (see `evaluateLines` for the down-the-note
 /// semantics and `ReactiveVariable` for naming rules; the RHS may also
-/// be a conversion), unit conversions (`10 km in mi`, `5 kg in lb`),
-/// and currency/crypto conversions (`42 USD in EUR`, `0.5 BTC in USD`)
-/// via an injected rate table.
+/// be a conversion), unit conversions (`10 km in mi`, `5 kg in lb`,
+/// `100 km/h to mph`, `5 ft 6 in in cm` — see `UnitConversion` for the
+/// dimensions and spellings), and currency/crypto conversions
+/// (`42 USD in EUR`, `0.5 BTC in USD`) via an injected rate table.
 public struct MathEngine: Sendable {
     private let rates: CurrencyRates.Snapshot?
 
@@ -47,6 +48,8 @@ public struct MathEngine: Sendable {
         case syntax
         case divideByZero
         case unknownUnit(String)
+        /// Both units are known but measure different things.
+        case incompatibleUnits(String, String)
         case unknownCurrency(String)
         case noRates
         case unknownVariable(String)
@@ -63,6 +66,7 @@ public struct MathEngine: Sendable {
             case .syntax: return "syntax?"
             case .divideByZero: return "÷ by 0"
             case .unknownUnit(let u): return "unknown unit \(u)"
+            case .incompatibleUnits(let f, let t): return "can't convert \(f) to \(t)"
             case .unknownCurrency(let c): return "unknown \(c)"
             case .noRates: return "no rates — offline?"
             case .unknownVariable(let n): return "unknown \(n)"
@@ -158,7 +162,8 @@ public struct MathEngine: Sendable {
     }
 
     /// Names an assignment RHS reads. A conversion RHS reads only its
-    /// amount expression — unit words (`km`, `in`, `mi`) are not names.
+    /// amount expression (every component of a compound quantity) —
+    /// unit words (`km`, `in`, `mi`) are not names.
     private static func rhsReferences(_ rhs: String) -> [String] {
         if let amount = conversionAmountExpression(rhs) {
             return ReactiveVariable.references(in: amount)
@@ -318,6 +323,19 @@ public struct MathEngine: Sendable {
         let chars = Array(line)
         var i = 0
         while i < chars.count {
+            // A number (with any exponent) is not a name: the `e3`
+            // of `1e3` must never read as a variable reference.
+            if chars[i].isNumber {
+                while i < chars.count, chars[i].isNumber || chars[i] == "." || chars[i] == "," { i += 1 }
+                if i < chars.count, chars[i] == "e" || chars[i] == "E" {
+                    var next = i + 1
+                    if next < chars.count, chars[next] == "-" || chars[next] == "+" { next += 1 }
+                    var digits = 0
+                    while next < chars.count, chars[next].isNumber { next += 1; digits += 1 }
+                    if digits > 0 { i = next; continue }
+                }
+                continue
+            }
             guard chars[i].isLetter || chars[i] == "_" else { i += 1; continue }
             let start = i
             while i < chars.count, chars[i].isLetter || chars[i].isNumber || chars[i] == "_" { i += 1 }
@@ -393,15 +411,14 @@ public struct MathEngine: Sendable {
         return .blank
     }
 
-    /// A line with digits, operators, or conversion words is a math attempt;
-    /// plain prose stays blank.
+    /// A line with digits or operators is a math attempt; plain prose
+    /// stays blank, including prose that merely contains `in`/`to`
+    /// ("walk to the shop" is not a broken conversion).
     private func looksLikeMath(_ line: String) -> Bool {
         if line.rangeOfCharacter(from: .decimalDigits) != nil { return true }
         if line.contains("=") { return true }
         let ops: Set<Character> = ["+", "-", "*", "/", "%", "^", "(", ")"]
-        if line.contains(where: { ops.contains($0) }) { return true }
-        let lower = " " + line.lowercased() + " "
-        return lower.contains(" in ") || lower.contains(" to ")
+        return line.contains(where: { ops.contains($0) })
     }
 
     private func isBareName(_ line: String) -> Bool {
@@ -410,59 +427,352 @@ public struct MathEngine: Sendable {
             && (line.first?.isLetter == true || line.first == "_")
     }
 
-    /// A line shaped like "<expr> in|to <word>" is a conversion attempt.
-    /// Returns nil result (not a variable fallback) when units are unknown.
+    /// A line is a conversion attempt when some `in`/`to` splits it
+    /// into an amount plus a source unit on the left and a target unit
+    /// on the right (see `parseConversion`). Prose that merely contains
+    /// the words ("walk to the shop") is not one.
     private func isConversionLine(_ line: String) -> Bool {
-        guard line.range(of: #"(?i)\b(in|to)\b"#, options: .regularExpression) != nil else { return false }
-        // Must have at least "<something> <word>" shape before the keyword.
-        let parts = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-        return parts.count >= 3
+        Self.parseConversion(line) != nil
     }
 
     /// The amount expression of a conversion (`price * 2` in
-    /// `price * 2 USD in EUR`), or nil when not conversion-shaped.
+    /// `price * 2 USD in EUR`; every component amount of a compound
+    /// quantity like `5 ft 6 in`), or nil when not conversion-shaped.
     private static func conversionAmountExpression(_ line: String) -> String? {
-        guard let parts = conversionParts(line) else { return nil }
-        return parts.expr
+        guard let parse = parseConversion(line) else { return nil }
+        if let parts = compoundParts(lhsText: parse.lhsText) {
+            return parts.map(\.amount).joined(separator: " ")
+        }
+        return parse.amountText
     }
 
-    private static func conversionParts(_ line: String) -> (expr: String, from: String, to: String)? {
-        guard let range = line.range(of: #"(?i)\b(in|to)\b"#, options: .regularExpression) else { return nil }
-        let lhs = line[line.startIndex..<range.lowerBound].trimmingCharacters(in: .whitespaces)
-        let rhs = line[range.upperBound...].trimmingCharacters(in: .whitespaces).lowercased()
-        guard let split = lhs.lastIndex(where: { $0.isWhitespace }) else { return nil }
-        let expr = lhs[lhs.startIndex..<split].trimmingCharacters(in: .whitespaces)
-        let from = lhs[lhs.index(after: split)...].trimmingCharacters(in: .whitespaces).lowercased()
-        guard !expr.isEmpty, !from.isEmpty else { return nil }
-        return (String(expr), from, rhs)
+    /// One parsed conversion. `fromRaw`/`toRaw` are the typed unit
+    /// phrases lowercased for gutter messages; the resolved units keep
+    /// the exact-cased lookup (data sizes care about case).
+    struct ConversionParse {
+        var lhsText: String
+        var amountText: String
+        var fromRaw: String
+        var toRaw: String
+        var fromUnit: UnitConversion.Unit?
+        var toUnit: UnitConversion.Unit?
+    }
+
+    /// Splits a conversion around its `in`/`to` keyword. Every keyword
+    /// occurrence is tried, last first, and the first whose two sides
+    /// both resolve to known units wins — so `9 in in cm` reads the
+    /// first `in` as inches and a descriptive `to` earlier in the line
+    /// does not steal the split. When nothing fully resolves, the
+    /// most conversion-shaped split is still returned (units partly
+    /// nil) so the gutter can name the unknown or incompatible side
+    /// instead of a bare syntax error; prose returns nil.
+    private static func parseConversion(_ line: String) -> ConversionParse? {
+        var fallback: ConversionParse?
+        for range in keywordRanges(in: line).reversed() {
+            let lhs = line[line.startIndex..<range.lowerBound].trimmingCharacters(in: .whitespaces)
+            let rhs = line[range.upperBound...].trimmingCharacters(in: .whitespaces)
+            guard !lhs.isEmpty else { continue }
+            let from = matchUnitAtEnd(of: lhs)
+            if rhs.isEmpty {
+                // "10 km in" — a conversion missing its target.
+                if let from {
+                    return ConversionParse(lhsText: lhs, amountText: from.amountText, fromRaw: lowerRaw(from.raw), toRaw: "", fromUnit: from.unit, toUnit: nil)
+                }
+                continue
+            }
+            let to = matchUnitAtStart(of: rhs)
+            if let from, let to {
+                return ConversionParse(lhsText: lhs, amountText: from.amountText, fromRaw: lowerRaw(from.raw), toRaw: lowerRaw(to.raw), fromUnit: from.unit, toUnit: to.unit)
+            }
+            if fallback == nil {
+                let fromSide = from.map { (raw: $0.raw, amountText: $0.amountText) } ?? fallbackUnitAtEnd(of: lhs)
+                let toRaw = to?.raw ?? rhs.components(separatedBy: .whitespaces).first(where: { !$0.isEmpty }) ?? ""
+                if let fromSide, !toRaw.isEmpty {
+                    let amountHasDigit = fromSide.amountText.rangeOfCharacter(from: .decimalDigits) != nil
+                    let currencySide = CurrencyRates.isCurrency(fromSide.raw) || CurrencyRates.isCurrency(toRaw)
+                    if from != nil || to != nil || amountHasDigit || currencySide {
+                        fallback = ConversionParse(
+                            lhsText: lhs, amountText: fromSide.amountText,
+                            fromRaw: lowerRaw(fromSide.raw), toRaw: lowerRaw(toRaw),
+                            fromUnit: from?.unit, toUnit: to?.unit
+                        )
+                    }
+                }
+            }
+        }
+        return fallback
+    }
+
+    private static func lowerRaw(_ raw: String) -> String {
+        raw.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?"))
+    }
+
+    private static func keywordRanges(in line: String) -> [Range<String.Index>] {
+        var ranges: [Range<String.Index>] = []
+        var search = line.startIndex..<line.endIndex
+        while let range = line.range(of: #"\b(in|to)\b"#, options: [.regularExpression, .caseInsensitive], range: search) {
+            ranges.append(range)
+            search = range.upperBound..<line.endIndex
+        }
+        return ranges
+    }
+
+    /// Longest unit phrase (up to three words: "miles per hour",
+    /// "square feet") ending `lhs`, or a unit glued onto its amount
+    /// (`10km`, `100°C`, `5'`). What precedes it is the amount text.
+    private static func matchUnitAtEnd(of lhs: String) -> (raw: String, unit: UnitConversion.Unit, amountText: String)? {
+        let tokens = lhs.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        for count in [3, 2, 1] where tokens.count > count {
+            let phrase = tokens.suffix(count).joined(separator: " ")
+            if let unit = UnitConversion.unit(for: phrase) {
+                return (phrase, unit, tokens.dropLast(count).joined(separator: " "))
+            }
+        }
+        if let last = tokens.last, let glued = gluedUnitSuffix(of: last) {
+            let amount = (tokens.dropLast() + [glued.amount]).joined(separator: " ")
+            return (glued.raw, glued.unit, amount)
+        }
+        return nil
+    }
+
+    /// Longest unit phrase starting `rhs`; anything after it is
+    /// trailing descriptive text ("10 km in mi for the run").
+    private static func matchUnitAtStart(of rhs: String) -> (raw: String, unit: UnitConversion.Unit)? {
+        let tokens = rhs.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        for count in [3, 2, 1] where tokens.count >= count {
+            let phrase = tokens.prefix(count).joined(separator: " ")
+            if let unit = UnitConversion.unit(for: phrase) {
+                return (phrase, unit)
+            }
+        }
+        return nil
+    }
+
+    /// The last token (or glued letter suffix) of `lhs` treated as a
+    /// would-be source unit when none resolves, so an unknown unit can
+    /// be named. Nil when there is no amount-plus-unit shape at all.
+    private static func fallbackUnitAtEnd(of lhs: String) -> (raw: String, amountText: String)? {
+        let tokens = lhs.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        if tokens.count >= 2, let last = tokens.last {
+            return (last, tokens.dropLast().joined(separator: " "))
+        }
+        if let only = tokens.first,
+           let split = only.firstIndex(where: { $0.isLetter || $0 == "°" }),
+           split > only.startIndex
+        {
+            return (String(only[split...]), String(only[only.startIndex..<split]))
+        }
+        return nil
+    }
+
+    /// A known unit glued onto the end of a single token: `10km`,
+    /// `(d*2)km`, `100°C`, `5'`, `6"`. The amount before it must end
+    /// in a digit, a dot, or a closing paren so a variable name like
+    /// `dkm` is never read as amount-plus-unit.
+    private static func gluedUnitSuffix(of token: String) -> (raw: String, unit: UnitConversion.Unit, amount: String)? {
+        func split(at index: String.Index) -> (raw: String, unit: UnitConversion.Unit, amount: String)? {
+            let amount = String(token[token.startIndex..<index])
+            let raw = String(token[index...])
+            guard let last = amount.last, last.isNumber || last == "." || last == ")",
+                  let unit = UnitConversion.unit(for: raw)
+            else { return nil }
+            return (raw, unit, amount)
+        }
+        if let paren = token.lastIndex(of: ")"), token.index(after: paren) < token.endIndex {
+            return split(at: token.index(after: paren))
+        }
+        if token.hasSuffix("'") || token.hasSuffix("\"") {
+            return split(at: token.index(before: token.endIndex))
+        }
+        if let first = token.firstIndex(where: { $0.isLetter || $0 == "°" }) {
+            return split(at: first)
+        }
+        return nil
+    }
+
+    // MARK: Compound quantities ("5 ft 6 in", "1 h 30 min")
+
+    /// Component amounts and units when `lhsText` is two or more
+    /// amount-plus-unit pairs, optionally behind a descriptive label
+    /// ("height 5 ft 6 in"). Each amount is a single token: a number
+    /// or a variable name, never a spaced expression.
+    private static func compoundParts(lhsText: String) -> [(amount: String, raw: String, unit: UnitConversion.Unit)]? {
+        let tokens = expandedCompoundTokens(lhsText)
+        guard tokens.count >= 4 else { return nil }
+        for start in tokens.indices {
+            var parts: [(amount: String, raw: String, unit: UnitConversion.Unit)] = []
+            var i = start
+            var ok = true
+            while i < tokens.count {
+                guard isAmountToken(tokens[i]) else { ok = false; break }
+                var matched: (raw: String, unit: UnitConversion.Unit, count: Int)?
+                for count in [3, 2, 1] where i + count < tokens.count {
+                    let phrase = tokens[(i + 1)...(i + count)].joined(separator: " ")
+                    if let unit = UnitConversion.unit(for: phrase) {
+                        matched = (phrase, unit, count)
+                        break
+                    }
+                }
+                guard let m = matched else { ok = false; break }
+                parts.append((tokens[i], m.raw, m.unit))
+                i += 1 + m.count
+            }
+            if ok, i == tokens.count, parts.count >= 2 { return parts }
+        }
+        return nil
+    }
+
+    private static func isAmountToken(_ token: String) -> Bool {
+        var body = token
+        if body.hasPrefix("-") || body.hasPrefix("+") { body = String(body.dropFirst()) }
+        guard !body.isEmpty else { return false }
+        if body.allSatisfy({ $0.isNumber || $0 == "." || $0 == "," }) {
+            return body.contains(where: { $0.isNumber })
+        }
+        // A variable may share a unit's name (`h = 5` then `h ft …`);
+        // in amount position it is still the amount.
+        return ReactiveVariable.isValidName(body)
+    }
+
+    /// Whitespace tokens with glued amount/unit runs split apart, so
+    /// `5ft`, `6in`, `10km/h`, and `5'6"` all become alternating
+    /// amount and unit tokens. A digit inside a unit (`m2`, `ft2`)
+    /// stays with the unit when the result is a known unit.
+    private static func expandedCompoundTokens(_ text: String) -> [String] {
+        var out: [String] = []
+        for token in text.components(separatedBy: .whitespaces) where !token.isEmpty {
+            var current = ""
+            var inAmount: Bool?
+            func flush() {
+                if !current.isEmpty { out.append(current) }
+                current = ""
+                inAmount = nil
+            }
+            for ch in token {
+                if ch == "'" || ch == "\"" {
+                    flush()
+                    out.append(String(ch))
+                    continue
+                }
+                let amountChar = ch.isNumber || ch == "." || ch == ","
+                if current.isEmpty {
+                    current.append(ch)
+                    inAmount = amountChar || ch == "-"
+                } else if inAmount == true, ch.isLetter || ch == "°" {
+                    flush()
+                    current.append(ch)
+                    inAmount = false
+                } else if inAmount == false, ch.isNumber {
+                    if UnitConversion.unit(for: current + String(ch)) != nil {
+                        current.append(ch)
+                    } else {
+                        flush()
+                        current.append(ch)
+                        inAmount = true
+                    }
+                } else {
+                    current.append(ch)
+                }
+            }
+            flush()
+        }
+        return out
+    }
+
+    /// Evaluates a conversion amount, allowing a descriptive label
+    /// before it ("run: 10", "oats 10") the way plain math lines do.
+    /// A name used *as a variable* (`nope * 2`) is an error, never a
+    /// label to rescue past.
+    private func evaluateAmount(_ text: String, lineIndex: Int, context: NoteContext, variables: [String: Double]) -> Result<Double, LineError> {
+        do {
+            return .success(try parseExpression(text, variables: variables))
+        } catch let e as MathError {
+            if e == .divideByZero { return .failure(.divideByZero) }
+            if let unknown = firstUnknownReference(in: text, variables: variables) {
+                return .failure(classifyUnknown(unknown, lineIndex: lineIndex, context: context))
+            }
+            // Longest evaluable suffix: after a `label:` prefix, then
+            // by dropping leading label words one at a time.
+            var candidates: [String] = []
+            if let colon = text.lastIndex(of: ":") {
+                candidates.append(text[text.index(after: colon)...].trimmingCharacters(in: .whitespaces))
+            }
+            let tokens = text.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+            for start in tokens.indices.dropFirst() {
+                candidates.append(tokens[start...].joined(separator: " "))
+            }
+            for candidate in candidates where !candidate.isEmpty {
+                if let value = try? parseExpression(candidate, variables: variables), value.isFinite {
+                    let usesVariable = ReactiveVariable.references(in: candidate).contains { variables[$0] != nil }
+                    if candidate.rangeOfCharacter(from: .decimalDigits) != nil || usesVariable {
+                        return .success(value)
+                    }
+                }
+            }
+            return .failure(mapMathError(e, lineIndex: lineIndex, context: context))
+        } catch {
+            return .failure(.syntax)
+        }
     }
 
     /// Conversion value shared by bare conversion lines and assignment
     /// RHSes (`dist = 10 km in mi`), so both report identical errors.
     private func evaluateConversion(_ line: String, lineIndex: Int, context: NoteContext, variables: [String: Double]) -> Result<Double, LineError> {
-        guard let parts = Self.conversionParts(line) else { return .failure(.syntax) }
-        let amount: Double
-        do {
-            amount = try parseExpression(parts.expr, variables: variables)
-        } catch let e as MathError {
-            return .failure(mapMathError(e, lineIndex: lineIndex, context: context))
-        } catch {
-            return .failure(.syntax)
-        }
-        if let physical = UnitConvert.convert(amount: amount, from: parts.from, to: parts.to) {
-            return .success(physical)
-        }
-        if CurrencyRates.isCurrency(parts.from) || CurrencyRates.isCurrency(parts.to) {
-            guard CurrencyRates.isCurrency(parts.from), CurrencyRates.isCurrency(parts.to) else {
-                return .failure(.unknownCurrency(CurrencyRates.isCurrency(parts.from) ? parts.to : parts.from))
+        guard let parse = Self.parseConversion(line) else { return .failure(.syntax) }
+        guard !parse.toRaw.isEmpty else { return .failure(.syntax) }
+        // Compound quantity: sum every component in the target unit.
+        if let toUnit = parse.toUnit, let parts = Self.compoundParts(lhsText: parse.lhsText) {
+            var total = 0.0
+            for part in parts {
+                let partAmount: Double
+                do {
+                    partAmount = try parseExpression(part.amount, variables: variables)
+                } catch let e as MathError {
+                    return .failure(mapMathError(e, lineIndex: lineIndex, context: context))
+                } catch {
+                    return .failure(.syntax)
+                }
+                guard let converted = UnitConversion.convert(amount: partAmount, from: part.unit, to: toUnit) else {
+                    return .failure(.incompatibleUnits(Self.lowerRaw(part.raw), parse.toRaw))
+                }
+                total += converted
             }
-            guard let rates else { return .failure(.noRates) }
-            if let converted = CurrencyRates.convert(amount: amount, from: parts.from, to: parts.to, rates: rates) {
+            return .success(total)
+        }
+        let amount: Double
+        switch evaluateAmount(parse.amountText, lineIndex: lineIndex, context: context, variables: variables) {
+        case .success(let value): amount = value
+        case .failure(let error): return .failure(error)
+        }
+        if let fromUnit = parse.fromUnit, let toUnit = parse.toUnit {
+            if let converted = UnitConversion.convert(amount: amount, from: fromUnit, to: toUnit) {
                 return .success(converted)
             }
-            return .failure(.unknownCurrency(parts.from))
+            return .failure(.incompatibleUnits(parse.fromRaw, parse.toRaw))
         }
-        return .failure(.unknownUnit(parts.to.isEmpty ? parts.from : parts.to))
+        if parse.fromUnit != nil {
+            return .failure(CurrencyRates.isCurrency(parse.toRaw)
+                ? .incompatibleUnits(parse.fromRaw, parse.toRaw)
+                : .unknownUnit(parse.toRaw))
+        }
+        if parse.toUnit != nil {
+            return .failure(CurrencyRates.isCurrency(parse.fromRaw)
+                ? .incompatibleUnits(parse.fromRaw, parse.toRaw)
+                : .unknownUnit(parse.fromRaw))
+        }
+        if CurrencyRates.isCurrency(parse.fromRaw) || CurrencyRates.isCurrency(parse.toRaw) {
+            guard CurrencyRates.isCurrency(parse.fromRaw), CurrencyRates.isCurrency(parse.toRaw) else {
+                return .failure(.unknownCurrency(CurrencyRates.isCurrency(parse.fromRaw) ? parse.toRaw : parse.fromRaw))
+            }
+            // Same code both sides needs no rate table.
+            if parse.fromRaw.uppercased() == parse.toRaw.uppercased() { return .success(amount) }
+            guard let rates else { return .failure(.noRates) }
+            if let converted = CurrencyRates.convert(amount: amount, from: parse.fromRaw, to: parse.toRaw, rates: rates) {
+                return .success(converted)
+            }
+            return .failure(.unknownCurrency(parse.fromRaw))
+        }
+        return .failure(.unknownUnit(parse.toRaw))
     }
 
     private func parseConversionOutcome(_ line: String, lineIndex: Int, context: NoteContext, variables: [String: Double]) -> LineOutcome {
@@ -484,15 +794,24 @@ public struct MathEngine: Sendable {
         return value
     }
 
+    /// Gutter formatting: plain integers, up to 6 decimal places with
+    /// trailing zeros trimmed, and scientific notation outside that
+    /// range so a tiny conversion result (1 mm in miles) never reads
+    /// as a rounded "0" and a huge one stays short. Negative zero
+    /// always displays as "0".
     public func format(_ value: Double) -> String {
         guard value.isFinite else { return "—" }
+        if value == 0 { return "0" }
         if value.truncatingRemainder(dividingBy: 1) == 0, abs(value) < 1e15 {
             return String(Int(value))
         }
-        // Trim trailing zeros to 6 significant decimals.
-        return String(format: "%.6f", value)
+        if abs(value) < 1e-6 || abs(value) >= 1e15 {
+            return String(format: "%.6g", value)
+        }
+        let trimmed = String(format: "%.6f", value)
             .replacingOccurrences(of: "0+$", with: "", options: .regularExpression)
             .replacingOccurrences(of: "\\.$", with: "", options: .regularExpression)
+        return trimmed == "-0" ? String(format: "%.6g", value) : trimmed
     }
 
     /// Totals every number in the note (sum) or averages them (avg).
@@ -658,12 +977,51 @@ private struct ExprParser {
         throw MathEngine.MathError.syntax
     }
 
+    /// Numbers may carry thousands separators ("1,000.5" is one
+    /// number) and an exponent ("1e3", "1.5e-7"), matching what
+    /// `format` can print back. A bare `e` with no exponent digits
+    /// is not consumed, so names are untouched.
     mutating func parseNumber() -> Double? {
         skipSpaces()
         let start = index
-        while index < chars.count, chars[index].isNumber || chars[index] == "." { index += 1 }
-        guard start != index else { return nil }
-        return Double(String(chars[start..<index]))
+        var text = ""
+        var sawDigit = false
+        var sawDot = false
+        while index < chars.count {
+            let ch = chars[index]
+            if ch.isNumber {
+                sawDigit = true
+                text.append(ch)
+                index += 1
+            } else if ch == ".", !sawDot {
+                sawDot = true
+                text.append(ch)
+                index += 1
+            } else if ch == ",", sawDigit, index + 1 < chars.count, chars[index + 1].isNumber {
+                index += 1
+            } else {
+                break
+            }
+        }
+        guard sawDigit else { index = start; return nil }
+        if index < chars.count, chars[index] == "e" || chars[index] == "E" {
+            var next = index + 1
+            var sign = ""
+            if next < chars.count, chars[next] == "-" || chars[next] == "+" {
+                sign = String(chars[next])
+                next += 1
+            }
+            var digits = ""
+            while next < chars.count, chars[next].isNumber {
+                digits.append(chars[next])
+                next += 1
+            }
+            if !digits.isEmpty {
+                text += "e" + sign + digits
+                index = next
+            }
+        }
+        return Double(text)
     }
 
     mutating func parseName() -> String? {
@@ -686,30 +1044,4 @@ private struct ExprParser {
     }
 }
 
-/// Length / weight conversions to a base unit, then out to the target.
-enum UnitConvert {
-    static let lengthToMeter: [String: Double] = [
-        "mm": 0.001, "cm": 0.01, "m": 1, "km": 1000,
-        "in": 0.0254, "ft": 0.3048, "yd": 0.9144, "mi": 1609.344,
-    ]
-    static let weightToKg: [String: Double] = [
-        "g": 0.001, "kg": 1, "oz": 0.0283495, "lb": 0.453592, "lbs": 0.453592,
-    ]
 
-    static func convert(amount: Double, from: String, to: String) -> Double? {
-        if let f = lengthToMeter[from], let t = lengthToMeter[to] {
-            return amount * f / t
-        }
-        if let f = weightToKg[from], let t = weightToKg[to] {
-            return amount * f / t
-        }
-        // Temperature one-offs.
-        switch (from, to) {
-        case ("c", "f"): return amount * 9 / 5 + 32
-        case ("f", "c"): return (amount - 32) * 5 / 9
-        case ("c", "k"): return amount + 273.15
-        case ("k", "c"): return amount - 273.15
-        default: return nil
-        }
-    }
-}
