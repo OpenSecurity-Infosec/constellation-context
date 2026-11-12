@@ -50,9 +50,13 @@ public enum NoteExport: Sendable {
         }
     }
 
-    public static func copyToClipboard(_ note: ContextNote) {
+    public static func copyToClipboard(_ string: String) {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(note.text, forType: .string)
+        NSPasteboard.general.setString(string, forType: .string)
+    }
+
+    public static func copyToClipboard(_ note: ContextNote) {
+        copyToClipboard(note.text)
     }
 
     // MARK: - Quick export

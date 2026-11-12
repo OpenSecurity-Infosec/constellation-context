@@ -31,7 +31,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | `list` checklists with tick-off | Partial (nesting + marker cycling + drag-reorder with subtree-follow and persisted order; live-drag human verification still open) |
 | `code` snippet buffer | Partial (per-block highlighting: fenced ```lang blocks in any note + whole-body `code` mode with inferred language; Swift/Python/JS/shell keyword/string/comment/number coloring in mono, tokenizer unit-tested; no type/function coloring, no language picker, look-and-feel vs Antinote unproven) |
 | `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen with progress ring, elapsed/remaining status line, paused state, Done-in finish line, finish beep; Antinote-grade scene art still missing) |
-| `paste` AutoPaste collection | Partial |
+| `paste` AutoPaste collection | Partial (each clipboard entry collected as its own `---`-delimited item, sanitized on the way in, live item count in the mode bar; ⌘⇧C copies all items joined without re-collecting the payload, ⌘⇧⌫ clears, ⌥⌘Z undoes, ⌘V in a paste note collects instead of inserting at the caret; domain logic unit-tested, live clipboard/menu feel and packaged-app comparison vs Antinote unverified; pre-delimiter notes read as one item and undo history is session-only) |
 | Screenshot-to-text OCR (on-device) | Partial (image drop + ⌥⇧S region capture via Apple Vision into the current note; Esc cancels; Screen Recording permission prompt on first use) |
 | One-click export (txt, Markdown, PDF) | Partial (quick export writes to last folder/Downloads with slug names + dedup + Finder reveal; Save As… remembers its folder; write failures alert instead of vanishing) |
 | Copy to clipboard | Shipped |

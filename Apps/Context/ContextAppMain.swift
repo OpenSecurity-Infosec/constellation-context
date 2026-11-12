@@ -110,6 +110,9 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }
     @objc func prevNote(_ sender: Any?) { main?.prevNote() }
     @objc func cycleMarker(_ sender: Any?) { main?.cycleMarkerAtCaret() }
+    @objc func copyAllPastes(_ sender: Any?) { main?.copyAllPasteItems() }
+    @objc func undoPaste(_ sender: Any?) { main?.undoPasteChange() }
+    @objc func clearPastes(_ sender: Any?) { main?.clearPasteCollection() }
     @objc func sendToAppleNotes(_ sender: Any?) { main?.sendToAppleNotes() }
     @objc func sendToObsidian(_ sender: Any?) { main?.sendToObsidian() }
     @objc func sendToBear(_ sender: Any?) { main?.sendToBear() }
@@ -141,6 +144,16 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")
         cycle.keyEquivalentModifierMask = [.command, .shift]
         format.addItem(cycle)
+        format.addItem(.separator())
+        let copyAll = NSMenuItem(title: "Copy All Pastes", action: #selector(copyAllPastes(_:)), keyEquivalent: "c")
+        copyAll.keyEquivalentModifierMask = [.command, .shift]
+        format.addItem(copyAll)
+        let undoPaste = NSMenuItem(title: "Undo Paste Change", action: #selector(undoPaste(_:)), keyEquivalent: "z")
+        undoPaste.keyEquivalentModifierMask = [.command, .option]
+        format.addItem(undoPaste)
+        let clearPastes = NSMenuItem(title: "Clear Pastes", action: #selector(clearPastes(_:)), keyEquivalent: "\u{7F}")
+        clearPastes.keyEquivalentModifierMask = [.command, .shift]
+        format.addItem(clearPastes)
         let formatItem = NSMenuItem(); formatItem.submenu = format; menu.addItem(formatItem)
         let share = NSMenu(title: "Share")
         share.addItem(withTitle: "Send to Apple Notes", action: #selector(sendToAppleNotes(_:)), keyEquivalent: "")

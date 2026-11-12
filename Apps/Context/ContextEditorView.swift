@@ -14,6 +14,7 @@ struct ContextEditorRoot: View {
     var stats: NoteStats?
     var checklist: [ChecklistItem]
     var autoPasteArmed: Bool
+    var pasteCanUndo: Bool = false
     var elapsed: TimeInterval
     var remaining: TimeInterval?
     var timerRunning: Bool
@@ -104,7 +105,9 @@ struct ContextEditorRoot: View {
                         slashSelected = 0
                     }, onImagePaste: { image in
                         controller?.handleImageDrop(image)
-                    })
+                    }, onCollectPaste: note.kind == .paste ? { pasted in
+                        controller?.collectPaste(pasted)
+                    } : nil)
                         .font(.system(size: ContextSettings.shared.fontSize))
                     if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
                         slashPopup(fragment: fragment)
@@ -329,8 +332,18 @@ struct ContextEditorRoot: View {
                 Button("Reset") { controller?.timerReset() }
                 Button("Full screen") { controller?.openTimerFullscreen() }
             case .paste:
-                Text(autoPasteArmed ? "Everything you copy lands here as plain text." : "Type paste + Return to collect copies.")
+                let itemCount = PasteCollection.items(in: note.text).count
+                Text(PasteCollection.statusLine(itemCount: itemCount, armed: autoPasteArmed))
                     .font(.caption).foregroundStyle(.secondary)
+                Button("Copy all") { controller?.copyAllPasteItems() }
+                    .help("Copy all pastes joined (⌘⇧C)")
+                    .disabled(itemCount == 0)
+                Button("Undo") { controller?.undoPasteChange() }
+                    .help("Undo last paste change (⌥⌘Z)")
+                    .disabled(!pasteCanUndo)
+                Button("Clear") { controller?.clearPasteCollection() }
+                    .help("Clear collected pastes (⌘⇧⌫)")
+                    .disabled(itemCount == 0)
             case .code:
                 Text("Snippet buffer — syntax highlighting on; fence with ```swift / ```python / ```js / ```sh to pick a language.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -368,6 +381,9 @@ private struct PlainTextEditor: NSViewRepresentable {
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
     var onImagePaste: ((NSImage) -> Void)?
+    /// Set only in `paste` notes: ⌘V collects the clipboard as a new
+    /// item at the end instead of inserting at the caret.
+    var onCollectPaste: ((String) -> Void)?
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
@@ -381,6 +397,7 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.onSlash = { fragment, range in onSlash?(fragment, range) }
         tv.onOpenURL = { url in NSWorkspace.shared.open(url) }
         tv.onImagePaste = { image in onImagePaste?(image) }
+        tv.onCollectPaste = onCollectPaste
         tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
         tv.isRichText = false
@@ -399,6 +416,7 @@ private struct PlainTextEditor: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let tv = scroll.documentView as? NSTextView else { return }
+        (tv as? ContextTextView)?.onCollectPaste = onCollectPaste
         if tv.string != text {
             let selected = tv.selectedRanges
             tv.string = text
@@ -423,11 +441,18 @@ final class ContextTextView: NSTextView {
     var onOpenURL: ((URL) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
     var onImagePaste: ((NSImage) -> Void)?
+    var onCollectPaste: ((String) -> Void)?
     private var slashCompletion: NSView?
 
     override func paste(_ sender: Any?) {
         // Plain text only: strip styling, bullets, indentation.
         let board = NSPasteboard.general
+        // In a `paste` note, ⌘V collects the clipboard as its own item
+        // (sanitized downstream) rather than inserting at the caret.
+        if let onCollectPaste, let s = board.string(forType: .string) {
+            onCollectPaste(s)
+            return
+        }
         if let s = board.string(forType: .string) {
             let clean = PlainText.sanitizePasteboard(s)
             insertText(clean, replacementRange: selectedRange())

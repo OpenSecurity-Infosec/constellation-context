@@ -154,15 +154,6 @@ final class ContextWindowController {
     func onTextChange(_ text: String) {
         store.stage(id: noteID, text: text)
         scheduleFlush()
-        let kind = ContextNote(text: text).kind
-        // Arm/disarm AutoPaste with the `paste` trigger.
-        if kind == .paste, !autoPaste.isArmed {
-            autoPaste.start { [weak self] pasted in
-                Task { @MainActor in self?.appendAutoPaste(pasted) }
-            }
-        } else if kind != .paste, autoPaste.isArmed {
-            autoPaste.stop()
-        }
         render(preservingFocus: true)
         // Opportunistic push when sync is on; SyncManager no-ops when off.
         Task { @MainActor in SyncManager.shared.sync(
@@ -171,11 +162,82 @@ final class ContextWindowController {
         ) }
     }
 
-    private func appendAutoPaste(_ pasted: String) {
+    // MARK: - AutoPaste collection
+
+    /// Arms the clipboard monitor exactly while the current note is a
+    /// `paste` note. Called from render so typing the trigger, navigating
+    /// onto an existing paste note, and launch all arm the same way.
+    private func syncAutoPasteArming() {
+        if note.kind == .paste, !autoPaste.isArmed {
+            autoPaste.start { [weak self] pasted in
+                Task { @MainActor in self?.collectPaste(pasted) }
+            }
+        } else if note.kind != .paste, autoPaste.isArmed {
+            autoPaste.stop()
+        }
+    }
+
+    /// Prior texts of the current paste note, for undo. Session-only and
+    /// scoped to one note; after a relaunch undo falls back to dropping
+    /// the last collected item.
+    private var pasteUndo: [String] = []
+    private var pasteUndoNoteID: UUID?
+
+    private func pushPasteUndo(_ previousText: String) {
+        if pasteUndoNoteID != noteID {
+            pasteUndo = []
+            pasteUndoNoteID = noteID
+        }
+        pasteUndo.append(previousText)
+        if pasteUndo.count > 50 { pasteUndo.removeFirst(pasteUndo.count - 50) }
+    }
+
+    var pasteCanUndo: Bool {
+        (pasteUndoNoteID == noteID && !pasteUndo.isEmpty)
+            || !PasteCollection.items(in: note.text).isEmpty
+    }
+
+    /// Collects one clipboard/paste entry as its own delimited item.
+    /// Shared by the AutoPaste monitor and a manual ⌘V in a paste note.
+    func collectPaste(_ pasted: String) {
         guard let current = store.note(id: noteID), current.kind == .paste else { return }
-        let clean = PlainText.sanitizePasteboard(pasted)
-        let next = current.text.isEmpty ? clean : current.text + "\n" + clean
+        let next = PasteCollection.appending(pasted, to: current.text)
+        guard next != current.text else { return }
+        pushPasteUndo(current.text)
         store.update(id: noteID, text: next)
+        render(preservingFocus: true)
+    }
+
+    /// ⌘⇧C: copies every collected item joined, without trigger or
+    /// delimiters. The monitor is told the write is ours so the payload
+    /// is not collected straight back in.
+    func copyAllPasteItems() {
+        guard note.kind == .paste else { return }
+        let payload = PasteCollection.joined(note.text)
+        guard !payload.isEmpty else { return }
+        NoteExport.copyToClipboard(payload)
+        autoPaste.markPasteboardSeen()
+    }
+
+    /// ⌘⇧⌫: empties the collection, staying in paste mode. Undoable.
+    func clearPasteCollection() {
+        guard note.kind == .paste, !PasteCollection.items(in: note.text).isEmpty else { return }
+        pushPasteUndo(note.text)
+        store.update(id: noteID, text: PasteCollection.cleared(note.text))
+        render(preservingFocus: true)
+    }
+
+    /// ⌥⌘Z: undoes the last collection change (append or clear) this
+    /// session; with no session history, drops the last collected item.
+    func undoPasteChange() {
+        guard note.kind == .paste else { return }
+        if pasteUndoNoteID == noteID, let previous = pasteUndo.popLast() {
+            store.update(id: noteID, text: previous)
+        } else {
+            let next = PasteCollection.removingLastItem(from: note.text)
+            guard next != note.text else { return }
+            store.update(id: noteID, text: next)
+        }
         render(preservingFocus: true)
     }
 
@@ -677,6 +739,7 @@ final class ContextWindowController {
     // MARK: - Render
 
     private func render(preservingFocus: Bool = false) {
+        syncAutoPasteArming()
         let current = note
         // Math memo: the 0.25s timer tick re-renders constantly; skip the
         // full re-eval when the math body is byte-identical so idle notes
@@ -728,6 +791,7 @@ final class ContextWindowController {
             stats: stats,
             checklist: items,
             autoPasteArmed: autoPaste.isArmed,
+            pasteCanUndo: pasteCanUndo,
             elapsed: timer.elapsed,
             remaining: timer.remaining,
             timerRunning: timer.isRunning,

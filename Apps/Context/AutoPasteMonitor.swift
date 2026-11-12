@@ -30,6 +30,12 @@ public final class AutoPasteMonitor: @unchecked Sendable {
         lock.withLock { stopLocked() }
     }
 
+    /// Marks the current pasteboard contents as already seen, so a write
+    /// the app itself just made (copy-all) is not collected back in.
+    public func markPasteboardSeen() {
+        lock.withLock { lastChangeCount = NSPasteboard.general.changeCount }
+    }
+
     private func stopLocked() {
         timer?.cancel()
         timer = nil
