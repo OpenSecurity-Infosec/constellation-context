@@ -12,7 +12,12 @@ import Vision
 @MainActor
 final class ContextWindowController {
     let window: ContextPanel
-    private(set) var store: NoteStore
+    private(set) var workspace: Workspace
+    private(set) var pad: Pad = .scratch
+    /// The current pad's notes. Reads go here; every change goes through
+    /// `workspace.apply` (one mutation path).
+    var store: NoteStore { workspace.store(for: pad) }
+    private let clipboard = ClipboardWatcher()
     private let rates = RateStore()
     private var math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
@@ -25,9 +30,9 @@ final class ContextWindowController {
     private var lastMathResults: [MathEngine.LineOutcome] = []
 
     init() {
-        store = Self.openStore()
-        store.collectGarbage()
-        let first = store.liveNotes.first ?? store.create()
+        workspace = Self.openWorkspace()
+        for p in [Pad.scratch, .clipboard] { workspace.store(for: p).collectGarbage() }
+        let first = workspace.store(for: .scratch).liveNotes.first ?? workspace.store(for: .scratch).create()
         noteID = first.id
         window = ContextPanel(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
@@ -50,14 +55,14 @@ final class ContextWindowController {
 
     /// The base vault from Settings (default `~/Context`), after a one-time
     /// move of legacy `notes.json` content into it.
-    static func openStore() -> NoteStore {
+    static func openWorkspace() -> Workspace {
         let vault = BaseVault(root: ContextSettings.shared.baseVaultPath.map {
             URL(fileURLWithPath: $0, isDirectory: true)
         } ?? BaseVault.defaultRoot)
         if let legacy = NotesJSONMigration.legacyFile {
             _ = try? NotesJSONMigration.run(from: legacy, into: vault)
         }
-        return NoteStore(vault: vault)
+        return Workspace(vault: vault)
     }
 
     /// Switches to another base-vault folder. Files in the old folder stay
@@ -66,9 +71,75 @@ final class ContextWindowController {
         flushNow()
         ContextSettings.shared.baseVaultPath = url.path
         ContextSettings.shared.save()
-        store = Self.openStore()
+        workspace = Self.openWorkspace()
+        pad = .scratch
         noteID = store.liveNotes.first?.id ?? store.create().id
         afterNavigate()
+    }
+
+    // MARK: - Pads and commands
+
+    /// Applies one command through the workspace. Failures (a note
+    /// deleted under us) are dropped; the next render shows the truth.
+    @discardableResult
+    func apply(_ command: ContextCommand) -> CommandResult? {
+        try? workspace.apply(command)
+    }
+
+    private func setText(_ text: String) {
+        apply(.setText(pad, id: noteID, text: text))
+    }
+
+    var pads: [Pad] { workspace.pads }
+
+    func switchPad(_ next: Pad) {
+        flushNow()
+        pad = next
+        store.reloadFromDisk()
+        noteID = store.liveNotes.first?.id ?? store.create().id
+        afterNavigate()
+        show()
+    }
+
+    func switchPad(number: Int) {
+        let all = pads
+        guard number >= 1, number <= all.count else { return }
+        switchPad(all[number - 1])
+    }
+
+    func promptNewProject() {
+        let alert = NSAlert()
+        alert.messageText = "New Project"
+        alert.informativeText = "A project keeps the live context you want your AI tools to see."
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
+        field.placeholderString = "Project name"
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        guard case .project(let name)? = apply(.createProject(name: field.stringValue)) else {
+            self.alert("Use a name with letters or numbers.")
+            return
+        }
+        switchPad(.project(name))
+    }
+
+    /// Clipboard history: every copy becomes an editable note in the
+    /// Clipboard pad, except secrets password managers mark as concealed.
+    func startClipboardHistory() {
+        guard ContextSettings.shared.clipboardHistory else {
+            clipboard.stop()
+            return
+        }
+        clipboard.start { [weak self] text in
+            guard let self else { return }
+            guard case .note? = self.apply(.captureClip(text: text)) else { return }
+            if self.pad == .clipboard, !self.window.isKeyWindow {
+                self.noteID = self.store.liveNotes.first?.id ?? self.noteID
+                self.render()
+            }
+        }
     }
 
     private func refreshRates() {
@@ -136,8 +207,9 @@ final class ContextWindowController {
 
     func newNote() {
         flushNow()
-        let n = store.create()
-        noteID = n.id
+        if pad.isProject { pad = .scratch }
+        guard case .note(let id)? = apply(.createNote(pad, text: "")) else { return }
+        noteID = id
         autoPaste.stop()
         timer = NoteTimer()
         render()
@@ -153,7 +225,7 @@ final class ContextWindowController {
         if idx + 1 < live.count {
             noteID = live[idx + 1].id
             afterNavigate()
-        } else {
+        } else if !pad.isProject {
             newNote()
         }
     }
@@ -173,7 +245,7 @@ final class ContextWindowController {
     }
 
     func trashCurrent() {
-        store.trash(id: noteID)
+        apply(.trash(pad, id: noteID))
         autoPaste.stop()
         if let next = store.liveNotes.first {
             noteID = next.id
@@ -184,7 +256,7 @@ final class ContextWindowController {
     }
 
     func onTextChange(_ text: String) {
-        store.stage(id: noteID, text: text)
+        apply(.stageText(pad, id: noteID, text: text))
         scheduleFlush()
         let kind = ContextNote(text: text).kind
         // Arm/disarm AutoPaste with the `paste` trigger.
@@ -202,25 +274,25 @@ final class ContextWindowController {
         guard let current = store.note(id: noteID), current.kind == .paste else { return }
         let clean = PlainText.sanitizePasteboard(pasted)
         let next = current.text.isEmpty ? clean : current.text + "\n" + clean
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
     func toggleChecklist(id: Int) {
         let next = ChecklistItem.toggle(text: note.text, id: id)
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
     func indentChecklist(id: Int, direction: ChecklistItem.IndentDirection) {
         let next = ChecklistItem.indent(text: note.text, id: id, direction: direction)
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
     func cycleChecklistMarker(id: Int) {
         let next = ChecklistItem.cycleMarker(text: note.text, id: id)
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
@@ -232,7 +304,7 @@ final class ContextWindowController {
         var dst = to
         if to > src { dst -= 1 }
         let next = ChecklistItem.move(text: note.text, from: src, to: dst)
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
@@ -247,7 +319,7 @@ final class ContextWindowController {
             ids: ids, from: from, to: displayTo, bodyLineCount: lines.count - offset
         )
         let next = ChecklistItem.moveBlock(text: text, from: srcId, to: anchor, bodyLineCount: lines.count - offset)
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
@@ -288,7 +360,7 @@ final class ContextWindowController {
     /// JSON encode + atomic write at most ~0.6s after typing pauses.
     private func scheduleFlush() {
         flushWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.store.flush() }
+        let work = DispatchWorkItem { [weak self] in self?.workspace.flushAll() }
         flushWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: work)
     }
@@ -297,7 +369,7 @@ final class ContextWindowController {
     func flushNow() {
         flushWork?.cancel()
         flushWork = nil
-        store.flush()
+        workspace.flushAll()
     }
 
     // MARK: - Extensions
@@ -329,13 +401,13 @@ final class ContextWindowController {
             selection: nil
         ) else { return }
         if let transformed = edit.fullText {
-            store.update(id: noteID, text: transformed)
+            setText(transformed)
         } else if let range = edit.tokenRange {
             var updated = fullText
             let start = updated.index(updated.startIndex, offsetBy: range.lowerBound)
             let end = updated.index(updated.startIndex, offsetBy: range.upperBound)
             updated.replaceSubrange(start..<end, with: edit.replacement)
-            store.update(id: noteID, text: updated)
+            setText(updated)
         }
         render(preservingFocus: true)
     }
@@ -372,12 +444,12 @@ final class ContextWindowController {
             } else {
                 updated += rep
             }
-            store.update(id: noteID, text: updated)
+            setText(updated)
         case .fullText(let full):
-            store.update(id: noteID, text: full)
+            setText(full)
         case .append(let extra):
             let base = note.text
-            store.update(id: noteID, text: base.isEmpty ? extra : base + "\n" + extra)
+            setText(base.isEmpty ? extra : base + "\n" + extra)
         }
         render(preservingFocus: true)
         return true
@@ -465,7 +537,7 @@ final class ContextWindowController {
         guard !clean.isEmpty else { return }
         let base = store.note(id: noteID)?.text ?? ""
         let next = base.isEmpty ? clean : base + "\n" + clean
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
     }
 
@@ -657,12 +729,8 @@ final class ContextWindowController {
     // MARK: - URL scheme actions
 
     func newNoteWithText(_ text: String?) {
-        if let text, !text.isEmpty {
-            let n = store.create(text: text)
-            noteID = n.id
-        } else {
-            noteID = store.create().id
-        }
+        pad = .scratch
+        if case .note(let id)? = apply(.createNote(.scratch, text: text ?? "")) { noteID = id }
         autoPaste.stop()
         timer = NoteTimer()
         render()
@@ -672,7 +740,7 @@ final class ContextWindowController {
     func appendToCurrent(_ text: String) {
         let base = note.text
         let next = base.isEmpty ? text : base + "\n" + text
-        store.update(id: noteID, text: next)
+        setText(next)
         render(preservingFocus: true)
         show()
     }
@@ -732,6 +800,8 @@ final class ContextWindowController {
         let view = ContextEditorRoot(
             controller: self,
             note: current,
+            pad: pad,
+            pads: pads,
             liveCount: store.liveNotes.count,
             mathResults: results,
             aggregate: sumAvg.map(math.format),

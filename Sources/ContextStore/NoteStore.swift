@@ -2,14 +2,30 @@ import ContextDomain
 import ContextVault
 import Foundation
 
-/// Scratch notes as Markdown files in the base vault (ADR-0001).
+/// One pad's notes as Markdown files in the base vault (ADR-0001).
 ///
-/// Live notes are files in `Scratch/`; The Void is the vault's `.trash/`.
-/// Ids, trash dates, and expiry live in the derived `.context/index.json`;
-/// losing it only resets ids and trash ages. File contents are exactly
-/// what the user typed — no frontmatter is added.
+/// Live notes are files in `folder`; The Void is `trash`. Ids, trash
+/// dates, and expiry live in a derived index under `.context/`; losing it
+/// only resets ids and trash ages. File contents are exactly what the
+/// user typed — no frontmatter is added.
 public final class NoteStore: @unchecked Sendable {
+    public struct Options: Sendable {
+        /// Fixed file stem for single-note pads (a project's `context`).
+        public var singleNoteStem: String?
+        /// New notes expire after this long unless edited (clipboard).
+        public var expireAfter: TimeInterval?
+
+        public init(singleNoteStem: String? = nil, expireAfter: TimeInterval? = nil) {
+            self.singleNoteStem = singleNoteStem
+            self.expireAfter = expireAfter
+        }
+    }
+
     public let vault: BaseVault
+    public let folder: URL
+    public let trashFolder: URL
+    public let indexURL: URL
+    public let options: Options
     private let lock = NSLock()
     private var entries: [UUID: Entry] = [:]
     private var index = Index()
@@ -35,9 +51,22 @@ public final class NoteStore: @unchecked Sendable {
         }
     }
 
-    public init(vault: BaseVault) {
+    /// The Scratch pad: `Scratch/`, the vault's top-level `.trash/`, and
+    /// `.context/index.json`.
+    public convenience init(vault: BaseVault) {
+        self.init(vault: vault, folder: vault.scratch, trash: vault.trash, index: vault.index)
+    }
+
+    public init(vault: BaseVault, folder: URL, trash: URL, index: URL, options: Options = Options()) {
         self.vault = vault
+        self.folder = folder
+        self.trashFolder = trash
+        self.indexURL = index
+        self.options = options
         try? vault.ensure()
+        for dir in [folder, trash] {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
         lock.withLock {
             loadIndex()
             scan()
@@ -80,9 +109,14 @@ public final class NoteStore: @unchecked Sendable {
     @discardableResult
     public func create(text: String = "") -> ContextNote {
         lock.withLock {
-            let note = ContextNote(text: text)
+            if options.singleNoteStem != nil, let existing = entries.values.first(where: { !$0.note.isTrashed }) {
+                return existing.note
+            }
+            var note = ContextNote(text: text)
+            note.expiresAt = options.expireAfter.map { note.createdAt.addingTimeInterval($0) }
             entries[note.id] = Entry(note: note)
             if !text.isEmpty { write(note.id) }
+            if note.expiresAt != nil { record(note.id) { $0.expiresAt = note.expiresAt } }
             return note
         }
     }
@@ -90,8 +124,7 @@ public final class NoteStore: @unchecked Sendable {
     public func update(id: UUID, text: String) {
         lock.withLock {
             guard entries[id] != nil else { return }
-            entries[id]?.note.text = text
-            entries[id]?.note.updatedAt = Date()
+            edit(id, text: text)
             write(id)
         }
     }
@@ -101,9 +134,20 @@ public final class NoteStore: @unchecked Sendable {
     public func stage(id: UUID, text: String) {
         lock.withLock {
             guard entries[id] != nil else { return }
-            entries[id]?.note.text = text
-            entries[id]?.note.updatedAt = Date()
+            edit(id, text: text)
             entries[id]?.dirty = true
+        }
+    }
+
+    /// Text change shared by update and stage. Editing a note that would
+    /// expire (a clipboard entry) keeps it.
+    private func edit(_ id: UUID, text: String) {
+        guard entries[id]?.note.text != text else { return }
+        entries[id]?.note.text = text
+        entries[id]?.note.updatedAt = Date()
+        if options.expireAfter != nil, entries[id]?.note.expiresAt != nil {
+            entries[id]?.note.expiresAt = nil
+            record(id) { $0.expiresAt = nil }
         }
     }
 
@@ -125,7 +169,7 @@ public final class NoteStore: @unchecked Sendable {
                 entries[id] = nil
                 return
             }
-            move(id, from: url, to: vault.trash)
+            move(id, from: url, to: trashFolder)
             record(id) { $0.trashedAt = now }
         }
     }
@@ -202,7 +246,7 @@ public final class NoteStore: @unchecked Sendable {
         guard let entry = entries[id], entry.note.isTrashed else { return }
         entries[id]?.note.trashedAt = nil
         entries[id]?.note.updatedAt = now
-        if let url = entry.url { move(id, from: url, to: vault.scratch) }
+        if let url = entry.url { move(id, from: url, to: folder) }
         record(id) { $0.trashedAt = nil }
     }
 
@@ -223,11 +267,12 @@ public final class NoteStore: @unchecked Sendable {
                 entries[id] = entry
                 return
             }
-            let folder = entry.note.isTrashed ? vault.trash : vault.scratch
-            let url = NoteFileName.available(stem: NoteFileName.timestamp(entry.note.createdAt), in: folder)
+            let target = entry.note.isTrashed ? trashFolder : folder
+            let stem = options.singleNoteStem ?? NoteFileName.timestamp(entry.note.createdAt)
+            let url = NoteFileName.available(stem: stem, in: target)
             entry.url = url
             if let rel = vault.relativePath(of: url) {
-                index.notes[rel] = Index.Record(id: id, createdAt: entry.note.createdAt)
+                index.notes[rel] = Index.Record(id: id, createdAt: entry.note.createdAt, expiresAt: entry.note.expiresAt)
                 saveIndex()
             }
         }
@@ -276,8 +321,8 @@ public final class NoteStore: @unchecked Sendable {
         for (id, entry) in entries {
             if let url = entry.url, let rel = vault.relativePath(of: url) { byPath[rel] = id }
         }
-        for (folder, trashed) in [(vault.scratch, false), (vault.trash, true)] {
-            for url in Self.markdownFiles(in: folder) {
+        for (dir, trashed) in [(folder, false), (trashFolder, true)] {
+            for url in Self.markdownFiles(in: dir) {
                 guard let rel = vault.relativePath(of: url) else { continue }
                 let diskDate = Self.modificationDate(url)
                 if let id = byPath[rel], let entry = entries[id] {
@@ -340,7 +385,7 @@ public final class NoteStore: @unchecked Sendable {
     }
 
     private func loadIndex() {
-        guard let data = try? Data(contentsOf: vault.index),
+        guard let data = try? Data(contentsOf: indexURL),
               let decoded = try? JSONDecoder.iso.decode(Index.self, from: data)
         else { return }
         index = decoded
@@ -348,7 +393,7 @@ public final class NoteStore: @unchecked Sendable {
 
     private func saveIndex() {
         guard let data = try? JSONEncoder.iso.encode(index) else { return }
-        try? data.write(to: vault.index, options: .atomic)
+        try? data.write(to: indexURL, options: .atomic)
     }
 
     static func markdownFiles(in folder: URL) -> [URL] {

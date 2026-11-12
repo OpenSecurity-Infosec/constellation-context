@@ -6,6 +6,8 @@ import SwiftUI
 struct ContextEditorRoot: View {
     weak var controller: ContextWindowController?
     var note: ContextNote
+    var pad: Pad = .scratch
+    var pads: [Pad] = []
     var liveCount: Int
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
@@ -45,6 +47,17 @@ struct ContextEditorRoot: View {
 
     private var toolbar: some View {
         HStack(spacing: 8) {
+            Menu(pad.title) {
+                ForEach(Array(pads.enumerated()), id: \.element) { index, p in
+                    Button(index < 9 ? "\(p.title)  ⌘\(index + 1)" : p.title) { controller?.switchPad(p) }
+                }
+                Divider()
+                Button("New Project…") { controller?.promptNewProject() }
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .font(.caption.weight(.medium))
+            .accessibilityIdentifier("overlay.padMenu")
             Button("‹") { controller?.prevNote() }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
             Text("\(liveCount)")
@@ -348,7 +361,7 @@ struct ContextEditorRoot: View {
                 Text(ratesFootnote)
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Text("⌥A toggle · ←/→ swipe notes · plain text always")
+                Text("⌥A toggle · ⌘1 Scratch · ⌘2 Clipboard · ⌘[ ⌘] notes")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
@@ -412,7 +425,8 @@ private struct PlainTextEditor: NSViewRepresentable {
     final class Coordinator { var view: NSTextView? }
 }
 
-/// NSTextView that strips formatting on paste and reports changes.
+/// NSTextView that pastes text without styling (Markdown kept) and
+/// reports changes.
 /// Applies Link Shrink: pasted URLs display shortened while the full URL
 /// is preserved for open/copy. Links render clickable.
 final class ContextTextView: NSTextView {
@@ -426,10 +440,10 @@ final class ContextTextView: NSTextView {
     private var slashCompletion: NSView?
 
     override func paste(_ sender: Any?) {
-        // Plain text only: strip styling, bullets, indentation.
+        // Text only, Markdown kept: styling is dropped, structure stays.
         let board = NSPasteboard.general
         if let s = board.string(forType: .string) {
-            let clean = PlainText.sanitizePasteboard(s)
+            let clean = PlainText.normalizePaste(s)
             insertText(clean, replacementRange: selectedRange())
             shrinkURLsAroundSelection()
             return

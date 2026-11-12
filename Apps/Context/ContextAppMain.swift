@@ -50,6 +50,8 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         applyPlacement()
         ContextHotKeys.install { [weak controller] in controller?.toggle() }
         ContextHotKeys.onCapture { [weak controller] in controller?.captureScreenshotToText() }
+        controller.startClipboardHistory()
+        ClipboardRelayer.changed = { [weak controller] in controller?.startClipboardHistory() }
         controller.show()
         if let pending = pendingURL {
             pendingURL = nil
@@ -127,6 +129,8 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func captureScreenshot(_ sender: Any?) { main?.captureScreenshotToText() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
+    @objc func newProject(_ sender: Any?) { main?.promptNewProject() }
+    @objc func switchPad(_ sender: NSMenuItem) { main?.switchPad(number: sender.tag) }
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
@@ -152,6 +156,18 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         cycle.keyEquivalentModifierMask = [.command, .shift]
         format.addItem(cycle)
         let formatItem = NSMenuItem(); formatItem.submenu = format; menu.addItem(formatItem)
+        let pads = NSMenu(title: "Pads")
+        for n in 1...9 {
+            let title = n == 1 ? "Scratch" : n == 2 ? "Clipboard" : "Project \(n - 2)"
+            let item = NSMenuItem(title: title, action: #selector(switchPad(_:)), keyEquivalent: "\(n)")
+            item.tag = n
+            pads.addItem(item)
+        }
+        pads.addItem(.separator())
+        let newProject = NSMenuItem(title: "New Project…", action: #selector(newProject(_:)), keyEquivalent: "n")
+        newProject.keyEquivalentModifierMask = [.command, .shift]
+        pads.addItem(newProject)
+        let padsItem = NSMenuItem(); padsItem.submenu = pads; menu.addItem(padsItem)
         let share = NSMenu(title: "Share")
         share.addItem(withTitle: "Send to Apple Notes", action: #selector(sendToAppleNotes(_:)), keyEquivalent: "")
         share.addItem(withTitle: "Send to Obsidian", action: #selector(sendToObsidian(_:)), keyEquivalent: "")

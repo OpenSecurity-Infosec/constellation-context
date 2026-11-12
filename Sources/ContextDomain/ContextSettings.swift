@@ -12,6 +12,8 @@ public struct ContextSettings: Codable, Sendable {
     public var themeMode: ThemeMode = .system
     /// Base vault folder; nil means `~/Context` (ADR-0002).
     public var baseVaultPath: String? = nil
+    /// Keep copies as editable notes in the Clipboard pad.
+    public var clipboardHistory: Bool = true
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
     public var colorTheme: ColorTheme = .mocha
@@ -68,7 +70,7 @@ public struct ContextSettings: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
-        case obsidianVaultPath, themeMode, baseVaultPath
+        case obsidianVaultPath, themeMode, baseVaultPath, clipboardHistory
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
         case lastExportDirectory
     }
@@ -83,6 +85,7 @@ public struct ContextSettings: Codable, Sendable {
         obsidianVaultPath = try c.decodeIfPresent(String.self, forKey: .obsidianVaultPath)
         themeMode = try c.decodeIfPresent(ThemeMode.self, forKey: .themeMode) ?? .system
         baseVaultPath = try c.decodeIfPresent(String.self, forKey: .baseVaultPath)
+        clipboardHistory = try c.decodeIfPresent(Bool.self, forKey: .clipboardHistory) ?? true
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha

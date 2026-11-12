@@ -92,6 +92,7 @@ private struct SettingsView: View {
                 ThemeRelayer.lookChanged()
             }
             BaseVaultSettingsRow()
+            ClipboardSettingsRow()
             LinkedVaultsSection()
             ExtensionSettingsRow()
             Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
@@ -157,6 +158,30 @@ private struct BaseVaultSettingsRow: View {
                 .lineLimit(1).truncationMode(.middle)
         }
     }
+}
+
+/// Clipboard history on/off. Concealed copies (passwords) are never kept.
+private struct ClipboardSettingsRow: View {
+    @State private var enabled: Bool = ContextSettings.shared.clipboardHistory
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Toggle("Keep clipboard history", isOn: $enabled)
+                .onChange(of: enabled) {
+                    ContextSettings.shared.clipboardHistory = enabled
+                    ContextSettings.shared.save()
+                    ClipboardRelayer.changed()
+                }
+                .accessibilityIdentifier("settings.clipboardHistory")
+            Text("Copies become editable notes in the Clipboard pad. Password-manager copies are skipped; untouched entries leave after 30 days.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
+@MainActor
+enum ClipboardRelayer {
+    nonisolated(unsafe) static var changed: () -> Void = {}
 }
 
 /// Relays a base-vault change to the live store.
