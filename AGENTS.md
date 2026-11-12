@@ -4,6 +4,10 @@ This is the operating contract for humans and coding agents in this repo. Follow
 
 **New here? Start with [`Docs/Quickstart.md`](Docs/Quickstart.md).**
 
+## Branches
+
+`master` is the single line of development. The `pivot` branch was merged into it on 2026-11-12 and is retired; do not commit to it. The pre-pivot Antinote-parity line is kept read-only as the tag `archive/master-parity-2026-11-12`; what was ported from it is in `Plans/active/master-port-triage.md`. Work only on `master`, and push to `origin/master` (cortex02 builds, tests, and installs it; see `Docs/Quickstart.md`).
+
 ## Sources of truth
 
 1. `Docs/Vision.md` covers the objective, principles, surfaces, MVP scope, and injection roadmap.
