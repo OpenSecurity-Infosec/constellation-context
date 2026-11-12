@@ -775,7 +775,7 @@ final class ContextWindowController {
     }
 
     func openVoid() {
-        let vc = VoidWindowController(store: store) { [weak self] id in
+        let vc = VoidWindowController(workspace: workspace, pad: pad) { [weak self] id in
             self?.noteID = id
             self?.afterNavigate()
             self?.show()

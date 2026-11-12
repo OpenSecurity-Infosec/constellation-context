@@ -19,6 +19,7 @@ public enum ContextCommand: Equatable, Sendable {
     case replace(Pad, id: UUID, range: NSRange, with: String)
     case trash(Pad, id: UUID)
     case restore(Pad, id: UUID)
+    case restoreMany(Pad, ids: [UUID], now: Date)
     case destroy(Pad, id: UUID)
     case createProject(name: String)
     case captureClip(text: String)
@@ -37,6 +38,7 @@ public enum ContextCommand: Equatable, Sendable {
 
 public enum CommandResult: Equatable, Sendable {
     case note(UUID)
+    case restored(NoteStore.BulkRestoreResult)
     case project(String)
     case none
 }
@@ -141,6 +143,8 @@ public final class Workspace: @unchecked Sendable {
         case .restore(let pad, let id):
             try existing(pad, id).restore(id: id)
             return .note(id)
+        case .restoreMany(let pad, let ids, let now):
+            return .restored(store(for: pad).restoreMany(ids: ids, now: now))
         case .destroy(let pad, let id):
             try existing(pad, id).destroy(id: id)
             return .none

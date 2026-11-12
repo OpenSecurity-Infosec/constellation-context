@@ -5,11 +5,14 @@ import SwiftUI
 @MainActor
 final class VoidWindowController {
     private let window: NSWindow
-    private let store: NoteStore
+    private let workspace: Workspace
+    private let pad: Pad
+    private var store: NoteStore { workspace.store(for: pad) }
     private let onRestore: (UUID) -> Void
 
-    init(store: NoteStore, onRestore: @escaping (UUID) -> Void) {
-        self.store = store
+    init(workspace: Workspace, pad: Pad, onRestore: @escaping (UUID) -> Void) {
+        self.workspace = workspace
+        self.pad = pad
         self.onRestore = onRestore
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 420, height: 380),
@@ -29,27 +32,30 @@ final class VoidWindowController {
 
     private var lastNotice = ""
 
+    private func perform(_ action: () throws -> Void) {
+        lastNotice = ""
+        do { try action() } catch { lastNotice = "The note could not be changed." }
+        render()
+    }
+
     private func render() {
         let void = store.voidNotes
         let view = VoidListView(notes: void, notice: lastNotice, onRestore: { [weak self] id in
-            self?.lastNotice = ""
-            self?.store.restore(id: id)
-            self?.onRestore(id)
-            self?.render()
+            guard let self else { return }
+            perform {
+                try workspace.apply(.restore(pad, id: id))
+                onRestore(id)
+            }
         }, onRestoreMany: { [weak self] ids in
             guard let self else { return }
-            let result = store.restoreMany(ids: ids)
-            if let first = ids.first { onRestore(first) }
-            if result.skippedExpired > 0 {
+            perform {
+                guard case .restored(let result) = try workspace.apply(.restoreMany(pad, ids: ids, now: Date())) else { return }
+                if let first = ids.first(where: { store.note(id: $0)?.isTrashed == false }) { onRestore(first) }
                 lastNotice = "Restored \(result.restored); \(result.skippedExpired) expired left behind."
-            } else {
-                lastNotice = "Restored \(result.restored)."
             }
-            render()
         }, onDestroy: { [weak self] id in
-            self?.lastNotice = ""
-            self?.store.destroy(id: id)
-            self?.render()
+            guard let self else { return }
+            perform { try workspace.apply(.destroy(pad, id: id)) }
         })
         window.contentView = NSHostingView(rootView: view)
     }

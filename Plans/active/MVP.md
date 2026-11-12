@@ -198,7 +198,7 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
 
 ## Next (after the manual pass)
 
-- Route The Void's restore and delete through `Workspace.apply` (the known deviation).
+- Void mutation routing is implemented; owner interaction checks remain below.
 - A real Claude Code harness connector.
 - The `contextctl` CLI and MCP server (`ContextAutomation`).
 - The "less is more" trim of legacy modes and settings.
@@ -300,3 +300,15 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   Validation: cortex02 isolated suite passed, 362 tests / 58 suites, including
   the existing caret, prediction/marked-text and composition regression tests.
   Installed visual behavior remains unproven pending owner checks.
+
+- **2026-11-12, Void mutation routing (Partial).** Plan and implementation:
+  Void captures its Workspace and pad; single restore, bulk restore and permanent
+  delete use typed commands. Removed the controller's direct store mutation path.
+  Bulk restore retains expiry skipping and counts; only restored notes are selected.
+  Errors use the existing notice. No settings, modes or controls added.
+  Workspace currently has no general undo/history engine; this slice shares its
+  mutation boundary without claiming to add undo for permanent deletion.
+  Owner checks (no GUI/VNC): restore one and several notes in each pad, include
+  expired Clipboard entries, delete permanently, reopen Void and restart.
+  Validation: isolated cortex02 suite passed, 363 tests / 58 suites.
+  Post-push CI and installed revision are reported in the turn close-out.

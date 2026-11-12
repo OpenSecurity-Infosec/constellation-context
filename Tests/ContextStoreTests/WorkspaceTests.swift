@@ -5,6 +5,25 @@ import Foundation
 import Testing
 
 @Suite struct WorkspaceTests {
+    @Test func bulkRestoreAndDestroyPersistThroughCommands() throws {
+        let vault = tempVault()
+        defer { try? FileManager.default.removeItem(at: vault.root) }
+        let ws = Workspace(vault: vault)
+        let store = ws.store(for: .clipboard)
+        let a = store.create(text: "keep [[link]]")
+        let b = store.create(text: "expired")
+        try ws.apply(.trash(.clipboard, id: a.id))
+        try ws.apply(.trash(.clipboard, id: b.id))
+        let now = Date()
+        store.setExpiry(id: b.id, at: now.addingTimeInterval(-1))
+        #expect(try ws.apply(.restoreMany(.clipboard, ids: [a.id, a.id, b.id, UUID()], now: now)) == .restored(.init(restored: 1, skippedExpired: 1)))
+        #expect(store.note(id: b.id)?.isTrashed == true)
+        #expect(Workspace(vault: vault).store(for: .clipboard).liveNotes.first?.text == "keep [[link]]")
+        try ws.apply(.destroy(.clipboard, id: b.id))
+        #expect(Workspace(vault: vault).store(for: .clipboard).note(id: b.id) == nil)
+        #expect(throws: WorkspaceError.noSuchNote) { try ws.apply(.destroy(.scratch, id: a.id)) }
+    }
+
     @Test func renamePreservesBytesAndIdentityThenTrashRetainsFile() throws {
         let vault = tempVault()
         defer { try? FileManager.default.removeItem(at: vault.root) }
