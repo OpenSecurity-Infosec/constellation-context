@@ -29,7 +29,6 @@ private struct SettingsView: View {
     @State private var fontSize: Double = Double(ContextSettings.shared.fontSize)
     @State private var pinOnTop: Bool = ContextSettings.shared.pinOnTop
     @State private var showMenuBar: Bool = ContextSettings.shared.showMenuBarExtra
-    @State private var vaultPath: String = ContextSettings.shared.obsidianVaultPath ?? ""
     @State private var theme: ThemeMode = ContextSettings.shared.themeMode
     @State private var showInDock: Bool = ContextSettings.shared.showInDock
     @State private var colorTheme: ColorTheme = ContextSettings.shared.colorTheme
@@ -91,25 +90,6 @@ private struct SettingsView: View {
                 ContextSettings.shared.fontSize = CGFloat(fontSize)
                 ContextSettings.shared.save()
                 ThemeRelayer.lookChanged()
-            }
-            HStack {
-                TextField("Obsidian vault folder", text: $vaultPath)
-                    .onChange(of: vaultPath) {
-                        let trimmed = vaultPath.trimmingCharacters(in: .whitespaces)
-                        ContextSettings.shared.obsidianVaultPath = trimmed.isEmpty ? nil : trimmed
-                        ContextSettings.shared.save()
-                    }
-                Button("Choose…") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseFiles = false
-                    panel.canChooseDirectories = true
-                    panel.canCreateDirectories = true
-                    if panel.runModal() == .OK, let url = panel.url {
-                        vaultPath = url.path
-                        ContextSettings.shared.obsidianVaultPath = url.path
-                        ContextSettings.shared.save()
-                    }
-                }
             }
             BaseVaultSettingsRow()
             LinkedVaultsSection()

@@ -1,5 +1,6 @@
 import AppKit
 import ContextDomain
+import ContextVault
 
 @main
 @MainActor
@@ -32,6 +33,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = buildMenu()
+        migrateObsidianSetting()
         let controller = ContextWindowController()
         main = controller
         let status = ContextStatusItem()
@@ -53,6 +55,14 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
             pendingURL = nil
             handleSchemeURL(pending)
         }
+    }
+
+    /// The old "Obsidian vault folder" setting becomes a linked vault once.
+    private func migrateObsidianSetting() {
+        guard let path = ContextSettings.shared.obsidianVaultPath, !path.isEmpty else { return }
+        try? LinkedVaultRegistry.standard?.linkObsidian(folder: URL(fileURLWithPath: path, isDirectory: true))
+        ContextSettings.shared.obsidianVaultPath = nil
+        ContextSettings.shared.save()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

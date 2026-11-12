@@ -72,7 +72,8 @@ public struct AnytypeConnector: VaultConnector {
         VaultNote(
             ref: VaultNoteRef(vaultID: id, noteID: object.id),
             document: Self.document(for: object),
-            modified: object.modified
+            modified: object.modified,
+            name: object.name
         )
     }
 

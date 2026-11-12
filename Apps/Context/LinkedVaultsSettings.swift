@@ -94,6 +94,21 @@ final class LinkedVaultsModel {
         step = .pickSpace(spaces)
     }
 
+    func linkObsidian() {
+        message = nil
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.message = "Choose your Obsidian vault folder"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try registry?.linkObsidian(folder: url)
+        } catch {
+            message = "Couldn't save the linked vault."
+        }
+        reload()
+    }
+
     func link(space: AnytypeSpace) {
         let vault = LinkedVault(kind: .anytype, name: space.name, spaceID: space.id)
         try? registry?.add(vault)
@@ -129,6 +144,8 @@ struct LinkedVaultsSection: View {
             HStack {
                 Text("Linked vaults")
                 Spacer()
+                Button("Link Obsidian…") { model.linkObsidian() }
+                    .accessibilityIdentifier("settings.linked.obsidian")
                 Button("Link Anytype…") { model.linkAnytype() }
                     .disabled(model.busy)
                     .accessibilityIdentifier("settings.linked.anytype")

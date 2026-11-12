@@ -56,6 +56,21 @@ public struct LinkedVaultRegistry: Sendable {
         try save(all)
     }
 
+    /// The first linked Obsidian vault's folder, if any.
+    public var obsidianFolder: URL? {
+        load().first { $0.kind == .obsidian }?.path.map { URL(fileURLWithPath: $0, isDirectory: true) }
+    }
+
+    /// Links `folder` as an Obsidian vault unless it is already linked.
+    @discardableResult
+    public func linkObsidian(folder: URL) throws -> LinkedVault {
+        let path = folder.standardizedFileURL.path
+        if let existing = load().first(where: { $0.kind == .obsidian && $0.path == path }) { return existing }
+        let vault = LinkedVault(kind: .obsidian, name: folder.lastPathComponent, path: path)
+        try add(vault)
+        return vault
+    }
+
     public func remove(id: String) throws {
         try save(load().filter { $0.id != id })
     }
@@ -143,7 +158,8 @@ public enum Connectors {
                 client: AnytypeClient(transport: anytypeTransport, apiKey: secrets.secret(for: anytypeKeyAccount))
             )
         case .obsidian:
-            return nil
+            guard let path = vault.path else { return nil }
+            return ObsidianConnector(id: vault.id, displayName: vault.name, root: URL(fileURLWithPath: path, isDirectory: true))
         }
     }
 }

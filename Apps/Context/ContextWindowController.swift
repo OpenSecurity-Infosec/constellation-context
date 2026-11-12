@@ -575,7 +575,7 @@ final class ContextWindowController {
 
     func sendToObsidian() {
         let env = Handoff.Environment.live()
-        let path = ContextSettings.shared.obsidianVaultPath
+        let path = LinkedVaultRegistry.standard?.obsidianFolder?.path
         let reason = Handoff.checkVault(path: path, env: env)
         switch reason {
         case nil:
@@ -601,8 +601,7 @@ final class ContextWindowController {
         panel.canCreateDirectories = true
         panel.message = "Choose your Obsidian vault folder"
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        ContextSettings.shared.obsidianVaultPath = url.path
-        ContextSettings.shared.save()
+        try? LinkedVaultRegistry.standard?.linkObsidian(folder: url)
         do {
             try NoteExport.sendToObsidian(note, vault: url, createIfMissing: true)
         } catch let e as NoteExport.ExportError {

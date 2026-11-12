@@ -34,15 +34,22 @@ public struct VaultNote: Equatable, Sendable {
     public var ref: VaultNoteRef
     public var document: MarkdownDocument
     public var modified: Date?
+    /// The source's own name for the note: a file name without `.md`,
+    /// or an Anytype object name.
+    public var name: String?
 
-    public init(ref: VaultNoteRef, document: MarkdownDocument, modified: Date? = nil) {
+    public init(ref: VaultNoteRef, document: MarkdownDocument, modified: Date? = nil, name: String? = nil) {
         self.ref = ref
         self.document = document
         self.modified = modified
+        self.name = name
     }
 
     public var title: String {
-        document.value(for: "title").flatMap { $0.isEmpty ? nil : $0 } ?? document.title
+        for candidate in [document.value(for: "title"), name] {
+            if let c = candidate, !c.isEmpty { return c }
+        }
+        return document.title
     }
 }
 
@@ -52,6 +59,8 @@ public enum VaultError: Error, Equatable, Sendable {
     /// Credentials missing, revoked, or wrong.
     case unauthorized
     case notFound
+    /// The note changed in another app after Context read it.
+    case conflict
     case rateLimited
     /// The edit cannot be represented in the source without losing data.
     case unsupported(String)
@@ -62,6 +71,7 @@ public enum VaultError: Error, Equatable, Sendable {
         case .unavailable(let why): why
         case .unauthorized: "Context isn't authorized. Link the vault again."
         case .notFound: "That note no longer exists."
+        case .conflict: "This note changed in another app. Reopen it to see the latest version."
         case .rateLimited: "The vault is busy. Try again in a moment."
         case .unsupported(let why): why
         case .invalid(let why): why
