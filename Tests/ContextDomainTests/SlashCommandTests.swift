@@ -13,9 +13,9 @@ import Testing
     }
 
     @Test func completionsFilter() {
-        #expect(SlashCommand.completions(matching: "").count == 4)
+        #expect(SlashCommand.completions(matching: "").count == 11)
         #expect(SlashCommand.completions(matching: "to").map(\.name) == ["today"])
-        #expect(SlashCommand.completions(matching: "s").map(\.name) == ["sort_lines"])
+        #expect(SlashCommand.completions(matching: "s").map(\.name) == ["sum", "sort_lines"])
     }
 
     @Test func todayInsertsISODate() {
@@ -36,9 +36,9 @@ import Testing
         #expect(edit?.fullText == "a\nb\nc")
     }
 
-    @Test func sortLinesKeepsTriggerPinned() {
+    @Test func sortLinesTreatsLegacyTriggerAsText() {
         let edit = SlashCommand.run(name: "sort_lines", tokenRange: nil, fullText: "list\nb\na", selection: nil)
-        #expect(edit?.fullText == "list\na\nb")
+        #expect(edit?.fullText == "a\nb\nlist")
     }
 
     @Test func unknownCommandNil() {

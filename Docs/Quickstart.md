@@ -21,7 +21,7 @@ Read this first. It takes five minutes and gets you productive in this repo. The
 
 The MVP in [Vision.md § MVP](Vision.md#mvp) is **not met yet**. Each item has code and tests, but the exit test has not been met. The gap list is in `Plans/active/MVP.md` § Status; start there. All eight steps are recorded in [`Plans/active/MVP.md`](../Plans/active/MVP.md), with commits and anything still unproven. Most features are **Partial**: tests pass, but the installed app hasn't been exercised by hand. The manual-check list is at the end of that plan, and the per-feature status is in `README.md` § MVP status.
 
-The Antinote-parity era is over. The first-line modes (`math`, `list`, `timer`, …), OCR, The Void, and `::` commands still work in Scratch, but they get no new investment. Expect a "less is more" trim (Vision § Open questions).
+The Antinote-parity era is over. First-line words are inert Markdown. Use explicit `::math`, `::sum`, `::avg`, `::count`, `::list`, `::code`, and `::timer` text commands; copies go to Clipboard only. OCR, The Void and export remain on-command.
 
 ## Build, test, run
 
@@ -130,5 +130,15 @@ The apps share no Swift package yet. Do not create one without an ADR.
 2. Then take the next work from [Vision.md § MVP](Vision.md#mvp) "Later". The likely order:
    - a real Claude Code harness connector;
    - the `contextctl` CLI and MCP server;
-   - the "less is more" trim of legacy modes.
+   - owner verification of the legacy-mode consolidation.
 3. Open a plan in `Plans/active/` for anything that crosses modules. Add an ADR for architectural decisions.
+
+## Explicit text commands
+
+Type a `::` command and choose it with Return or Tab in the existing completion
+list. `::math`, `::sum`, `::avg` and `::count` insert results for the note text
+excluding the command token; put the token on its own last line. `::list` formats
+that text as editable Markdown tasks, and `::code` wraps it in a safe Markdown
+fence. Each command is one undoable edit. `::timer` inserts elapsed time, starting
+an in-memory stopwatch for the note on its first call; it has no running display
+or persisted state. Clipboard collects copies independently of the current note.

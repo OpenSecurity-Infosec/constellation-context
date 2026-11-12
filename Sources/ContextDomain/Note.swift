@@ -49,7 +49,7 @@ public struct ContextNote: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-/// First-line magic words, mirroring Antinote's trigger vocabulary.
+/// Legacy vocabulary retained for source compatibility; trigger detection is inert.
 public enum NoteKind: String, Equatable, Sendable {
     case plain
     case math
@@ -62,17 +62,8 @@ public enum NoteKind: String, Equatable, Sendable {
     case paste
 
     public init(trigger: String) {
-        switch trigger {
-        case "math": self = .math
-        case "sum": self = .sum
-        case "avg", "average": self = .avg
-        case "count": self = .count
-        case "list": self = .list
-        case "code": self = .code
-        case "timer": self = .timer
-        case "paste": self = .paste
-        default: self = .plain
-        }
+        // Legacy first-line words are ordinary Markdown, including paste.
+        self = .plain
     }
 
     public var triggerWord: String? {

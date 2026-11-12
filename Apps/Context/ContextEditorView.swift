@@ -18,19 +18,6 @@ struct ContextEditorRoot: View {
     var aiState: AIState = .idle
     var liveCount: Int
     var noteIndex: Int = 0
-    var mathResults: [MathEngine.LineOutcome]
-    var aggregate: String?
-    var sumAvgLines: [String] = []
-    var countLines: [String] = []
-    var stats: NoteStats?
-    var checklist: [ChecklistItem]
-    var autoPasteArmed: Bool
-    var elapsed: TimeInterval
-    var remaining: TimeInterval?
-    var timerRunning: Bool
-    var ratesFootnote: String? = nil
-    var jsExtensions: [JSExtension.Script] = []
-
     @State private var slashFragment: String? = nil
     @State private var slashRange: NSRange = NSRange(location: 0, length: 0)
     @State private var slashSelected: Int = 0
@@ -59,7 +46,6 @@ struct ContextEditorRoot: View {
                 Spacer(minLength: 0)
                 VStack(spacing: 8) {
                     if aiState != .idle { aiCard }
-                    if hasModeCard { modeCard }
                     positionDots
                 }
                 .padding(.horizontal, 16)
@@ -146,33 +132,24 @@ struct ContextEditorRoot: View {
     }
 
     private var editor: some View {
-        Group {
-            if note.kind == .list {
-                checklistView
-            } else {
-                ZStack(alignment: .topLeading) {
-                    mathGutter
-                    PlainTextEditor(text: note.text, noteID: note.id, titlesFirstLine: pad != .clipboard, onChange: { controller?.onTextChange($0) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
-                        controller?.indentRowAtCaret(direction: direction)
-                    }, onSlash: { fragment, range in
-                        slashFragment = fragment
-                        slashRange = range
-                        slashSelected = 0
-                    }, onImagePaste: { image in
-                        controller?.handleImageDrop(image)
-                    }, contextMenuItems: {
-                        controller?.noteMenuItems(for: .canvas) ?? []
-                    })
-                        .font(.system(size: ContextSettings.shared.fontSize))
-                    if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
-                        slashPopup(fragment: fragment)
-                    }
-                }
+        ZStack(alignment: .topLeading) {
+            PlainTextEditor(text: note.text, noteID: note.id, titlesFirstLine: pad != .clipboard, onChange: { controller?.onTextChange($0) }, onSlash: { fragment, range in
+                slashFragment = fragment
+                slashRange = range
+                slashSelected = 0
+            }, onImagePaste: { image in
+                controller?.handleImageDrop(image)
+            }, contextMenuItems: {
+                controller?.noteMenuItems(for: .canvas) ?? []
+            })
+                .font(.system(size: ContextSettings.shared.fontSize))
+            if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: []).isEmpty {
+                slashPopup(fragment: fragment)
             }
         }
         .onKeyPress(.return) {
             if slashFragment != nil, let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
+                let matches = SlashCommand.completions(matching: fragment, extensions: [])
                 if slashSelected < matches.count {
                     runSlashCommand(matches[slashSelected].name)
                     return .handled
@@ -189,7 +166,7 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.downArrow) {
             if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
+                let matches = SlashCommand.completions(matching: fragment, extensions: [])
                 slashSelected = min(slashSelected + 1, matches.count - 1)
                 return .handled
             }
@@ -204,7 +181,7 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.tab) {
             if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
+                let matches = SlashCommand.completions(matching: fragment, extensions: [])
                 if slashSelected < matches.count {
                     runSlashCommand(matches[slashSelected].name)
                     return .handled
@@ -232,106 +209,10 @@ struct ContextEditorRoot: View {
         }
     }
 
-    private var mathGutter: some View {
-        // Right-aligned inline results for math notes, per-line
-        // contributions for sum/avg notes.
-        VStack(alignment: .trailing, spacing: 0) {
-            // Offset past the trigger line.
-            if note.kind == .math || note.kind == .sum || note.kind == .avg || note.kind == .count {
-                Color.clear.frame(height: lineHeight)
-            }
-            switch note.kind {
-            case .count:
-                ForEach(countLines.indices, id: \.self) { i in
-                    Text(countLines[i])
-                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                        .foregroundStyle(.secondary)
-                        .frame(height: lineHeight)
-                }
-            case .sum, .avg:
-                ForEach(sumAvgLines.indices, id: \.self) { i in
-                    Text(sumAvgLines[i])
-                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                        .foregroundStyle(.secondary)
-                        .frame(height: lineHeight)
-                }
-            default:
-                ForEach(mathResults.indices, id: \.self) { i in
-                    switch mathResults[i] {
-                case .value(let r):
-                    // gutterDisplay names the variable on assignment
-                    // lines ("price = 10"), plain value elsewhere.
-                    Text(r.gutterDisplay)
-                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                        .foregroundStyle(Color.ctxAccent)
-                        .frame(height: lineHeight)
-                case .error(let e):
-                    Text(e.message)
-                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                        .foregroundStyle(Color.ctxWarning)
-                        .frame(height: lineHeight)
-                case .blank:
-                    Text("")
-                        .frame(height: lineHeight)
-                }
-                }
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        // Line up with the text view's inset (it adds 10pt of its own).
-        .padding(.top, ZenMetrics.textInset.height - 10)
-        .padding(.trailing, ZenMetrics.textInset.width)
-        .allowsHitTesting(false)
-    }
-
-    private var lineHeight: CGFloat { ContextSettings.shared.fontSize * 1.35 + 4 }
-
-    private var checklistView: some View {
-        List {
-            ForEach(checklist) { item in
-                HStack {                    Button(item.checked ? "☑" : "☐") { controller?.toggleChecklist(id: item.id) }
-                        .buttonStyle(.plain)
-                    Text(markerPrefix(item))
-                        .font(.system(size: ContextSettings.shared.fontSize).monospaced())
-                        .foregroundStyle(.secondary)
-                        .frame(minWidth: 24, alignment: .trailing)
-                    TextField("", text: Binding(
-                        get: { item.text },
-                        set: { _ in }
-                    ))
-                    .textFieldStyle(.plain)
-                    .strikethrough(item.checked)
-                    .foregroundStyle(item.checked ? .secondary : .primary)
-                }
-                .padding(.leading, CGFloat(item.indent) * 16)
-                .contextMenu {
-                    Button("Nest (Tab)") { controller?.indentChecklist(id: item.id, direction: .in) }
-                    Button("Outdent (⇧Tab)") { controller?.indentChecklist(id: item.id, direction: .out) }
-                    Button("Cycle marker (⌘⇧M)") { controller?.cycleChecklistMarker(id: item.id) }
-                }
-            }
-            .onMove { from, to in controller?.moveChecklistBlock(from: from, to: to) }
-            .onDelete { _ in }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .padding(.top, ZenMetrics.textInset.height - 10)
-        .padding(.horizontal, ZenMetrics.textInset.width - 16)
-    }
-
-    private func markerPrefix(_ item: ChecklistItem) -> String {
-        switch item.marker {
-        case .checkbox: return item.checked ? "[x]" : "[ ]"
-        case .bullet: return "-"
-        case .numbered(let n): return "\(n)."
-        }
-    }
-
     /// `::` autocomplete popup: type to filter, Tab/↑↓ to move, Return to run.
-    /// Native builtins first, then installed JS extensions.
+    /// Deterministic builtins only.
     private func slashPopup(fragment: String) -> some View {
-        let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
+        let matches = SlashCommand.completions(matching: fragment, extensions: [])
         return VStack(alignment: .leading, spacing: 0) {
             ForEach(matches.indices, id: \.self) { i in
                 Button {
@@ -369,52 +250,6 @@ struct ContextEditorRoot: View {
     private func runSlashCommand(_ name: String) {
         controller?.runSlashCommand(name: name, tokenRange: slashRange)
         slashFragment = nil
-    }
-
-    /// Legacy first-line modes keep a small floating readout. Plain notes
-    /// and modes with nothing live to show get none.
-    private var hasModeCard: Bool {
-        switch note.kind {
-        case .sum, .avg, .count, .timer: true
-        case .paste: autoPasteArmed
-        case .math: ratesFootnote != nil
-        default: false
-        }
-    }
-
-    private var modeCard: some View {
-        HStack(spacing: 12) {
-            switch note.kind {
-            case .sum, .avg:
-                Text("\(note.kind.triggerWord ?? "") = \(aggregate ?? "—")")
-                    .font(.system(.body).monospaced())
-                    .foregroundStyle(Color.ctxAccent)
-            case .count:
-                if let stats {
-                    Text("\(stats.lines) lines · \(stats.words) words · \(stats.characters) chars")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-            case .timer:
-                Text(NoteTimer.format(remaining ?? elapsed))
-                    .font(.system(.title3).monospaced())
-                Button(timerRunning ? "Stop" : "Start") {
-                    timerRunning ? controller?.timerStop() : controller?.timerStart()
-                }
-                Button("Reset") { controller?.timerReset() }
-                Button("Full Screen") { controller?.openTimerFullscreen() }
-            case .paste:
-                Text("Collecting copies").font(.caption).foregroundStyle(.secondary)
-            case .math:
-                if let ratesFootnote {
-                    Text(ratesFootnote).font(.caption).foregroundStyle(.secondary)
-                }
-            default:
-                EmptyView()
-            }
-        }
-        .buttonStyle(.borderless)
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
     }
 
     /// AI proposals float over the bottom of the canvas until accepted or
@@ -564,7 +399,26 @@ struct PlainTextEditor: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    final class Coordinator {
+    @MainActor final class Coordinator: NSObject {
+        override init() {
+            super.init()
+            for name in [Notification.Name.NSUndoManagerDidUndoChange, Notification.Name.NSUndoManagerDidRedoChange] {
+                NotificationCenter.default.addObserver(self, selector: #selector(historyDidChange(_:)), name: name, object: nil)
+            }
+        }
+
+        deinit { NotificationCenter.default.removeObserver(self) }
+
+        // Native undo changes text storage without calling didChangeText.
+        // Commit before SwiftUI can push the previous model value back in.
+        @objc private func historyDidChange(_ notification: Notification) {
+            guard let tv = view as? ContextTextView,
+                  let manager = notification.object as? UndoManager,
+                  manager === tv.undoManager, !tv.hasMarkedText() else { return }
+            tv.refreshStyling()
+            onChange?(tv.string)
+        }
+
         var view: NSTextView?
         var noteID: AnyHashable?
         var styleKey: String?
@@ -612,11 +466,11 @@ final class ContextTextView: NSTextView {
 
     override func doCommand(by selector: Selector) {
         // Tab nests / Shift+Tab outdents the current checklist line.
-        if selector == #selector(insertTab(_:)) {
+        if selector == #selector(insertTab(_:)), onIndent != nil {
             onIndent?(.in)
             return
         }
-        if selector == #selector(insertBacktab(_:)) {
+        if selector == #selector(insertBacktab(_:)), onIndent != nil {
             onIndent?(.out)
             return
         }
@@ -636,13 +490,16 @@ final class ContextTextView: NSTextView {
 
     /// Fires onSlash while the caret sits on a `::token`.
     private func checkSlashTrigger() {
-        let caret = selectedRange().location
+        guard let caretIndex = Range(NSRange(location: selectedRange().location, length: 0), in: string)?.lowerBound else { return }
+        let caret = string.distance(from: string.startIndex, to: caretIndex)
         guard let found = SlashCommand.token(at: caret, in: string) else {
             hideSlashCompletion()
             return
         }
         let fragment = String(found.token.dropFirst(2))
-        let range = NSRange(location: found.range.lowerBound, length: found.range.upperBound - found.range.lowerBound)
+        let start = string.index(string.startIndex, offsetBy: found.range.lowerBound)
+        let end = string.index(string.startIndex, offsetBy: found.range.upperBound)
+        let range = NSRange(start..<end, in: string)
         onSlash?(fragment, range)
         showSlashCompletion(fragment: fragment, tokenRange: range)
     }

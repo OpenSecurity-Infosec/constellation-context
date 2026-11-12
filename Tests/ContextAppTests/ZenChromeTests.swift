@@ -102,7 +102,7 @@ import Testing
         tv.setSelectedRange(NSRange(location: 0, length: storage.length))
         tv.insertText("math\n2 + 2", replacementRange: tv.selectedRange())
         let mathFont = try #require(storage.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
-        #expect(mathFont.pointSize == bodyFont.pointSize)
+        #expect(mathFont.pointSize > bodyFont.pointSize, "legacy mode words use ordinary prose titles")
     }
 }
 

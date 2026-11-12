@@ -4,14 +4,14 @@ import Testing
 
 @Suite struct NoteTests {
     @Test func triggerDetection() {
-        #expect(ContextNote(text: "math\n1+1").kind == .math)
-        #expect(ContextNote(text: "LIST\n- a").kind == .list)
+        #expect(ContextNote(text: "math\n1+1").kind == .plain)
+        #expect(ContextNote(text: "LIST\n- a").kind == .plain)
         #expect(ContextNote(text: "hello").kind == .plain)
-        #expect(ContextNote(text: "count\n1 2 3").kind == .count)
+        #expect(ContextNote(text: "count\n1 2 3").kind == .plain)
     }
 
-    @Test func bodyStripsTrigger() {
-        #expect(ContextNote(text: "math\n2+2").bodyWithoutTrigger == "2+2")
+    @Test func bodyPreservesLegacyFirstLine() {
+        #expect(ContextNote(text: "math\n2+2").bodyWithoutTrigger == "math\n2+2")
     }
 
     @Test func sanitizeStripsBullets() {

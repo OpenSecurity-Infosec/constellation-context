@@ -6,6 +6,11 @@ import Foundation
 public enum SlashCommand: Sendable {
     /// A text edit produced by running a command.
     public struct Edit: Equatable, Sendable {
+        public init(tokenRange: Range<Int>?, replacement: String, fullText: String?) {
+            self.tokenRange = tokenRange
+            self.replacement = replacement
+            self.fullText = fullText
+        }
         /// Range of the `::token` to replace (nil = whole-buffer transform).
         public var tokenRange: Range<Int>?
         public var replacement: String
@@ -23,6 +28,13 @@ public enum SlashCommand: Sendable {
     }
 
     public static let builtins: [Definition] = [
+        Definition(name: "math", hint: "Insert local calculation results"),
+        Definition(name: "sum", hint: "Insert sum"),
+        Definition(name: "avg", hint: "Insert average"),
+        Definition(name: "count", hint: "Insert text counts"),
+        Definition(name: "list", hint: "Format text as Markdown tasks"),
+        Definition(name: "code", hint: "Fence text as Markdown code"),
+        Definition(name: "timer", hint: "Insert stopwatch elapsed time; first call starts"),
         Definition(name: "today", hint: "Insert ISO date"),
         Definition(name: "now", hint: "Insert local date + time"),
         Definition(name: "sort_lines", hint: "Sort lines A–Z"),
@@ -87,6 +99,27 @@ public enum SlashCommand: Sendable {
         now: Date = Date()
     ) -> Edit? {
         switch name.lowercased() {
+        case "list", "code", "count":
+            var chars = Array(fullText)
+            if let r = tokenRange, r.lowerBound >= 0, r.upperBound <= chars.count { chars.removeSubrange(r) }
+            let input = String(chars).trimmingCharacters(in: .newlines)
+            if name == "count" {
+                let stats = NoteStats.compute(for: input)
+                return Edit(tokenRange: tokenRange, replacement: "\(stats.lines) lines · \(stats.words) words · \(stats.characters) chars", fullText: nil)
+            }
+            if name == "code" {
+                let fence = String(repeating: "`", count: max(3, input.split(whereSeparator: { $0 != "`" }).map { $0.count + 1 }.max() ?? 3))
+                return Edit(tokenRange: nil, replacement: "", fullText: fence + "\n" + input + "\n" + fence)
+            }
+            let output = input.components(separatedBy: .newlines).map { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return line }
+                if trimmed.range(of: #"^[-*+] \[[ xX]\] "#, options: .regularExpression) != nil { return line }
+                let indent = String(line.prefix(while: { $0 == " " || $0 == "\t" }))
+                let body = trimmed.replacingOccurrences(of: #"^(?:[-*+] |\d+[.)] )"#, with: "", options: .regularExpression)
+                return indent + "- [ ] " + body
+            }.joined(separator: "\n")
+            return Edit(tokenRange: nil, replacement: "", fullText: output)
         case "today":
             return Edit(tokenRange: tokenRange, replacement: isoDate(now), fullText: nil)
         case "now":
@@ -140,15 +173,7 @@ public enum SlashCommand: Sendable {
             let sortedSlice = lines[target].sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
             lines.replaceSubrange(target, with: sortedSlice)
         } else {
-            // Whole body: keep a trigger first line pinned, sort the rest.
-            let first = lines.first ?? ""
-            if NoteKind(trigger: first.trimmingCharacters(in: .whitespaces).lowercased()) != .plain, lines.count > 1 {
-                let head = lines[0]
-                let rest = lines.dropFirst().sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-                lines = [head] + rest
-            } else {
-                lines = lines.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-            }
+            lines.sort { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         }
         return lines.joined(separator: "\n")
     }

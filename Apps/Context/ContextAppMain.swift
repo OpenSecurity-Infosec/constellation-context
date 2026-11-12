@@ -123,7 +123,6 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
     @objc func newNote(_ sender: Any?) { main?.newNote() }
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }
     @objc func prevNote(_ sender: Any?) { main?.prevNote() }
-    @objc func cycleMarker(_ sender: Any?) { main?.cycleMarkerAtCaret() }
     @objc func sendToAppleNotes(_ sender: Any?) { main?.sendToAppleNotes() }
     @objc func sendToObsidian(_ sender: Any?) { main?.sendToObsidian() }
     @objc func sendToBear(_ sender: Any?) { main?.sendToBear() }
@@ -182,11 +181,6 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
         let note = NSMenu(title: "Note")
         note.delegate = self
         let noteItem = NSMenuItem(); noteItem.submenu = note; menu.addItem(noteItem)
-        let format = NSMenu(title: "Format")
-        let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")
-        cycle.keyEquivalentModifierMask = [.command, .shift]
-        format.addItem(cycle)
-        let formatItem = NSMenuItem(); formatItem.submenu = format; menu.addItem(formatItem)
         let pads = NSMenu(title: "Pads")
         for n in 1...9 {
             let title = n == 1 ? "Scratch" : n == 2 ? "Clipboard" : "Project \(n - 2)"

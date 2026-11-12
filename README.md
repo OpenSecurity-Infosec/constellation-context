@@ -43,7 +43,7 @@ Not in the MVP: the `contextctl` CLI and MCP server, real harness connectors, ro
 
 ## Baseline: Antinote features (historical)
 
-This is the pre-pivot parity record. Antinote parity work is closed, and the table is not a roadmap.
+This is the pre-pivot parity record. Antinote parity work is closed, and the table is not a roadmap. The descriptions below record historical behavior: first-line modes, mode controls, AutoPaste, live currency fetching and checklist controls have since been removed. Explicit `::math`, `::sum`, `::avg`, `::count`, `::list`, `::code` and `::timer` commands insert or format ordinary text; Clipboard alone collects copies. This consolidation remains Partial pending owner interaction checks.
 
 | Antinote feature | Context status (honest: Partial until proven feelable vs Antinote) |
 | --- | --- |
@@ -112,5 +112,5 @@ unless you opt in.
 
 - Notes live on this Mac as Markdown files in the base vault, `~/Context` by default (Settings → Base vault). It opens in Obsidian as-is. Legacy `notes.json` content moves there once, and the old file is kept as `notes.json.migrated-*`.
 - Linked vaults are listed in `~/Library/Application Support/ConstellationContext/vaults.json`. The Anytype and AI API keys are in the Keychain.
-- No accounts and no analytics. Network calls happen only for currency rates in `math` notes, for AI actions you run (sent to the endpoint in Settings → AI), and for a linked Anytype (localhost).
+- No accounts and no analytics. Network calls happen only for AI actions you run (sent to the endpoint in Settings → AI), and for a linked Anytype (localhost).
 - License: MIT (see `LICENSE`).

@@ -159,11 +159,10 @@ The app now has:
 - `gpt-6.1-terra` AI actions as diff proposals;
 - a Library window with cross-source search and a canvas that shows images inline in Read mode.
 
-Antinote-era features still work in Scratch: first-line modes, OCR, The Void, builtin `::` commands, URL schemes, and export. They are frozen and are candidates for the "less is more" trim. iCloud sync was removed in favor of file sync (ADR-0001).
+Legacy first-line words are ordinary Markdown. Local calculations, counts, task/code formatting and session stopwatch readouts run explicitly through builtin `::` text commands. Clipboard is the sole copy collector. OCR, The Void, URL schemes and export remain on-command actions. iCloud sync was removed in favor of file sync (ADR-0001).
 
 ## Open questions
 
-- Which first-line modes survive the "less is more" cut?
 - Should the base vault default stay at `~/Context`? It was chosen to avoid the Documents privacy prompt on ad-hoc-signed builds. The other options are iCloud Drive, or asking on first run.
 - Anytype's real markdown round-trip fidelity. The connector follows API v1 `2025-11-08`, but it has only been tested against a fake.
 - Live inline styling while typing in the Library (Bear-style). Today, images show only in Read mode.

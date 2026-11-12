@@ -336,3 +336,30 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     the entire legacy trim or installed interaction has been verified.
   - Validation: isolated cortex02 suite passed, 364 tests / 58 suites.
     Local swift test unavailable on this Linux host. CI and revision check follow.
+
+- **2026-11-12, first-line mode consolidation (Partial; owner verification pending).**
+  - Plan/contracts: first-line words become inert ordinary Markdown without
+    rewriting stored notes. Keep local calculations, counts, Markdown tasks/code
+    and stopwatch readouts behind the existing explicit `::` command entry point.
+    These support quick text work under Vision principles 1 and 5; no settings,
+    modes, pickers or canvas controls are added. Commands use Workspace mutations
+    and native editor undo. Clipboard alone collects copies through its existing
+    privacy policy; remove AutoPaste and the timer/fullscreen/gutter surfaces.
+  - Owner manual checks (no GUI/VNC attempted): reopen legacy math/list/code/timer/
+    paste notes and confirm their bytes remain intact and no mode UI activates;
+    type `::math`, `::sum`, `::avg`, `::count`, `::list`, `::code`, and `::timer`
+    on command, check results, edit Markdown tasks/code normally, undo/redo once,
+    switch pads and restart. First `::timer` starts a session-only stopwatch for
+    that note; subsequent calls insert elapsed time. Restart resets stopwatch
+    state. Copy text while Scratch contains `paste`: only Clipboard collects it;
+    check clipboard opt-out, concealed password-manager copies, no focus theft,
+    and project ⇧⌘C. Check non-ASCII text before commands and IME composition.
+  - Currency calculations are local and report unavailable rates; there is no
+    automatic network rate fetch. Installed interaction remains unproven.
+  - Validation: isolated cortex02 source copy passed all 371 tests in 61 suites,
+    including native command undo/redo, marked-text/editor regressions, inert
+    legacy first lines and metadata, byte-preserving reopen, local calculations,
+    portable task/code formatting and Unicode command ranges. A prior run caught
+    the old typography expectation; undo testing also caught stale Workspace text
+    after native undo. Both are fixed. Local swift test is unavailable on this
+    Linux host. Post-push CI and forced-install revision are reported at close-out.

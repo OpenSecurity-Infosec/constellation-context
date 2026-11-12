@@ -8,7 +8,7 @@ import SwiftUI
 import Vision
 
 /// Main scratchpad window: borderless floating panel with swipe navigation,
-/// inline math gutter, checklist rows, OCR drop, and export.
+/// explicit text commands, OCR drop, and export.
 @MainActor
 final class ContextWindowController {
     let window: ContextPanel
@@ -23,22 +23,15 @@ final class ContextWindowController {
     var projectInfoCache: (pad: Pad, info: ProjectInfo?)?
     var aiState: AIState = .idle
     var aiTask: Task<Void, Never>?
-    private let rates = RateStore()
-    private var math = MathEngine()
-    private let autoPaste = AutoPasteMonitor()
     private(set) var noteID: UUID
-    private var timer = NoteTimer()
-    private var timerMode: NoteTimer.Mode = .stopwatch
-    private var tickTimer: Timer?
+    private var commandTimers: [UUID: Date] = [:]
     private var hosting: NSHostingView<ContextEditorRoot>?
     /// Hover chrome for the zen canvas.
     let chrome = ZenChrome()
     /// Whether the settings panel is open on the right.
     private(set) var inspectorOpen = false
-    private var lastMathBody = ""
-    private var lastMathResults: [MathEngine.LineOutcome] = []
 
-    /// Tests pass a temp workspace and `live: false` (no rate fetch).
+    /// Tests pass a temporary workspace. `live` remains source-compatible; no rate fetch occurs.
     init(workspace: Workspace? = nil, live: Bool = true) {
         self.workspace = workspace ?? Self.openWorkspace()
         for p in [Pad.scratch, .clipboard] { self.workspace.store(for: p).collectGarbage() }
@@ -63,10 +56,8 @@ final class ContextWindowController {
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
         ContextTheme.apply(mode: ContextSettings.shared.themeMode)
-        if live { refreshRates() }
         render()
         applyLook()
-        startTimerTick()
         updatePin()
     }
 
@@ -89,6 +80,7 @@ final class ContextWindowController {
         ContextSettings.shared.baseVaultPath = url.path
         ContextSettings.shared.save()
         workspace = Self.openWorkspace()
+        commandTimers.removeAll()
         pad = .scratch
         noteID = store.liveNotes.first?.id ?? store.create().id
         afterNavigate()
@@ -157,36 +149,6 @@ final class ContextWindowController {
                 self.noteID = self.store.liveNotes.first?.id ?? self.noteID
                 self.render()
             }
-        }
-    }
-
-    private func refreshRates() {
-        if let snap = rates.current { math = MathEngine(rates: snap) }
-        lastMathBody = ""
-        Task { [weak self] in
-            await self?.rates.refreshIfNeeded()
-            await MainActor.run {
-                if let snap = self?.rates.current {
-                    self?.math = MathEngine(rates: snap)
-                    self?.lastMathBody = ""
-                    self?.render(preservingFocus: true)
-                }
-            }
-        }
-    }
-
-    var ratesFootnote: String? {
-        // Show only in math notes mentioning a currency code.
-        let body = note.bodyWithoutTrigger.uppercased()
-        let mentionsCurrency = (CurrencyRates.fiat.union(CurrencyRates.crypto)).contains { body.contains($0) }
-        guard note.kind == .math, mentionsCurrency else { return nil }
-        switch CurrencyRates.freshness(of: rates.current) {
-        case .unavailable:
-            return "rates unavailable offline — connect once to fetch"
-        case .live:
-            return "rates \(CurrencyRates.ageLabel(since: rates.current!.fetchedAt))"
-        case .cachedStale:
-            return "rates \(CurrencyRates.ageLabel(since: rates.current!.fetchedAt)) (cached — provider unreachable)"
         }
     }
 
@@ -279,8 +241,6 @@ final class ContextWindowController {
         if pad.isProject { pad = .scratch }
         guard case .note(let id)? = apply(.createNote(pad, text: "")) else { return }
         noteID = id
-        autoPaste.stop()
-        timer = NoteTimer()
         render()
         show()
     }
@@ -308,15 +268,12 @@ final class ContextWindowController {
 
     private func afterNavigate() {
         flushNow()
-        autoPaste.stop()
-        timer = NoteTimer()
         render()
         chrome.flashPosition()
     }
 
     func trashCurrent() {
         apply(.trash(pad, id: noteID))
-        autoPaste.stop()
         if let next = store.liveNotes.first {
             noteID = next.id
         } else {
@@ -329,106 +286,15 @@ final class ContextWindowController {
         apply(.stageText(pad, id: noteID, text: text))
         scheduleFlush()
         chrome.typing()
-        let kind = ContextNote(text: text).kind
-        // Arm/disarm AutoPaste with the `paste` trigger.
-        if kind == .paste, !autoPaste.isArmed {
-            autoPaste.start { [weak self] pasted in
-                Task { @MainActor in self?.appendAutoPaste(pasted) }
-            }
-        } else if kind != .paste, autoPaste.isArmed {
-            autoPaste.stop()
-        }
         render(preservingFocus: true)
-    }
-
-    private func appendAutoPaste(_ pasted: String) {
-        guard let current = store.note(id: noteID), current.kind == .paste else { return }
-        let clean = PlainText.sanitizePasteboard(pasted)
-        let next = current.text.isEmpty ? clean : current.text + "\n" + clean
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    func toggleChecklist(id: Int) {
-        let next = ChecklistItem.toggle(text: note.text, id: id)
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    func indentChecklist(id: Int, direction: ChecklistItem.IndentDirection) {
-        let next = ChecklistItem.indent(text: note.text, id: id, direction: direction)
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    func cycleChecklistMarker(id: Int) {
-        let next = ChecklistItem.cycleMarker(text: note.text, id: id)
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    /// Drag-reorder: moves one checklist row. IndexSet comes from SwiftUI
-    /// .onMove in display order, which matches body-line order from parse.
-    func moveChecklist(from: IndexSet, to: Int) {
-        guard let src = from.first else { return }
-        // SwiftUI reports `to` post-removal; domain move takes a final index.
-        var dst = to
-        if to > src { dst -= 1 }
-        let next = ChecklistItem.move(text: note.text, from: src, to: dst)
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    /// Drag-reorder with subtree-follow: the dragged row carries its nested
-    /// children. Display positions translate to body ids via parse order.
-    func moveChecklistBlock(from: IndexSet, to displayTo: Int) {
-        let text = note.text
-        let lines = text.components(separatedBy: .newlines)
-        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
-        let ids = ChecklistItem.parse(text).map(\.id)
-        let (srcId, anchor) = ChecklistItem.moveDisplay(
-            ids: ids, from: from, to: displayTo, bodyLineCount: lines.count - offset
-        )
-        let next = ChecklistItem.moveBlock(text: text, from: srcId, to: anchor, bodyLineCount: lines.count - offset)
-        setText(next)
-        render(preservingFocus: true)
-    }
-
-    /// Current checklist row id under the caret in the plain text buffer.
-    func rowIDForCaret(_ caret: Int) -> Int {
-        let text = note.text
-        let lines = text.components(separatedBy: .newlines)
-        let offset = lines.first?.trimmingCharacters(in: .whitespaces).lowercased() == "list" ? 1 : 0
-        var pos = 0
-        for (i, line) in lines.enumerated() {
-            if caret <= pos + line.count { return max(0, i - offset) }
-            pos += line.count + 1
-        }
-        return max(0, lines.count - 1 - offset)
-    }
-
-    func indentRowAtCaret(direction: ChecklistItem.IndentDirection) {
-        indentChecklist(id: rowIDForCaret(lastCaret), direction: direction)
-    }
-
-    private var lastCaret: Int = 0
-
-    func trackCaret(_ caret: Int) { lastCaret = caret }
-
-    func cycleMarkerAtCaret(_ caret: Int) {
-        cycleChecklistMarker(id: rowIDForCaret(caret))
-    }
-
-    func cycleMarkerAtCaret() {
-        cycleChecklistMarker(id: rowIDForCaret(lastCaret))
     }
 
     // MARK: - Coalesced persistence
 
     private var flushWork: DispatchWorkItem?
 
-    /// Coalesces per-keystroke disk writes: memory + gutter update now,
-    /// JSON encode + atomic write at most ~0.6s after typing pauses.
+    /// Coalesces per-keystroke disk writes: memory update now,
+    /// atomic Markdown write at most ~0.6s after typing pauses.
     private func scheduleFlush() {
         flushWork?.cancel()
         let work = DispatchWorkItem { [weak self] in
@@ -452,103 +318,50 @@ final class ContextWindowController {
 
     // MARK: - Slash commands
 
-    /// Runs a `::` command: native builtins first, then installed JS scripts.
-    /// JS `replacement` swaps the token; `fullText` rewrites the buffer;
-    /// `append` adds to the end.
-    func runSlashCommand(name: String, tokenRange: NSRange) {
+    /// Explicit text commands share the Workspace mutation path and native undo.
+    func runSlashCommand(name: String, tokenRange: NSRange, now: Date = Date()) {
+        if let tv = ContextTextView.active, tv.window === window, tv.hasMarkedText() { return }
         let fullText = note.text
         let chars = Array(fullText)
-        let intRange: Range<Int>? = {
-            guard tokenRange.location >= 0,
-                  tokenRange.location + tokenRange.length <= chars.count
-            else { return nil }
-            return tokenRange.location..<(tokenRange.location + tokenRange.length)
-        }()
-        guard let edit = SlashCommand.run(
-            name: name,
-            tokenRange: intRange,
-            fullText: fullText,
-            selection: nil
-        ) else { return }
+        let intRange = Range(tokenRange, in: fullText).map {
+            fullText.distance(from: fullText.startIndex, to: $0.lowerBound)..<fullText.distance(from: fullText.startIndex, to: $0.upperBound)
+        }
+        guard let range = intRange else { return }
+        let input = String(chars[..<range.lowerBound]) + String(chars[range.upperBound...])
+        let edit: SlashCommand.Edit
+        if let result = TextCalculation.run(name: name, text: input) {
+            edit = SlashCommand.Edit(tokenRange: range, replacement: result, fullText: nil)
+        } else if name == "timer" {
+            let started = commandTimers[noteID] ?? now
+            commandTimers[noteID] = started
+            edit = SlashCommand.Edit(tokenRange: range, replacement: NoteTimer.format(now.timeIntervalSince(started)), fullText: nil)
+        } else if let result = SlashCommand.run(name: name, tokenRange: range, fullText: fullText, selection: nil) {
+            edit = result
+        } else { return }
         if let transformed = edit.fullText {
-            setText(transformed)
+            applyCommandText(transformed, name: name)
         } else if let range = edit.tokenRange {
             var updated = fullText
             let start = updated.index(updated.startIndex, offsetBy: range.lowerBound)
             let end = updated.index(updated.startIndex, offsetBy: range.upperBound)
             updated.replaceSubrange(start..<end, with: edit.replacement)
-            setText(updated)
+            applyCommandText(updated, name: name)
         }
         render(preservingFocus: true)
     }
 
 
-
-    // MARK: - Timer controls
-
-    private func startTimerTick() {
-        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.render(preservingFocus: true) }
+    private func applyCommandText(_ text: String, name: String) {
+        if let tv = ContextTextView.active, tv.window === window, tv.string == note.text, !tv.hasMarkedText() {
+            let all = NSRange(location: 0, length: (tv.string as NSString).length)
+            if tv.shouldChangeText(in: all, replacementString: text) {
+                tv.replaceCharacters(in: all, with: text)
+                tv.didChangeText() // stageText through Workspace, including native undo/redo
+                tv.undoManager?.setActionName(name)
+            }
+        } else {
+            setText(text)
         }
-    }
-
-    func timerStart() { timerMode = NoteTimer.parseMode(from: note.text); timer.start(mode: timerMode) }
-    func timerStop() { timer.stop() }
-    func timerReset() { timer.reset() }
-
-    // MARK: - Fullscreen timer
-
-    private var timerWindow: TimerWindowController?
-
-    /// Named fullscreen display for the current `timer` note. Nil unless
-    /// the note is a timer note.
-    func timerSnapshot() -> TimerSnapshot? {
-        guard note.kind == .timer else { return nil }
-        let mode = NoteTimer.parseMode(from: note.text)
-        let raw = NoteTimer.name(from: note.text)
-        let name = raw.isEmpty ? "Timer" : raw
-        let label: String = switch mode {
-        case .stopwatch: "stopwatch"
-        case .countdown: "countdown"
-        case .pomodoro: "pomodoro"
-        }
-        let display: String
-        let finished: Bool
-        switch mode {
-        case .stopwatch:
-            display = NoteTimer.format(timer.elapsed)
-            finished = false
-        case .countdown, .pomodoro:
-            let left = timer.remaining ?? {
-                if case .countdown(let s) = mode { return s }
-                if case .pomodoro(let s) = mode { return s }
-                return 0
-            }()
-            display = NoteTimer.format(left)
-            finished = timer.totalDuration != nil && left <= 0
-        }
-        return TimerSnapshot(
-            name: name, display: display, fraction: timer.fractionDone,
-            running: timer.isRunning, modeLabel: label, finished: finished,
-            elapsed: timer.elapsed, total: timer.totalDuration
-        )
-    }
-
-    func openTimerFullscreen() {
-        guard note.kind == .timer else { return }
-        if let open = timerWindow {
-            open.show()
-            return
-        }
-        let wc = TimerWindowController(
-            read: { [weak self] in self?.timerSnapshot() },
-            onStart: { [weak self] in self?.timerStart() },
-            onStop: { [weak self] in self?.timerStop() },
-            onReset: { [weak self] in self?.timerReset() },
-            onClose: { [weak self] in self?.timerWindow = nil }
-        )
-        timerWindow = wc
-        wc.show()
     }
 
     // MARK: - OCR
@@ -767,8 +580,6 @@ final class ContextWindowController {
     func newNoteWithText(_ text: String?) {
         pad = .scratch
         if case .note(let id)? = apply(.createNote(.scratch, text: text ?? "")) { noteID = id }
-        autoPaste.stop()
-        timer = NoteTimer()
         render()
         show()
     }
@@ -794,45 +605,6 @@ final class ContextWindowController {
 
     func render(preservingFocus: Bool = false) {
         let current = note
-        // Math memo: the 0.25s timer tick re-renders constantly; skip the
-        // full re-eval when the math body is byte-identical so idle notes
-        // cost nothing and typing only pays for real changes.
-        let mathBody = current.kind == .math ? current.bodyWithoutTrigger : ""
-        let results: [MathEngine.LineOutcome]
-        if mathBody == lastMathBody {
-            results = lastMathResults
-        } else {
-            results = current.kind == .math ? math.evaluateLines(note: mathBody) : []
-            lastMathBody = mathBody
-            lastMathResults = results
-        }
-        let sumAvg: Double? = {
-            switch current.kind {
-            case .sum: return math.aggregate(current.bodyWithoutTrigger, mode: .sum)
-            case .avg: return math.aggregate(current.bodyWithoutTrigger, mode: .avg)
-            default: return nil
-            }
-        }()
-        // Per-line sum/avg gutter so each line shows what it contributes.
-        // Empty for other modes; blank string means "counts for nothing".
-        let sumAvgLines: [String]
-        switch current.kind {
-        case .sum, .avg:
-            sumAvgLines = math.contributions(text: current.bodyWithoutTrigger).map { nums in
-                nums.isEmpty ? "" : math.format(nums.reduce(0, +))
-            }
-        default:
-            sumAvgLines = []
-        }
-        let stats = current.kind == .count ? NoteStats.compute(for: current.bodyWithoutTrigger) : nil
-        // Per-line count gutter so each line shows its contribution.
-        let countLines: [String]
-        if current.kind == .count {
-            countLines = NoteStats.breakdown(for: current.bodyWithoutTrigger).map(\.display)
-        } else {
-            countLines = []
-        }
-        let items = current.kind == .list ? ChecklistItem.parse(current.text) : []
         let live = store.liveNotes
         let view = ContextEditorRoot(
             controller: self,
@@ -844,19 +616,8 @@ final class ContextWindowController {
             inspectorOpen: inspectorOpen,
             aiState: aiState,
             liveCount: live.count,
-            noteIndex: live.firstIndex(where: { $0.id == noteID }) ?? 0,
-            mathResults: results,
-            aggregate: sumAvg.map(math.format),
-            sumAvgLines: sumAvgLines,
-            countLines: countLines,
-            stats: stats,
-            checklist: items,
-            autoPasteArmed: autoPaste.isArmed,
-            elapsed: timer.elapsed,
-            remaining: timer.remaining,
-            timerRunning: timer.isRunning,
-            ratesFootnote: ratesFootnote,
-            jsExtensions: jsExtensions
+            noteIndex: live.firstIndex(where: { $0.id == noteID }) ?? 0
+
         )
         if let hosting {
             hosting.rootView = view

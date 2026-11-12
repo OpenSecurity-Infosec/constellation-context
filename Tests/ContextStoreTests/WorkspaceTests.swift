@@ -5,6 +5,20 @@ import Foundation
 import Testing
 
 @Suite struct WorkspaceTests {
+    @Test func openingLegacyModeMetadataNeverRewritesFiles() throws {
+        let vault = tempVault()
+        defer { try? FileManager.default.removeItem(at: vault.root) }
+        let ws = Workspace(vault: vault)
+        let source = "---\nmode: paste\ncodeLanguage: swift\nautoPaste: true\nunknown: keep\n---\npaste\n[[Other]] ![[image.png]]"
+        guard case .note(let id) = try ws.apply(.createNote(.scratch, text: source)),
+              let url = ws.store(for: .scratch).fileURL(id: id) else { Issue.record("Expected file"); return }
+        let original = try Data(contentsOf: url)
+        let reopened = Workspace(vault: vault)
+        #expect(reopened.store(for: .scratch).note(id: id)?.kind == .plain)
+        reopened.flushAll()
+        #expect(try Data(contentsOf: url) == original)
+    }
+
     @Test func bulkRestoreAndDestroyPersistThroughCommands() throws {
         let vault = tempVault()
         defer { try? FileManager.default.removeItem(at: vault.root) }
