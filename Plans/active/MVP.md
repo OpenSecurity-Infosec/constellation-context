@@ -363,3 +363,19 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     the old typography expectation; undo testing also caught stale Workspace text
     after native undo. Both are fixed. Local swift test is unavailable on this
     Linux host. Post-push CI and forced-install revision are reported at close-out.
+
+- **2026-11-12, fenced-code closing delimiters (Partial).**
+  - Chosen Vision gap: inline Markdown styling must stop at a valid closing
+    fence, including one longer than its opener. Backtick and tilde fences now
+    accept longer closers; inline-code matches cannot cross fenced blocks.
+    No settings, modes or controls added. Ordinary editor/Clipboard paste already
+    uses normalizePaste; the historical sanitizer leftover is limited to OCR.
+  - Regression test covers both fence characters, literal links inside code,
+    restored link styling after the closer, and unchanged source text.
+  - Owner manual checks (no GUI/VNC attempted): in overlay and Library, type
+    three-backtick and three-tilde blocks, close with four matching characters,
+    and confirm following links render normally. Edit delimiters, undo/redo,
+    switch notes and reopen; verify saved Markdown stays intact.
+  - Local swift test unavailable (Linux has no Swift). Isolated cortex02 suite
+    and post-push CI/install verification are reported in the turn close-out.
+  - Validation: isolated cortex02 suite passed, 372 tests in 62 suites.

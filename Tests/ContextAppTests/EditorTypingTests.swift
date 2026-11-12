@@ -159,3 +159,20 @@ struct MarkdownStylingTests {
         #expect(storage.attribute(.underlineStyle, at: 0, effectiveRange: nil) == nil)
     }
 }
+
+@MainActor
+struct FencedCodeStylingTests {
+    @Test func longerClosingFencesRestoreProseStyling() throws {
+        for marker in ["`", "~"] {
+            let fence = String(repeating: marker, count: 3)
+            let source = "Title\n" + fence + "swift\n[[inside]] **literal**\n" + fence + marker + "\n[[outside]]"
+            let storage = NSTextStorage(string: source)
+            MarkdownStyling.apply(to: storage)
+            let inside = (source as NSString).range(of: "[[inside]]").location
+            let outside = (source as NSString).range(of: "[[outside]]").location
+            #expect(storage.attribute(.underlineStyle, at: inside, effectiveRange: nil) == nil)
+            #expect(storage.attribute(.underlineStyle, at: outside, effectiveRange: nil) != nil)
+            #expect(storage.string == source)
+        }
+    }
+}

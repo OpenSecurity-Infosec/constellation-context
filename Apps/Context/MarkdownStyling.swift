@@ -16,7 +16,14 @@ enum MarkdownStyling {
                 storage.addAttributes(attributes, range: match.range)
             }
         }
-        for match in matches("(?s)^ {0,3}(`{3,}|~{3,})[^\\n]*\\n.*?(?:^ {0,3}\\1[ \\t]*(?:\\n|$)|\\z)") + matches("`[^`\\n]+`") {
+        // Match each fence character separately so a longer closing fence is valid.
+        // Backtick info strings cannot contain backticks (CommonMark).
+        let fences = matches("(?s)^ {0,3}(`{3,})[^`\\n]*\\n.*?(?:^ {0,3}\\1`*[ \\t]*(?:\\n|$)|\\z)")
+            + matches("(?s)^ {0,3}(~{3,})[^\\n]*\\n.*?(?:^ {0,3}\\1~*[ \\t]*(?:\\n|$)|\\z)")
+        for match in fences {
+            code.append(match.range)
+        }
+        for match in matches("`[^`\\n]+`") where !code.contains(where: { NSIntersectionRange($0, match.range).length > 0 }) {
             code.append(match.range)
         }
         paint("^ {0,3}#{1,6}[ \\t]+[^\\n]+", [.font: NSFont.systemFont(ofSize: ContextTheme.bodyFont.pointSize * 1.25, weight: .semibold)])
