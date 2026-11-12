@@ -29,6 +29,7 @@ let package = Package(
         ),
         .testTarget(name: "ContextDomainTests", dependencies: ["ContextDomain", "ContextExport"], path: "Tests/ContextDomainTests"),
         .testTarget(name: "ContextMathTests", dependencies: ["ContextMath", "ContextDomain"], path: "Tests/ContextMathTests"),
+        .testTarget(name: "ContextAppTests", dependencies: ["ContextApp", "ContextStore", "ContextVault", "ContextDomain"], path: "Tests/ContextAppTests"),
         .testTarget(name: "ContextStoreTests", dependencies: ["ContextStore", "ContextDomain", "ContextVault"], path: "Tests/ContextStoreTests"),
         .testTarget(name: "ContextHarnessTests", dependencies: ["ContextHarness", "ContextStore", "ContextVault", "ContextDomain"], path: "Tests/ContextHarnessTests"),
         .testTarget(name: "ContextAITests", dependencies: ["ContextAI"], path: "Tests/ContextAITests"),

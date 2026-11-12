@@ -27,8 +27,6 @@ struct ContextEditorRoot: View {
     var ratesFootnote: String? = nil
     var jsExtensions: [JSExtension.Script] = []
 
-    @State private var text: String = ""
-    @State private var isEditing = false
     @State private var slashFragment: String? = nil
     @State private var slashRange: NSRange = NSRange(location: 0, length: 0)
     @State private var slashSelected: Int = 0
@@ -44,11 +42,6 @@ struct ContextEditorRoot: View {
         }
         .background(Color.ctxEditorBackground)
         .frame(minWidth: 480, minHeight: 360)
-        .onAppear { text = note.text }
-        .onChange(of: note.id) { text = note.text }
-        .onChange(of: note.text) { _, newValue in
-            if !isEditing { text = newValue }
-        }
     }
 
     private var toolbar: some View {
@@ -137,7 +130,7 @@ struct ContextEditorRoot: View {
             } else {
                 ZStack(alignment: .topLeading) {
                     mathGutter
-                    PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
+                    PlainTextEditor(text: note.text, noteID: note.id, onChange: { controller?.onTextChange($0) }, onCaret: { caret in controller?.trackCaret(caret) }, onIndent: { direction in
                         controller?.indentRowAtCaret(direction: direction)
                     }, onSlash: { fragment, range in
                         slashFragment = fragment
@@ -508,10 +501,15 @@ struct ContextEditorRoot: View {
     }
 }
 
+/// The note's text view. The store is the single source of truth: typing
+/// is reported through `onChange` (which saves synchronously), and
+/// `updateNSView` only pushes text that changed somewhere else — a note
+/// switch, a command, an AI edit. Provisional (marked) text from input
+/// methods and macOS inline predictions is never saved or overwritten.
 private struct PlainTextEditor: NSViewRepresentable {
-    @Binding var text: String
-    @Binding var isEditing: Bool
-    var onCommit: () -> Void
+    var text: String
+    var noteID: UUID
+    var onChange: (String) -> Void
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
@@ -520,11 +518,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
         ContextTextView.active = tv
-        tv.onChange = { newText in
-            text = newText
-            onCommit()
-        }
-        tv.onFocus = { focused in isEditing = focused }
+        tv.onChange = { newText in context.coordinator.onChange?(newText) }
         tv.onCaret = { caret in onCaret?(caret) }
         tv.onIndent = { direction in onIndent?(direction) }
         tv.onSlash = { fragment, range in onSlash?(fragment, range) }
@@ -543,22 +537,38 @@ private struct PlainTextEditor: NSViewRepresentable {
         scroll.hasVerticalScroller = true
         scroll.drawsBackground = false
         context.coordinator.view = tv
+        context.coordinator.onChange = onChange
+        context.coordinator.noteID = noteID
+        tv.string = text
+        tv.refreshLinkAttributes()
         return scroll
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let tv = scroll.documentView as? NSTextView else { return }
-        if tv.string != text {
-            let selected = tv.selectedRanges
-            tv.string = text
-            tv.selectedRanges = selected
-            (tv as? ContextTextView)?.refreshLinkAttributes()
-        }
-        tv.font = ContextTheme.bodyFont
+        guard let tv = scroll.documentView as? ContextTextView else { return }
+        context.coordinator.onChange = onChange
+        if tv.font != ContextTheme.bodyFont { tv.font = ContextTheme.bodyFont }
+        let switched = context.coordinator.noteID != noteID
+        context.coordinator.noteID = noteID
+        // Mid-composition the view holds provisional text the store
+        // deliberately lacks; leave it alone until it resolves.
+        guard switched || !tv.hasMarkedText(), tv.string != text else { return }
+        let caret = tv.selectedRange()
+        tv.string = text
+        let length = (text as NSString).length
+        tv.setSelectedRange(switched
+            ? NSRange(location: length, length: 0)
+            : NSRange(location: min(caret.location, length), length: min(caret.length, max(0, length - caret.location))))
+        tv.refreshLinkAttributes()
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
-    final class Coordinator { var view: NSTextView? }
+
+    final class Coordinator {
+        var view: NSTextView?
+        var noteID: UUID?
+        var onChange: ((String) -> Void)?
+    }
 }
 
 /// NSTextView that pastes text without styling (Markdown kept) and
@@ -567,7 +577,6 @@ private struct PlainTextEditor: NSViewRepresentable {
 /// is preserved for open/copy. Links render clickable.
 final class ContextTextView: NSTextView {
     var onChange: ((String) -> Void)?
-    var onFocus: ((Bool) -> Void)?
     var onCaret: ((Int) -> Void)?
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onOpenURL: ((URL) -> Void)?
@@ -611,6 +620,9 @@ final class ContextTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
+        // Marked text is provisional (an input method mid-composition or a
+        // macOS inline prediction). Report only committed text.
+        guard !hasMarkedText() else { return }
         refreshLinkAttributes()
         onChange?(string)
         onCaret?(selectedRange().location)
@@ -716,17 +728,6 @@ final class ContextTextView: NSTextView {
         super.keyDown(with: event)
     }
 
-    override func becomeFirstResponder() -> Bool {
-        let ok = super.becomeFirstResponder()
-        if ok { onFocus?(true) }
-        return ok
-    }
-
-    override func resignFirstResponder() -> Bool {
-        let ok = super.resignFirstResponder()
-        if ok { onFocus?(false) }
-        return ok
-    }
 }
 
 import ContextMath

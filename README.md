@@ -19,6 +19,10 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 
 `run-app.sh` packages the debug build into `/Applications/Context.app` and opens it. **⌥A** (Option+A) toggles the overlay from anywhere. **⇧⌘L** opens the Library.
 
+## Typing regression tests
+
+`Tests/ContextAppTests/EditorTypingTests` hosts the real overlay on a temporary vault and types into it with key events. They cover typing order and the caret, renders between keys, typing mid-line, the saved file, edits made elsewhere, note switching, and provisional (marked) text from input methods and macOS inline predictions, which must never be saved or written back as real characters. They need a logged-in desktop session, and they run as part of `swift test`.
+
 ## MVP status
 
 "Partial" means automated tests pass, but the installed app has not been exercised by hand for that feature. "Shipped" means verified in the installed app.

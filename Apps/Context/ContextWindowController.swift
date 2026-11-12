@@ -34,10 +34,12 @@ final class ContextWindowController {
     private var lastMathBody = ""
     private var lastMathResults: [MathEngine.LineOutcome] = []
 
-    init() {
-        workspace = Self.openWorkspace()
-        for p in [Pad.scratch, .clipboard] { workspace.store(for: p).collectGarbage() }
-        let first = workspace.store(for: .scratch).liveNotes.first ?? workspace.store(for: .scratch).create()
+    /// Tests pass a temp workspace and `live: false` (no rate fetch).
+    init(workspace: Workspace? = nil, live: Bool = true) {
+        self.workspace = workspace ?? Self.openWorkspace()
+        for p in [Pad.scratch, .clipboard] { self.workspace.store(for: p).collectGarbage() }
+        let scratch = self.workspace.store(for: .scratch)
+        let first = scratch.liveNotes.first ?? scratch.create()
         noteID = first.id
         window = ContextPanel(
             contentRect: NSRect(x: 0, y: 0, width: 640, height: 480),
@@ -51,7 +53,7 @@ final class ContextWindowController {
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
         ContextTheme.apply(mode: ContextSettings.shared.themeMode)
-        refreshRates()
+        if live { refreshRates() }
         render()
         applyLook()
         startTimerTick()
