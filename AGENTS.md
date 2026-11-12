@@ -54,8 +54,21 @@ no standing checkout on cortex — sync the tree over first, then build:
 ```bash
 # from apps01, in this repo (excluding local build products)
 rsync -a --exclude .git --exclude .build ./ crew-cortex01:~/constellation-context/
-ssh crew-cortex01 'cd ~/constellation-context && swift test'
 ssh crew-cortex01 'cd ~/constellation-context && swift build'
+```
+
+`swift build` works as-is on cortex. Plain `swift test` does not: cortex has
+Command Line Tools only (no Xcode), so SwiftPM cannot find the `Testing`
+module. Point it at the CLT frameworks (verified: 181 tests pass):
+
+```bash
+ssh crew-cortex01 'cd ~/constellation-context && \
+  DYLD_LIBRARY_PATH=/Library/Developer/CommandLineTools/Library/Developer/usr/lib:/Library/Developer/CommandLineTools/Library/Developer/Frameworks \
+  swift test \
+  -Xswiftc -F -Xswiftc /Library/Developer/CommandLineTools/Library/Developer/Frameworks \
+  -Xlinker -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks \
+  -Xlinker -rpath -Xlinker /Library/Developer/CommandLineTools/Library/Developer/usr/lib \
+  -Xlinker -rpath -Xlinker /Library/Developer/CommandLineTools/Library/Developer/Frameworks'
 ```
 
 On any Mac with Command Line Tools: `swift test`, `swift build`, then
