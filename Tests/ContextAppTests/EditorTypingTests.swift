@@ -140,3 +140,22 @@ import Testing
         #expect(tv.selectedRange().location == ("first\nappended by a command" as NSString).length)
     }
 }
+
+@MainActor
+struct MarkdownStylingTests {
+    @Test func stylingPreservesSourceSelectionAndResetsRemovedSyntax() throws {
+        let view = ContextTextView()
+        view.string = "Title\n# Heading\n**bold** _italic_\n- [x] task\n> quote\n[[note]] [site](https://example.com)\n`code`"
+        let original = view.string
+        view.setSelectedRange(NSRange(location: 12, length: 3))
+        view.refreshStyling()
+        #expect(view.string == original)
+        #expect(view.selectedRange() == NSRange(location: 12, length: 3))
+        let storage = try #require(view.textStorage)
+        let link = (original as NSString).range(of: "[[note]]")
+        #expect(storage.attribute(.underlineStyle, at: link.location, effectiveRange: nil) != nil)
+        view.string = "plain"
+        view.refreshStyling()
+        #expect(storage.attribute(.underlineStyle, at: 0, effectiveRange: nil) == nil)
+    }
+}

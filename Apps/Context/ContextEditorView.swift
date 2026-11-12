@@ -490,9 +490,9 @@ struct ContextEditorRoot: View {
 /// `updateNSView` only pushes text that changed somewhere else — a note
 /// switch, a command, an AI edit. Provisional (marked) text from input
 /// methods and macOS inline predictions is never saved or overwritten.
-private struct PlainTextEditor: NSViewRepresentable {
+struct PlainTextEditor: NSViewRepresentable {
     var text: String
-    var noteID: UUID
+    var noteID: AnyHashable
     /// Clipboard entries are snippets, not documents, so they get no title.
     var titlesFirstLine = true
     var onChange: (String) -> Void
@@ -566,7 +566,7 @@ private struct PlainTextEditor: NSViewRepresentable {
 
     final class Coordinator {
         var view: NSTextView?
-        var noteID: UUID?
+        var noteID: AnyHashable?
         var styleKey: String?
         var onChange: ((String) -> Void)?
     }
@@ -661,7 +661,11 @@ final class ContextTextView: NSTextView {
 
     /// Re-applies display styling: typography, then links.
     func refreshStyling() {
+        guard !hasMarkedText() else { return }
         applyTypography()
+        if CanvasTypography.isProse(string), let storage = textStorage {
+            MarkdownStyling.apply(to: storage)
+        }
         refreshLinkAttributes()
     }
 

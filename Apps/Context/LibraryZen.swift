@@ -207,11 +207,8 @@ struct LibraryCanvas: View {
         if model.selection == nil {
             Color.clear
         } else if model.editing {
-            TextEditor(text: Binding(get: { model.text }, set: { model.textChanged($0) }))
-                .font(.system(size: ContextSettings.shared.fontSize))
-                .scrollContentBackground(.hidden)
-                .padding(.horizontal, ZenMetrics.textInset.width - 5)
-                .padding(.top, ZenMetrics.textInset.height)
+            PlainTextEditor(text: model.text, noteID: AnyHashable(model.selection),
+                            onChange: { model.textChanged($0) })
                 .accessibilityIdentifier("library.editor")
         } else {
             ScrollView {

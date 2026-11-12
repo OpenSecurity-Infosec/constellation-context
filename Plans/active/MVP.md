@@ -287,3 +287,16 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   Installed interaction remains unproven.
   Validation: cortex02 isolated suite passed, 361 tests / 57 suites.
   CI and forced installation revision are reported in the turn close-out.
+
+- **2026-11-12, gap 6 (Partial).** Shared overlay and Library editing uses
+  display-only Markdown attributes for headings, emphasis, lists/tasks, quotes,
+  code and links/wikilinks. Source delimiters stay visible and editable; no new
+  controls. Marked text bypasses styling and persistence as before.
+  Owner checks: in both editors type and remove each syntax; move the caret
+  into styled text, undo/redo, paste Markdown, switch notes, and reopen saved
+  files. Exercise inline predictions and an IME, including cancellation and
+  commit; confirm no duplicated text or caret jumps. Check light/dark appearance,
+  Clipboard (no title), and legacy math alignment. No GUI/VNC attempted.
+  Validation: cortex02 isolated suite passed, 362 tests / 58 suites, including
+  the existing caret, prediction/marked-text and composition regression tests.
+  Installed visual behavior remains unproven pending owner checks.
