@@ -16,7 +16,6 @@ struct NoteInspector: View {
     /// Esc closes the panel unless an AI card is using it.
     var escCloses: Bool
 
-    @State private var colorTheme = ContextSettings.shared.colorTheme
     @State private var fontSize = Double(ContextSettings.shared.fontSize)
 
     var body: some View {
@@ -125,16 +124,6 @@ struct NoteInspector: View {
 
     private var lookSection: some View {
         section("Look") {
-            Picker("Theme", selection: $colorTheme) {
-                ForEach(ColorTheme.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .onChange(of: colorTheme) {
-                ContextSettings.shared.colorTheme = colorTheme
-                ContextSettings.shared.save()
-                ThemeRelayer.lookChanged()
-            }
             row("Text size") {
                 Text("\(Int(fontSize))").foregroundStyle(.secondary).monospacedDigit()
                 Stepper("", value: $fontSize, in: 11...22, step: 1).labelsHidden()

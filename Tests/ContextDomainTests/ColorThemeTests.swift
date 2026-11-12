@@ -31,7 +31,7 @@ import Testing
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(ContextSettings.self, from: data)
         #expect(decoded.colorTheme == .paper)
-        #expect(decoded.translucentWindow)
+        #expect(!decoded.translucentWindow)
     }
 
     @Test func settingsDefaults() throws {

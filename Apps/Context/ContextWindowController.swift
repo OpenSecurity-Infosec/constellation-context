@@ -448,10 +448,7 @@ final class ContextWindowController {
 
     // MARK: - Extensions
 
-    /// Installed JS extensions, reloaded each render so dropped files appear.
-    var jsExtensions: [JSExtension.Script] {
-        JSExtension.load(from: JSExtension.defaultFolder())
-    }
+    var jsExtensions: [JSExtension.Script] { [] }
 
     // MARK: - Slash commands
 
@@ -459,7 +456,6 @@ final class ContextWindowController {
     /// JS `replacement` swaps the token; `fullText` rewrites the buffer;
     /// `append` adds to the end.
     func runSlashCommand(name: String, tokenRange: NSRange) {
-        if runJSExtension(name: name, tokenRange: tokenRange) { return }
         let fullText = note.text
         let chars = Array(fullText)
         let intRange: Range<Int>? = {
@@ -486,48 +482,7 @@ final class ContextWindowController {
         render(preservingFocus: true)
     }
 
-    @discardableResult
-    private func runJSExtension(name: String, tokenRange: NSRange) -> Bool {
-        let scripts = jsExtensions
-        guard let script = SlashCommand.extensionScript(named: name, in: scripts) else { return false }
-        let fullText = note.text
-        let chars = Array(fullText)
-        let token: String = {
-            guard tokenRange.location >= 0,
-                  tokenRange.location + tokenRange.length <= chars.count
-            else { return "::\(name)" }
-            return String(chars[tokenRange.location..<(tokenRange.location + tokenRange.length)])
-        }()
-        let input = JSExtension.Input(
-            text: fullText,
-            token: token,
-            selection: "",
-            nowISO: ISO8601DateFormatter().string(from: Date())
-        )
-        guard let output = JSExtension.run(
-            script, input: input,
-            allowNetwork: ContextSettings.shared.extensionsAllowNetwork
-        ) else { return true }
-        switch output {
-        case .replacement(let rep):
-            var updated = fullText
-            if tokenRange.location >= 0, tokenRange.location + tokenRange.length <= chars.count {
-                let start = updated.index(updated.startIndex, offsetBy: tokenRange.location)
-                let end = updated.index(updated.startIndex, offsetBy: tokenRange.location + tokenRange.length)
-                updated.replaceSubrange(start..<end, with: rep)
-            } else {
-                updated += rep
-            }
-            setText(updated)
-        case .fullText(let full):
-            setText(full)
-        case .append(let extra):
-            let base = note.text
-            setText(base.isEmpty ? extra : base + "\n" + extra)
-        }
-        render(preservingFocus: true)
-        return true
-    }
+
 
     // MARK: - Timer controls
 

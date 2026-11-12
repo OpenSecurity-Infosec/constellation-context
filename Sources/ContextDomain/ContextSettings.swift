@@ -9,7 +9,7 @@ public struct ContextSettings: Codable, Sendable {
     public var hotKeyCode: UInt32 = 0 // ANSI A
     public var hotKeyModifiers: UInt32 = 0x0800 // optionKey
     public var obsidianVaultPath: String? = nil
-    public var themeMode: ThemeMode = .system
+    public var themeMode: ThemeMode { get { .system } set {} }
     /// Base vault folder; nil means `~/Context` (ADR-0002).
     public var baseVaultPath: String? = nil
     /// Keep copies as editable notes in the Clipboard pad.
@@ -17,10 +17,10 @@ public struct ContextSettings: Codable, Sendable {
     /// OpenAI-compatible endpoint and model for AI actions; nil = defaults.
     public var aiBaseURL: String? = nil
     public var aiModel: String? = nil
-    public var extensionsAllowNetwork: Bool = false
+    public var extensionsAllowNetwork: Bool { get { false } set {} }
     public var showInDock: Bool = true
-    public var colorTheme: ColorTheme = .paper
-    public var translucentWindow: Bool = false
+    public var colorTheme: ColorTheme { get { .paper } set {} }
+    public var translucentWindow: Bool { get { false } set {} }
     public var lastExportDirectory: String? = nil
 
     public nonisolated(unsafe) static var shared = ContextSettings.load()
@@ -86,16 +86,32 @@ public struct ContextSettings: Codable, Sendable {
         hotKeyCode = try c.decodeIfPresent(UInt32.self, forKey: .hotKeyCode) ?? 0
         hotKeyModifiers = try c.decodeIfPresent(UInt32.self, forKey: .hotKeyModifiers) ?? 0x0800
         obsidianVaultPath = try c.decodeIfPresent(String.self, forKey: .obsidianVaultPath)
-        themeMode = try c.decodeIfPresent(ThemeMode.self, forKey: .themeMode) ?? .system
         baseVaultPath = try c.decodeIfPresent(String.self, forKey: .baseVaultPath)
         clipboardHistory = try c.decodeIfPresent(Bool.self, forKey: .clipboardHistory) ?? true
         aiBaseURL = try c.decodeIfPresent(String.self, forKey: .aiBaseURL)
         aiModel = try c.decodeIfPresent(String.self, forKey: .aiModel)
-        extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
-        colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .paper
-        translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
         lastExportDirectory = try c.decodeIfPresent(String.self, forKey: .lastExportDirectory)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(fontSize, forKey: .fontSize)
+        try c.encodeIfPresent(showMenuBarExtra, forKey: .showMenuBarExtra)
+        try c.encodeIfPresent(pinOnTop, forKey: .pinOnTop)
+        try c.encodeIfPresent(hotKeyCode, forKey: .hotKeyCode)
+        try c.encodeIfPresent(hotKeyModifiers, forKey: .hotKeyModifiers)
+        try c.encodeIfPresent(obsidianVaultPath, forKey: .obsidianVaultPath)
+        try c.encodeIfPresent(themeMode, forKey: .themeMode)
+        try c.encodeIfPresent(baseVaultPath, forKey: .baseVaultPath)
+        try c.encodeIfPresent(clipboardHistory, forKey: .clipboardHistory)
+        try c.encodeIfPresent(aiBaseURL, forKey: .aiBaseURL)
+        try c.encodeIfPresent(aiModel, forKey: .aiModel)
+        try c.encodeIfPresent(extensionsAllowNetwork, forKey: .extensionsAllowNetwork)
+        try c.encodeIfPresent(showInDock, forKey: .showInDock)
+        try c.encodeIfPresent(colorTheme, forKey: .colorTheme)
+        try c.encodeIfPresent(translucentWindow, forKey: .translucentWindow)
+        try c.encodeIfPresent(lastExportDirectory, forKey: .lastExportDirectory)
     }
 
     public func save() {

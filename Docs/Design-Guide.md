@@ -28,7 +28,7 @@ The canvas starts with text and nothing else. These rules turn "less is more" in
   1. **Hidden (the default).** Text, the caret, and generous margins. Nothing else is drawn.
   2. **Hover bands.** When the pointer is near the top edge, the header fades in: the pad name and a quiet More text menu. When the pointer is near the bottom edge, the note-position dots fade in. The dots also flash briefly after a note switch. Typing hides both until the pointer moves again.
   3. **Native menus.** Every note action is built once (`noteMenuItems`) and appears in the menu bar's Note menu, the canvas's right-click menu, and the header's More button. Deeper configuration stays in Settings.
-- **Settings inspector.** A panel that slides in from the right edge (⌥⌘I, or ⋯ › Show Inspector) with the current pad's project documents, delivery targets, AI model, and look (theme, text size). The window grows to make room so the text stays put, and Esc closes it. Full configuration stays in Settings.
+- **Settings inspector.** A panel that slides in from the right edge (⌥⌘I, or ⋯ › Show Inspector) with the current pad's project documents, delivery targets, AI model, and look (text size). The window grows to make room so the text stays put, and Esc closes it. Full configuration stays in Settings.
 - **Transient work floats.** AI proposals and the legacy mode readouts are floating material cards at the bottom of the canvas. They are not full-width bars, and they disappear when they are done.
 - **No hint text.** Shortcuts live in menus, not in the canvas.
 
@@ -48,7 +48,8 @@ The canvas starts with text and nothing else. These rules turn "less is more" in
 
 ## Existing themes
 
-The Paper (default), Mocha, and Forest themes, adjustable text size, and the translucent window option already exist. Consolidating them against the family rules is open work. Do not add new themes before that pass.
+Paper follows system light/dark appearance. Text size remains adjustable. Legacy
+color-theme, appearance override and translucency preferences are ignored.
 
 ## References
 

@@ -29,10 +29,7 @@ private struct SettingsView: View {
     @State private var fontSize: Double = Double(ContextSettings.shared.fontSize)
     @State private var pinOnTop: Bool = ContextSettings.shared.pinOnTop
     @State private var showMenuBar: Bool = ContextSettings.shared.showMenuBarExtra
-    @State private var theme: ThemeMode = ContextSettings.shared.themeMode
     @State private var showInDock: Bool = ContextSettings.shared.showInDock
-    @State private var colorTheme: ColorTheme = ContextSettings.shared.colorTheme
-    @State private var translucent: Bool = ContextSettings.shared.translucentWindow
 
     var body: some View {
         Form {
@@ -57,34 +54,6 @@ private struct SettingsView: View {
                     }
             }
             Section("Appearance") {
-                Picker("Appearance", selection: $theme) {
-                    Text("System").tag(ThemeMode.system)
-                    Text("Light").tag(ThemeMode.light)
-                    Text("Dark").tag(ThemeMode.dark)
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: theme) {
-                    ContextSettings.shared.themeMode = theme
-                    ContextSettings.shared.save()
-                    ContextTheme.apply(mode: theme)
-                }
-                Picker("Color theme", selection: $colorTheme) {
-                    ForEach(ColorTheme.allCases, id: \.self) { t in
-                        Text(t.displayName).tag(t)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: colorTheme) {
-                    ContextSettings.shared.colorTheme = colorTheme
-                    ContextSettings.shared.save()
-                    ThemeRelayer.lookChanged()
-                }
-                Toggle("Translucent window", isOn: $translucent)
-                    .onChange(of: translucent) {
-                        ContextSettings.shared.translucentWindow = translucent
-                        ContextSettings.shared.save()
-                        ThemeRelayer.lookChanged()
-                    }
                 Slider(value: $fontSize, in: 11...22, step: 1) {
                     Text("Text size: \(Int(fontSize))")
                 }.onChange(of: fontSize) {
@@ -97,7 +66,6 @@ private struct SettingsView: View {
             ClipboardSettingsRow()
             LinkedVaultsSection()
             AISettingsRow()
-            ExtensionSettingsRow()
             Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -192,34 +160,4 @@ enum ClipboardRelayer {
 @MainActor
 enum VaultRelayer {
     nonisolated(unsafe) static var baseVaultChanged: (URL) -> Void = { _ in }
-}
-
-/// JS extension privacy + folder. Scripts run sandboxed with no network
-/// bridge; the toggle stays OFF unless the user opts in.
-private struct ExtensionSettingsRow: View {
-    @State private var allowNetwork: Bool = ContextSettings.shared.extensionsAllowNetwork
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Toggle("Let extensions call their own APIs", isOn: $allowNetwork)
-                .onChange(of: allowNetwork) {
-                    ContextSettings.shared.extensionsAllowNetwork = allowNetwork
-                    ContextSettings.shared.save()
-                }
-            HStack {
-                Text("Extensions folder")
-                    .font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Button("Reveal") {
-                    NSWorkspace.shared.activateFileViewerSelecting([JSExtension.defaultFolder()])
-                }
-                .font(.caption)
-            }
-            Text("Drop .js files with `// name: x` headers to add ::commands.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        .onAppear {
-            allowNetwork = ContextSettings.shared.extensionsAllowNetwork
-        }
-    }
 }

@@ -312,3 +312,27 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   expired Clipboard entries, delete permanently, reopen Void and restart.
   Validation: isolated cortex02 suite passed, 363 tests / 58 suites.
   Post-push CI and installed revision are reported in the turn close-out.
+
+- **2026-11-12, less-is-more trim (Partial).**
+  - Removed JS extension loading/execution from the app, its folder control and
+    arbitrary-API permission toggle. Builtin text commands remain deterministic
+    on-command edits through the existing Workspace-backed setText path.
+  - Removed light/dark overrides, color-theme pickers (Settings and Inspector),
+    and translucency toggle. Legacy persisted values are inert: system appearance,
+    Paper and opaque paper apply consistently; text size remains for readability.
+  - Audit: retain math/sum/avg/count as local text calculations; list as editable
+    tasks; code as plain-text formatting; timer as an on-command local readout;
+    paste collection remains a candidate for consolidation into Clipboard.
+    OCR captures text on command; Void provides trash recovery; export and URL
+    actions support file ownership and shared operations. Placement controls serve
+    overlay access; clipboard opt-out serves privacy; vault/model settings serve
+    explicitly configured sources. No new controls or content mutation paths.
+  - Owner checks (no GUI/VNC used): switch macOS light/dark; verify Paper in
+    overlay and Library, including an old settings file with overrides; adjust
+    text size; confirm Inspector and Settings no longer offer theme/translucency
+    or extension controls. Verify builtin commands still edit and undo; installed
+    JS commands must no longer execute. Smoke-check pads, AI proposals and focus.
+  - First-line mode consolidation remains open; this entry does not claim that
+    the entire legacy trim or installed interaction has been verified.
+  - Validation: isolated cortex02 suite passed, 364 tests / 58 suites.
+    Local swift test unavailable on this Linux host. CI and revision check follow.

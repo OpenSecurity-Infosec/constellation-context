@@ -159,7 +159,7 @@ The app now has:
 - `gpt-6.1-terra` AI actions as diff proposals;
 - a Library window with cross-source search and a canvas that shows images inline in Read mode.
 
-Antinote-era features still work in Scratch: first-line modes, OCR, The Void, `::` commands and JS extensions, URL schemes, and export. They are frozen and are candidates for the "less is more" trim. iCloud sync was removed in favor of file sync (ADR-0001).
+Antinote-era features still work in Scratch: first-line modes, OCR, The Void, builtin `::` commands, URL schemes, and export. They are frozen and are candidates for the "less is more" trim. iCloud sync was removed in favor of file sync (ADR-0001).
 
 ## Open questions
 
