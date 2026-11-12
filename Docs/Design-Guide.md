@@ -41,7 +41,7 @@ The canvas starts with text and nothing else. These rules turn "less is more" in
 ## Surfaces
 
 - **Quick overlay.** One pad at a time, with full-bleed text. Switch pads by swipe or ⌘[ / ⌘]. The pad indicator stays minimal. The overlay opens ready to type.
-- **Library.** Three panes, Bear-style: sidebar (base vault, linked vaults, projects, tags), note list, and editor. The sidebar and list collapse down to the editor alone.
+- **Library.** Bear-style sources, note list, and editor, but zen: it opens as the note alone. The pointer at the left edge (or ⌃⌘S) slides in the sources and the list. Opening a note hides the sources at once; the list stays until the pointer moves into the text. Read/Edit (⌘E) and the note's actions sit in a header that fades in at the top edge. Logic: `LibraryReveal`.
 - **Canvas editor.** Markdown is styled inline as you type, Bear-style, not shown in a split preview. Embedded objects render inline at reading size. The file on disk stays plain Markdown.
 - **AI proposals.** Proposals appear on the page as an inline diff or ghost text, with accept and reject. Accepting is one undoable edit.
 

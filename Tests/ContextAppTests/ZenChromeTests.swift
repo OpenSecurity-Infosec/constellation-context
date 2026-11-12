@@ -81,3 +81,53 @@ import Testing
         #expect(mathFont.pointSize == bodyFont.pointSize)
     }
 }
+
+/// The zen Library: the note alone at rest, panels from the left edge.
+struct LibraryRevealTests {
+    @Test func panelsFollowTheLeftEdgeAndTheOpenNote() {
+        var reveal = LibraryReveal()
+        #expect(reveal.panels == .none, "opens as the note alone")
+
+        reveal.pointer(CGPoint(x: 400, y: 300), hasNote: true)
+        #expect(reveal.panels == .none)
+
+        reveal.pointer(CGPoint(x: 4, y: 300), hasNote: true)
+        #expect(reveal.panels == .all, "the left edge brings in sources and list")
+
+        reveal.pointer(CGPoint(x: 300, y: 300), hasNote: true)
+        #expect(reveal.panels == .all, "moving over the panels keeps them")
+
+        reveal.openedNote()
+        #expect(reveal.panels == .list, "opening a note hides the sources")
+
+        reveal.pointer(CGPoint(x: 200, y: 300), hasNote: true)
+        #expect(reveal.panels == .list, "the list stays while the pointer is on it")
+
+        reveal.pointer(CGPoint(x: 600, y: 300), hasNote: true)
+        #expect(reveal.panels == .none, "moving into the text hides the list")
+    }
+
+    @Test func noNoteKeepsPanelsAndTheKeyboardTogglePins() {
+        var reveal = LibraryReveal()
+        reveal.showAll()
+        reveal.pointer(CGPoint(x: 900, y: 300), hasNote: false)
+        #expect(reveal.panels == .all, "with nothing open, the panels stay")
+
+        var pinned = LibraryReveal()
+        pinned.toggle()
+        pinned.pointer(CGPoint(x: 900, y: 300), hasNote: true)
+        #expect(pinned.panels == .all, "⌃⌘S panels stay until toggled off")
+        pinned.toggle()
+        #expect(pinned.panels == .none)
+    }
+
+    @Test func headerShowsOnlyOverTheNote() {
+        var reveal = LibraryReveal()
+        reveal.pointer(CGPoint(x: 400, y: 10), hasNote: true)
+        #expect(reveal.header)
+        reveal.pointer(CGPoint(x: 4, y: 10), hasNote: true)
+        #expect(!reveal.header, "over the panels the header stays hidden")
+        reveal.pointer(nil, hasNote: true)
+        #expect(!reveal.header)
+    }
+}

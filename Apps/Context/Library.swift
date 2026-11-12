@@ -43,10 +43,20 @@ final class LibraryModel {
             guard oldValue != selection else { return }
             commitPending(oldValue)
             open(selection)
+            if selection != nil { reveal.openedNote() } else { reveal.showAll() }
         }
     }
     var text = ""
     var editing = false
+    /// Which side panels show. Starts as the note alone.
+    var reveal = LibraryReveal()
+
+    /// Pointer position from the window's top-left; nil when it left.
+    func pointer(_ point: CGPoint?) {
+        var next = reveal
+        next.pointer(point, hasNote: selection != nil)
+        if next != reveal { reveal = next }
+    }
     var status: String?
     private var loadedLinked: VaultNote?
     private var saveTask: Task<Void, Never>?
@@ -293,122 +303,6 @@ final class LibraryModel {
     }
 }
 
-struct LibraryView: View {
-    @Bindable var model: LibraryModel
-
-    var body: some View {
-        NavigationSplitView {
-            List(selection: $model.source) {
-                Section("Context") {
-                    Label("Scratch", systemImage: "note.text").tag(LibrarySource.pad(.scratch))
-                    Label("Clipboard", systemImage: "doc.on.clipboard").tag(LibrarySource.pad(.clipboard))
-                }
-                if !model.projects.isEmpty {
-                    Section("Projects") {
-                        ForEach(model.projects, id: \.self) { name in
-                            Label(name, systemImage: "folder").tag(LibrarySource.pad(.project(name)))
-                        }
-                    }
-                }
-                if !model.linked.isEmpty {
-                    Section("Linked") {
-                        ForEach(model.linked) { vault in
-                            Label(vault.name, systemImage: vault.kind == .anytype ? "square.stack" : "books.vertical")
-                                .tag(LibrarySource.linked(vault.id))
-                        }
-                    }
-                }
-            }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 190)
-            .accessibilityIdentifier("library.sources")
-        } content: {
-            List(model.items, selection: $model.selection) { item in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title).lineLimit(1)
-                    if !item.snippet.isEmpty {
-                        Text(item.snippet).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                    }
-                    if !model.query.isEmpty {
-                        Text(item.source).font(.caption2).foregroundStyle(.tertiary)
-                    }
-                }
-                .padding(.vertical, 2)
-                .tag(item.id)
-            }
-            .searchable(text: $model.query, placement: .sidebar, prompt: "Search everything")
-            .navigationSplitViewColumnWidth(min: 220, ideal: 280)
-            .accessibilityIdentifier("library.notes")
-        } detail: {
-            if model.selection == nil {
-                Text(model.status ?? "Select a note.")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                LibraryCanvas(model: model)
-            }
-        }
-        .frame(minWidth: 820, minHeight: 480)
-    }
-}
-
-/// Read mode renders Markdown with images inline; Edit mode is the raw
-/// Markdown. The file on disk is always exactly the Markdown text.
-struct LibraryCanvas: View {
-    @Bindable var model: LibraryModel
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Picker("", selection: $model.editing) {
-                    Text("Read").tag(false)
-                    Text("Edit").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-                .accessibilityIdentifier("library.mode")
-                Button("Toggle Edit") { model.editing.toggle() }
-                    .keyboardShortcut("e", modifiers: .command)
-                    .opacity(0)
-                    .frame(width: 0, height: 0)
-                    .accessibilityHidden(true)
-                Spacer()
-                if let status = model.status {
-                    Text(status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-                if !model.projects.isEmpty {
-                    Menu("Add to Project") {
-                        ForEach(model.projects, id: \.self) { p in Button(p) { model.addToProject(p) } }
-                    }
-                    .fixedSize()
-                    .accessibilityIdentifier("library.addToProject")
-                }
-                if let file = model.selectedFile {
-                    Button("Reveal") { NSWorkspace.shared.activateFileViewerSelecting([file]) }
-                }
-            }
-            .font(.caption)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            Divider()
-            if model.editing {
-                TextEditor(text: Binding(get: { model.text }, set: { model.textChanged($0) }))
-                    .font(.system(size: ContextSettings.shared.fontSize, design: .monospaced))
-                    .scrollContentBackground(.hidden)
-                    .padding(12)
-                    .accessibilityIdentifier("library.editor")
-            } else {
-                ScrollView {
-                    CanvasReader(text: model.text, imageURL: model.imageURL)
-                        .padding(24)
-                        .frame(maxWidth: 720, alignment: .leading)
-                        .frame(maxWidth: .infinity)
-                }
-                .accessibilityIdentifier("library.reader")
-            }
-        }
-        .background(Color.ctxEditorBackground)
-    }
-}
-
 struct CanvasReader: View {
     var text: String
     var imageURL: (String) -> URL?
@@ -423,12 +317,17 @@ struct CanvasReader: View {
                     }
                 }
             }
-            ForEach(Array(MarkdownBlocks.parse(doc.body).enumerated()), id: \.offset) { _, block in
+            let title = CanvasTypography.titleRange(in: doc.body) != nil
+            ForEach(Array(MarkdownBlocks.parse(doc.body).enumerated()), id: \.offset) { blockIndex, block in
                 switch block {
                 case .text(let s):
                     VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(s.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
-                            Self.line(line)
+                        ForEach(Array(s.components(separatedBy: "\n").enumerated()), id: \.offset) { lineIndex, line in
+                            if title, blockIndex == 0, lineIndex == 0, !line.hasPrefix("#") {
+                                Self.title(line)
+                            } else {
+                                Self.line(line)
+                            }
                         }
                     }
                 case .image(let target, let alt):
@@ -455,6 +354,13 @@ struct CanvasReader: View {
         } else {
             Text("Image not found: \(target)").font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    /// A prose note's first line, set like the overlay's title.
+    static func title(_ line: String) -> some View {
+        Text(line)
+            .font(.system(size: (ContextSettings.shared.fontSize * CanvasTypography.titleScale).rounded(), design: .serif))
+            .padding(.bottom, ContextSettings.shared.fontSize * CanvasTypography.titleSpacing)
     }
 
     static func line(_ line: String) -> some View {
@@ -502,9 +408,28 @@ final class LibraryWindowController {
             backing: .buffered, defer: false
         )
         window.title = "Library"
+        // Zen: no visible title bar; the traffic lights always show.
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.backgroundColor = ContextTheme.editorBackground
         window.isReleasedWhenClosed = false
         window.setFrameAutosaveName("ContextLibrary")
-        window.contentView = NSHostingView(rootView: LibraryView(model: model))
+        // Open on a note, so the Library starts as the note alone.
+        model.selection = model.items.first?.id
+        if model.selection == nil { model.reveal.showAll() }
+        let hosting = NSHostingView(rootView: LibraryView(model: model))
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        let container = ZenContainerView(frame: NSRect(x: 0, y: 0, width: 1040, height: 660))
+        container.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hosting.topAnchor.constraint(equalTo: container.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.onPointer = { [weak model] point, _ in model?.pointer(point) }
+        window.contentView = container
         window.center()
         self.window = window
         self.model = model
