@@ -427,6 +427,9 @@ struct ContextEditorRoot: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            Text(BuildInfo.label(from: Bundle.main.infoDictionary ?? [:]))
+                .font(.caption2).foregroundStyle(.secondary)
+                .help("Build identity: git revision and build time")
             Button("Settings") { controller?.openSettings() }
                 .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
         }

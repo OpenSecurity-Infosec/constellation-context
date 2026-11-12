@@ -15,6 +15,8 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 
 `run-app.sh` packages the debug build into `/Applications/Context.app` and opens it. The global hotkey is **⌥A** (Option+A) from anywhere.
 
+The build identity (`<git short hash> · built <local time>`) shows bottom-right in the main window's status bar and in the About Context panel (with the commit subject). It is stamped by `package-app.sh`; unpackaged `swift run` builds show `dev`. Layout and wording unverified by hand.
+
 ## Features vs Antinote (antinote.io/features)
 
 | Antinote feature | Context status (honest: Partial until proven feelable vs Antinote) |

@@ -25,6 +25,10 @@ if [[ -f Apps/Context/Context.entitlements ]]; then
 fi
 rev="$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo dev)"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $rev" "$app/Contents/Info.plist" >/dev/null
+build_date="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+subject="$(git -C "$root" log -1 --format=%s 2>/dev/null || true)"
+plutil -replace ContextBuildDate -string "$build_date" "$app/Contents/Info.plist"
+plutil -replace ContextCommitSubject -string "$subject" "$app/Contents/Info.plist"
 printf '%s\n' "$rev" > "$app/Contents/Resources/ContextRevision"
 chmod +x "$app/Contents/MacOS/Context"
 xattr -cr "$app" >/dev/null 2>&1 || true
