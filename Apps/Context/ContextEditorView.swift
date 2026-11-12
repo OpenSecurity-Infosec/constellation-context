@@ -62,7 +62,7 @@ struct ContextEditorRoot: View {
 
     private var header: some View {
         HStack(spacing: 14) {
-            // Room for the traffic lights, which fade with the header.
+            // Room for the traffic lights, which always show.
             Color.clear.frame(width: 64, height: 1)
             Menu(pad.title) {
                 ForEach(Array(pads.enumerated()), id: \.element) { index, p in

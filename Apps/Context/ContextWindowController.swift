@@ -49,7 +49,8 @@ final class ContextWindowController {
             backing: .buffered, defer: false
         )
         window.title = "Context"
-        // Zen canvas: no visible title bar. The traffic lights fade in with
+        // Zen canvas: no visible title bar. The traffic lights always show;
+        // hiding them makes the window look broken.
         // the header when the pointer reaches the top edge.
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
@@ -59,12 +60,10 @@ final class ContextWindowController {
         window.center()
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
-        chrome.onHeaderChange = { [weak self] visible in self?.setTrafficLights(visible: visible) }
         ContextTheme.apply(mode: ContextSettings.shared.themeMode)
         if live { refreshRates() }
         render()
         applyLook()
-        setTrafficLights(visible: false, animated: false)
         startTimerTick()
         updatePin()
     }
@@ -203,21 +202,6 @@ final class ContextWindowController {
         }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-    }
-
-    /// Fades the close, minimize, and zoom buttons with the header.
-    func setTrafficLights(visible: Bool, animated: Bool = true) {
-        let buttons: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
-        let views = buttons.compactMap { window.standardWindowButton($0) }
-        let alpha: CGFloat = visible ? 1 : 0
-        guard animated else {
-            views.forEach { $0.alphaValue = alpha }
-            return
-        }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18
-            views.forEach { $0.animator().alphaValue = alpha }
-        }
     }
 
     func toggle() {

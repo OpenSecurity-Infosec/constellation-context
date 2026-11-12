@@ -23,7 +23,7 @@ Context should feel like a calm, native Mac utility where **text is the interfac
 
 The canvas starts with text and nothing else. These rules turn "less is more" into layout:
 
-- **No visible window chrome.** No title bar, separator, toolbar, or status bar. The traffic lights are hidden until the header shows.
+- **No visible window chrome.** No title bar, separator, toolbar, or status bar. The traffic lights always show; hiding them makes the window look broken.
 - **Three layers of disclosure.**
   1. **Hidden (the default).** Text, the caret, and generous margins. Nothing else is drawn.
   2. **Hover bands.** When the pointer is near the top edge, the header fades in: the pad name, new note, search, and ⋯. When the pointer is near the bottom edge, the note-position dots fade in. The dots also flash briefly after a note switch. Typing hides both until the pointer moves again.

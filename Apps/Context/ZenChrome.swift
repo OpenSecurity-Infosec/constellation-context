@@ -24,9 +24,6 @@ final class ZenChrome: ObservableObject {
     @Published private(set) var header = false
     @Published private(set) var footer = false
     @Published private(set) var positionFlash = false
-    /// Fires when the header shows or hides, so AppKit chrome (the traffic
-    /// lights) can follow it.
-    var onHeaderChange: ((Bool) -> Void)?
     private var flashTask: Task<Void, Never>?
 
     /// `point` is measured from the top-left of the canvas; nil means the
@@ -57,7 +54,6 @@ final class ZenChrome: ObservableObject {
     private func setHeader(_ visible: Bool) {
         guard header != visible else { return }
         header = visible
-        onHeaderChange?(visible)
     }
 }
 

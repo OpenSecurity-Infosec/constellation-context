@@ -11,8 +11,6 @@ import Testing
 @Suite(.serialized) struct ZenChromeTests {
     @Test func chromeIsHiddenUntilThePointerReachesAnEdge() {
         let chrome = ZenChrome()
-        var lights: [Bool] = []
-        chrome.onHeaderChange = { lights.append($0) }
         #expect(!chrome.header && !chrome.footer)
 
         chrome.pointer(CGPoint(x: 200, y: 200), height: 480)
@@ -29,7 +27,6 @@ import Testing
 
         chrome.pointer(nil, height: 480)
         #expect(!chrome.header && !chrome.footer, "leaving the window hides everything")
-        #expect(lights == [true, false], "traffic lights follow the header")
     }
 
     @Test func everyNoteActionIsInTheSharedMenu() {
