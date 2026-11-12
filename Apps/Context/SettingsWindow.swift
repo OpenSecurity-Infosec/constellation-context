@@ -33,6 +33,7 @@ private struct SettingsView: View {
     @State private var showInDock: Bool = ContextSettings.shared.showInDock
     @State private var lightColorTheme = ContextSettings.shared.lightColorTheme
     @State private var darkColorTheme = ContextSettings.shared.darkColorTheme
+    @State private var paperType = ContextSettings.shared.paperType
     @State private var translucent: Bool = ContextSettings.shared.translucentWindow
 
     var body: some View {
@@ -70,6 +71,16 @@ private struct SettingsView: View {
             }
             colorThemePicker("Light color theme", selection: $lightColorTheme)
             colorThemePicker("Dark color theme", selection: $darkColorTheme)
+            Picker("Paper type", selection: $paperType) {
+                ForEach(PaperType.allCases, id: \.self) { paper in
+                    Text(paper.displayName).tag(paper)
+                }
+            }
+            .onChange(of: paperType) {
+                ContextSettings.shared.paperType = paperType
+                ContextSettings.shared.save()
+                ThemeRelayer.lookChanged()
+            }
             Toggle("Translucent window", isOn: $translucent)
                 .onChange(of: translucent) {
                     ContextSettings.shared.translucentWindow = translucent

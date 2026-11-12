@@ -99,6 +99,7 @@ struct ContextEditorRoot: View {
                 checklistView
             } else {
                 ZStack(alignment: .topLeading) {
+                    PaperBackground().allowsHitTesting(false).accessibilityHidden(true)
                     mathGutter
                     PlainTextEditor(text: $text, isEditing: $isEditing, onCommit: { controller?.onTextChange(text) }, onCaret: { caret in codeCaret = caret; controller?.trackCaret(caret) }, onIndent: { direction in
                         controller?.indentRowAtCaret(direction: direction)
@@ -852,3 +853,35 @@ final class ContextTextView: NSTextView {
 
 import ContextMath
 import ContextDomain
+
+/// A viewport decoration: never participates in text storage, copy, or export.
+private struct PaperBackground: View {
+    var body: some View {
+        Canvas { context, size in
+            let paper = ContextSettings.shared.paperType
+            guard paper != .plain else { return }
+            let spacing = max(18, ContextSettings.shared.fontSize * 1.6)
+            var path = Path()
+            if paper == .dotted {
+                for x in stride(from: spacing, through: size.width, by: spacing) {
+                    for y in stride(from: spacing, through: size.height, by: spacing) {
+                        path.addEllipse(in: CGRect(x: x, y: y, width: 1.5, height: 1.5))
+                    }
+                }
+                context.fill(path, with: .color(.primary.opacity(0.16)))
+            } else {
+                for y in stride(from: spacing, through: size.height, by: spacing) {
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                if paper == .grid {
+                    for x in stride(from: spacing, through: size.width, by: spacing) {
+                        path.move(to: CGPoint(x: x, y: 0))
+                        path.addLine(to: CGPoint(x: x, y: size.height))
+                    }
+                }
+                context.stroke(path, with: .color(.primary.opacity(0.10)), lineWidth: 0.5)
+            }
+        }
+    }
+}

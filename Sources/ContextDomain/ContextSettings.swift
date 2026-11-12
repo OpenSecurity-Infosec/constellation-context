@@ -22,6 +22,7 @@ public struct ContextSettings: Codable, Sendable {
         themeMode.isDark(systemDark: systemDark) ? darkColorTheme : lightColorTheme
     }
 
+    public var paperType: PaperType = .plain
     public var translucentWindow: Bool = false
     public var lastExportDirectory: String? = nil
 
@@ -42,6 +43,7 @@ public struct ContextSettings: Codable, Sendable {
         colorTheme: ColorTheme = .mocha,
         lightColorTheme: ColorTheme? = nil,
         darkColorTheme: ColorTheme? = nil,
+        paperType: PaperType = .plain,
         translucentWindow: Bool = false,
         lastExportDirectory: String? = nil
     ) {
@@ -59,6 +61,7 @@ public struct ContextSettings: Codable, Sendable {
         self.colorTheme = colorTheme
         self.lightColorTheme = lightColorTheme ?? colorTheme
         self.darkColorTheme = darkColorTheme ?? colorTheme
+        self.paperType = paperType
         self.translucentWindow = translucentWindow
         self.lastExportDirectory = lastExportDirectory
     }
@@ -84,6 +87,7 @@ public struct ContextSettings: Codable, Sendable {
         case obsidianVaultPath, themeMode, iCloudSyncEnabled, lastSyncAt
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
         case lightColorTheme, darkColorTheme
+        case paperType
         case lastExportDirectory
     }
 
@@ -103,6 +107,7 @@ public struct ContextSettings: Codable, Sendable {
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha
         lightColorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .lightColorTheme) ?? colorTheme
         darkColorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .darkColorTheme) ?? colorTheme
+        paperType = try c.decodeIfPresent(PaperType.self, forKey: .paperType) ?? .plain
         translucentWindow = try c.decodeIfPresent(Bool.self, forKey: .translucentWindow) ?? false
         lastExportDirectory = try c.decodeIfPresent(String.self, forKey: .lastExportDirectory)
     }
