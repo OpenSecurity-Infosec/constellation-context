@@ -92,11 +92,17 @@ public struct ObsidianConnector: VaultConnector {
         return try await read(VaultNoteRef(vaultID: id, noteID: rel))
     }
 
+    /// Local file for an embed in a note, if it exists in the vault.
+    public func attachmentURL(_ target: String, in ref: VaultNoteRef) -> URL? {
+        guard let note = try? fileURL(for: ref.noteID) else { return nil }
+        return MarkdownBlocks.resolve(target, noteFolder: note.deletingLastPathComponent(), vaultRoot: root)
+    }
+
     // MARK: - Paths
 
     /// Resolves a note id to a file inside the vault, refusing anything
     /// outside it or inside a hidden folder.
-    func fileURL(for noteID: String) throws -> URL {
+    public func fileURL(for noteID: String) throws -> URL {
         let parts = noteID.split(separator: "/", omittingEmptySubsequences: true)
         guard !parts.isEmpty,
               parts.allSatisfy({ $0 != ".." && $0 != "." && !$0.hasPrefix(".") }),

@@ -722,6 +722,13 @@ final class ContextWindowController {
 
     func openSettings() { SettingsWindowController.shared.show() }
 
+    private(set) lazy var library = LibraryWindowController { [unowned self] in self.workspace }
+
+    func openLibrary() {
+        flushNow()
+        library.show()
+    }
+
     // MARK: - Search
 
     func openSearch(query: String? = nil) {

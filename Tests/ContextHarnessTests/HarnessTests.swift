@@ -152,3 +152,16 @@ func linkedVault() throws -> ObsidianConnector {
         #expect(log.records().first?.ok == true)
     }
 }
+
+@Suite struct WriteDocumentTests {
+    @Test func writesOnlyExistingDocs() throws {
+        let ws = makeWorkspace()
+        try ws.apply(.createProject(name: "Alpha"))
+        let p = ws.project("Alpha")
+        try "old".write(to: p.docs.appendingPathComponent("Spec.md"), atomically: true, encoding: .utf8)
+        try ws.apply(.writeDocument(project: "Alpha", fileName: "Spec.md", text: "new"))
+        #expect(try String(contentsOf: p.docs.appendingPathComponent("Spec.md"), encoding: .utf8) == "new")
+        #expect(throws: WorkspaceError.noSuchDocument) { try ws.apply(.writeDocument(project: "Alpha", fileName: "New.md", text: "x")) }
+        #expect(throws: WorkspaceError.noSuchDocument) { try ws.apply(.writeDocument(project: "Alpha", fileName: "../context.md", text: "x")) }
+    }
+}

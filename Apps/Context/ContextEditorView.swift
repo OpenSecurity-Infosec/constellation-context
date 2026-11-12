@@ -497,6 +497,9 @@ struct ContextEditorRoot: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            Button("Library") { controller?.openLibrary() }
+                .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("overlay.library")
             Button("Settings") { controller?.openSettings() }
                 .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
         }

@@ -21,6 +21,8 @@ public enum ContextCommand: Equatable, Sendable {
     case captureClip(text: String)
     /// Copies a file into the project's `docs/`.
     case addDocument(project: String, file: URL)
+    /// Overwrites a text file in the project's `docs/`.
+    case writeDocument(project: String, fileName: String, text: String)
     /// Moves a `docs/` file to the vault trash.
     case removeDocument(project: String, fileName: String)
     case attachReference(project: String, ProjectReference)
@@ -134,6 +136,16 @@ public final class Workspace: @unchecked Sendable {
             let ext = file.pathExtension.isEmpty ? "md" : file.pathExtension
             let dest = NoteFileName.available(stem: stem, ext: ext, in: p.docs)
             try FileManager.default.copyItem(at: file, to: dest)
+            return .project(name)
+        case .writeDocument(let name, let fileName, let text):
+            let p = try existingProject(name)
+            let url = p.docs.appendingPathComponent(fileName)
+            guard !fileName.contains("/"), !fileName.hasPrefix("."), FileManager.default.fileExists(atPath: url.path) else {
+                throw WorkspaceError.noSuchDocument
+            }
+            if (try? String(contentsOf: url, encoding: .utf8)) != text {
+                try text.write(to: url, atomically: true, encoding: .utf8)
+            }
             return .project(name)
         case .removeDocument(let name, let fileName):
             let p = try existingProject(name)

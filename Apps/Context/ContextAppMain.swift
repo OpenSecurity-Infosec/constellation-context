@@ -130,6 +130,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
     @objc func newProject(_ sender: Any?) { main?.promptNewProject() }
+    @objc func openLibrary(_ sender: Any?) { main?.openLibrary() }
     @objc func switchPad(_ sender: NSMenuItem) { main?.switchPad(number: sender.tag) }
 
     private func buildMenu() -> NSMenu {
@@ -175,6 +176,9 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         let shareItem = NSMenuItem(); shareItem.submenu = share; menu.addItem(shareItem)
         let window = NSMenu(title: "Window")
         window.addItem(withTitle: "Toggle Context", action: #selector(toggleWindow(_:)), keyEquivalent: "a")
+        let library = NSMenuItem(title: "Library", action: #selector(openLibrary(_:)), keyEquivalent: "l")
+        library.keyEquivalentModifierMask = [.command, .shift]
+        window.addItem(library)
         let windowItem = NSMenuItem(); windowItem.submenu = window; menu.addItem(windowItem)
         return menu
     }
