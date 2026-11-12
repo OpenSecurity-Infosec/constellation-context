@@ -38,12 +38,12 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
 | Apple Notes / Obsidian / Bear direct export | Partial (all three wired; missing-app paths now specific — Notes/Bear install prompts, vault unset/missing/not-a-folder/unwritable each named, picker only when no usable vault, no fake vault creation) |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Partial (long URLs render shortened in the editor with the full URL as tooltip; plain click expands/collapses in place, ⌘↩ opens the link under the caret, and copy/save/export always carry the full URL — the `…` form never reaches disk; detection covers scheme URLs incl. non-http (`ftp:`, `context:`, `obsidian:`…), `mailto:`/`tel:`, `www.`, bare domains with port/path/query/fragment, localhost, IPv4, and e-mail-as-mailto, with trailing-punctuation trimming and balanced-parentheses handling, domain-unit-tested; the link being typed stays full until the caret leaves it and identical URLs toggle together; live click/keyboard feel in the packaged app vs Antinote unverified) |
-| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (25 builtins: date/time variants (`today`/`tomorrow`/`yesterday`/`now`/`time`/`timestamp`, custom formats via `today(yyyy/MM/dd)`), line transforms (`sort_lines` incl. `(desc)`, `reverse_lines`, `dedupe_lines`, `trim_lines`, `remove_blank_lines`, `shuffle_lines`), text transforms (`upper`/`lower`/`title`/`trim`, `base64_encode`/`base64_decode`, `hash` (SHA-256), `md5`, `json_format`), `random` ranges/picks, `count`, `uuid`, `help`, plus aliases (`date`, `sort`, `sha256`, `json`, …); arguments are parenthesised (`::random(1, 10)`, quotes protect commas) and reach JS scripts as `input.args`; unknown commands never fail silently — the popup shows the error with did-you-mean suggestions (prefix/edit-distance/substring), non-math notes mark unknown `::tokens` in the gutter, and run/argument/JSON/base64 errors land in the status bar; JS sandbox surfaces syntax/thrown errors, missing `run`, unusable returns, and unreadable files, terminates scripts at a 2s wall-clock limit (unit-tested with infinite loops), and keeps fetch/XHR/WebSocket absent; domain logic unit-tested on cortex only (343 tests) — live popup/gutter/status-bar feel in the packaged app vs Antinote unverified; selection-scoped transforms are implemented and tested in the domain but the editor does not yet pass a selection, so in-app transforms are token/whole-note only; no extension gallery, no network bridge for scripts) |
+| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (25 builtins: date/time variants (`today`/`tomorrow`/`yesterday`/`now`/`time`/`timestamp`, custom formats via `today(yyyy/MM/dd)`), line transforms (`sort_lines` incl. `(desc)`, `reverse_lines`, `dedupe_lines`, `trim_lines`, `remove_blank_lines`, `shuffle_lines`), text transforms (`upper`/`lower`/`title`/`trim`, `base64_encode`/`base64_decode`, `hash` (SHA-256), `md5`, `json_format`), `random` ranges/picks, `count`, `uuid`, `help`, plus aliases (`date`, `sort`, `sha256`, `json`, …); arguments are parenthesised (`::random(1, 10)`, quotes protect commas) and reach JS scripts as `input.args`; unknown commands never fail silently — the popup shows the error with did-you-mean suggestions (prefix/edit-distance/substring), non-math notes mark unknown `::tokens` in the gutter, and run/argument/JSON/base64 errors land in the status bar; JS sandbox surfaces syntax/thrown errors, missing `run`, unusable returns, and unreadable files, terminates scripts at a 2s wall-clock limit (unit-tested with infinite loops), and keeps fetch/XHR/WebSocket absent; domain logic unit-tested on cortex only (343 tests) — live popup/gutter/status-bar feel in the packaged app vs Antinote unverified; editor now forwards nonempty source selections (including collapsed-link offset mapping) to domain transforms; interactive selection/popup behavior remains unverified; no extension gallery, no network bridge for scripts) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |
 | Note search pane (⌘F) | Partial (title+body search with fuzzy match for typos/partial tokens, exact ranked first; no saved searches) |
 | iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
-| URL schemes (`context://`) | Partial (open/new/search/append parse + handle; real Raycast/Alfred flows untested) |
+| URL schemes (`context://`) | Partial (open/new/search/append parse + handle; single percent decode, Unicode, empty/missing parameters and invalid routes covered by unit tests; invalid requests show an alert; note IDs unsupported and rejected; packaged alerts and real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
 | Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; Antinote paper types, separate light+dark colour themes, theme maker, app icon picker missing) |
 | Dock + menu bar + pin (dock / menu / both / neither) | Partial (toggles live; menu-bar-only edge cases unproven) |
@@ -96,3 +96,37 @@ cannot hang the app.
 - Notes live on this Mac: `~/Library/Application Support/ConstellationContext/notes.json`.
 - No accounts, no analytics, no network calls except future opt-in rate fetching.
 - License: MIT (see `LICENSE`).
+
+### Raycast / Alfred URL recipes
+
+Install the packaged app first so macOS registers the scheme. Paste these into Terminal:
+
+```sh
+open 'context://open'
+open 'context://new?text=Hello%20world%0A%E9%9B%AA%20%F0%9F%98%80'
+open 'context://search?query=shopping%20list'
+open 'context://append?text=Milk%20%26%20bread'
+```
+
+Raycast Quicklinks: use any URL above as the link. Alfred: connect a Keyword
+input to an Open URL action containing one of those URLs. For arbitrary input,
+use this Bash Run Script in Alfred (input as argv), or save it as a Raycast Script
+Command; Python 3 must be available:
+
+```bash
+#!/bin/bash
+# @raycast.schemaVersion 1
+# @raycast.title New Context Note
+# @raycast.mode silent
+# @raycast.argument1 {"type":"text","placeholder":"Note text"}
+encoded=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1")
+open "context://new?text=$encoded"
+```
+
+Encode parameter values once as UTF-8 percent escapes. `+` stays a literal plus;
+use `%20` for spaces, `%26` for ampersands, `%25` for percent signs.
+`new` accepts missing/empty text; search requires `query` (empty opens search);
+append requires nonempty text and targets the current note. Open shows the overlay.
+Note identifiers are unsupported: unknown parameters, duplicate parameters,
+unknown actions, extra paths and fragments are rejected with a visible alert.
+Real Raycast/Alfred execution and packaged-app alert/selection feel have not been verified.

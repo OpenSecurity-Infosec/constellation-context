@@ -634,6 +634,16 @@ final class ContextTextView: NSTextView {
         lastLinkPresentation = nil
     }
 
+    var commandSelection: Range<Int>? {
+        let selected = selectedRange()
+        guard selected.length > 0 else { return nil }
+        let source = sourceTextForSaving()
+        let start = lastLinkPresentation?.sourceOffset(forDisplayOffset: selected.location) ?? selected.location
+        let end = lastLinkPresentation?.sourceOffset(forDisplayOffset: NSMaxRange(selected)) ?? NSMaxRange(selected)
+        guard let range = Range(NSRange(location: start, length: end - start), in: source) else { return nil }
+        return source.distance(from: source.startIndex, to: range.lowerBound)..<source.distance(from: source.startIndex, to: range.upperBound)
+    }
+
     private func sourceCaretUTF16Offset() -> Int {
         lastLinkPresentation?.sourceOffset(forDisplayOffset: selectedRange().location)
             ?? selectedRange().location

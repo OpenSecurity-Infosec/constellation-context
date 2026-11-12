@@ -60,7 +60,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     /// Handles `context://` URLs from Raycast/Alfred/scripts/Shortcuts.
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
-            if URLScheme.parse(url) != nil {
+            if url.scheme?.lowercased() == URLScheme.scheme {
                 handleSchemeURL(url)
             }
         }
@@ -77,7 +77,7 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReply _: NSAppleEventDescriptor) {
         if let s = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
-           let url = URL(string: s), URLScheme.parse(url) != nil
+           let url = URL(string: s)
         {
             if main == nil {
                 pendingURL = url
@@ -88,7 +88,13 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleSchemeURL(_ url: URL) {
-        guard let intent = URLScheme.parse(url) else { return }
+        guard let intent = URLScheme.parse(url) else {
+            let alert = NSAlert()
+            alert.messageText = "Cannot open Context URL"
+            alert.informativeText = "Unknown action or invalid parameters. Use open, new?text=…, search?query=…, or append?text=…. Note identifiers are not supported."
+            alert.runModal()
+            return
+        }
         switch intent {
         case .open:
             main?.show()

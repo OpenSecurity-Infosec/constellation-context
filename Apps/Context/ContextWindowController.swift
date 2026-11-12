@@ -373,7 +373,7 @@ final class ContextWindowController {
             rawArgument: invocation?.hasParenthesisedArgs == true ? invocation?.rawArgument : nil,
             tokenRange: intRange,
             fullText: fullText,
-            selection: nil,
+            selection: (window.firstResponder as? ContextTextView)?.commandSelection,
             knownNames: jsExtensions.map(\.commandName)
         )
         guard let edit = try? result.get() else {
