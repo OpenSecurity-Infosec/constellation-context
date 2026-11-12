@@ -17,7 +17,7 @@ swift test
 CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 ```
 
-`run-app.sh` packages the debug build into `/Applications/Context.app` and opens it. **⌥A** (Option+A) toggles the overlay from anywhere. **⇧⌘L** opens the Library.
+`run-app.sh` packages the debug build into `/Applications/Context.app` and opens it. The package step stamps the build: `CFBundleVersion` is the short git hash (cortex02's auto-installer compares it to `origin/master`), and **Context › About Context** and the Inspector footer show `<hash> · built <local time>`. The About panel also shows the commit subject. **⌥A** (Option+A) toggles the overlay from anywhere. **⇧⌘L** opens the Library.
 
 ## Typing regression tests
 

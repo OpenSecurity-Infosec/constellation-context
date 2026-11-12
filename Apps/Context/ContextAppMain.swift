@@ -129,6 +129,14 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
     @objc func captureScreenshot(_ sender: Any?) { main?.captureScreenshotToText() }
     @objc func showSettings(_ sender: Any?) { main?.openSettings() }
     @objc func showVoid(_ sender: Any?) { main?.openVoid() }
+    @objc func showAbout(_ sender: Any?) {
+        let text = BuildInfo.aboutText(from: Bundle.main.infoDictionary ?? [:])
+        let credits = NSAttributedString(string: text, attributes: [
+            .font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor,
+        ])
+        NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
+    }
+
     @objc func newProject(_ sender: Any?) { main?.promptNewProject() }
     @objc func openLibrary(_ sender: Any?) { main?.openLibrary() }
     @objc func switchPad(_ sender: NSMenuItem) { main?.switchPad(number: sender.tag) }
@@ -142,6 +150,8 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
         let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Context", action: #selector(showAbout(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings…", action: #selector(showSettings(_:)), keyEquivalent: ",")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Context", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")

@@ -34,6 +34,10 @@ struct NoteInspector: View {
                 }
                 aiSection
                 lookSection
+                Text(BuildInfo.label(from: Bundle.main.infoDictionary ?? [:]))
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("inspector.build")
             }
             .padding(.horizontal, 18)
             .padding(.top, 34)
