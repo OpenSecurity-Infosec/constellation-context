@@ -39,7 +39,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Copy-as-context, with `context.md` kept current.
   - `HarnessConnector` and `RouterSync` interfaces, each with a stub.
   - A delivery record.
-- [ ] **6. AI actions**
+- [x] **6. AI actions**
   - `ContextAI` OpenAI-compatible client: CXN router, `gpt-6.1-terra`, key in the Keychain.
   - Actions: summarize, tidy, extract-to-project, and compact.
   - Each result is shown as a proposal, accept or reject, and applies as one undoable edit.
@@ -101,3 +101,12 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Unproven, needs a manual pass:
     - the Context menu and Send to Project;
     - pasting the Copy Import Line output into a real `CLAUDE.md` and confirming Claude Code picks the file up.
+- **2026-11-12, step 6, done** (`dd21e57`).
+  - 241 tests pass.
+  - **Live:** `gpt-6.1-terra` at `infer.cxn.sh` answered the client in ~9 s, using the key read from the opencode config into the test's environment only.
+  - The app has no AI key until the user clicks Settings → AI → "Use opencode's CXN key" or pastes one. I did not write the user's key into the Keychain myself.
+  - Unproven, needs a manual pass:
+    - the drawer rendering;
+    - ⌘↩ and Esc;
+    - ⌘Z after Accept;
+    - Extract with undo.
