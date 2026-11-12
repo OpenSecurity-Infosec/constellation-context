@@ -213,3 +213,23 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   against an isolated temporary source copy before push. Manual GUI checks for
   this foundation: none; existing canvas smoke checks remain pending.
   Validation: cortex02 isolated suite passed, 356 tests in 56 suites.
+
+- **2026-11-12, gap 3, daily notes and template selection (Partial).**
+  - File → Open Daily Note (⇧⌘D) opens or creates Scratch/yyyy-MM-dd.md
+    using the current time zone; reopening preserves existing text.
+  - File → New Note from Template… (⌥⌘N) uses a native file picker,
+    expands {{date}}, and creates a separate Scratch note. Cancel leaves notes
+    unchanged. No persisted template preference.
+  - Justification: these on-command menu actions support the Vision's daily-note
+    replacement goal while leaving the default canvas empty of controls.
+  - Both operations use Workspace.apply; all created content stays in the base
+    vault. Templates are read only; linked vaults receive no new files.
+  - Tests cover reopen preservation, restart, date boundaries, and Markdown /
+    unknown-token preservation. GUI behavior remains unproven.
+  - Owner checks: invoke both shortcuts; reopen today's edited note; choose a
+    Markdown template containing {{date}}, frontmatter and wikilinks; cancel the
+    picker; confirm the source template stays unchanged and files land in Scratch.
+  - Remaining gap 3: Library create/rename/delete, folder browsing, wikilinks.
+  - Validation: isolated cortex02 suite passed, 358 tests in 56 suites.
+    First run exposed URL normalization in daily lookup; fixed before commit.
+    Post-push CI and installed revision are checked in this turn's report.

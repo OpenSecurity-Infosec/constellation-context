@@ -238,6 +238,42 @@ final class ContextWindowController {
 
     // MARK: - Note ops
 
+    func openDailyNote() {
+        flushNow()
+        do {
+            let result = try workspace.apply(.openDailyNote(date: Date(), timeZone: .current))
+            switchPad(.scratch)
+            if case .note(let id) = result { noteID = id }
+            render()
+            show()
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Couldn't open the daily note."
+            alert.runModal()
+        }
+    }
+
+    func newNoteFromTemplate() {
+        let picker = NSOpenPanel()
+        picker.allowedContentTypes = [.text]
+        picker.allowsMultipleSelection = false
+        picker.message = "Choose a Markdown or text template. {{date}} expands to today's date."
+        guard picker.runModal() == .OK, let url = picker.url else { return }
+        do {
+            let template = try String(contentsOf: url, encoding: .utf8)
+            flushNow()
+            let result = try workspace.apply(.createFromTemplate(template, date: Date(), timeZone: .current))
+            switchPad(.scratch)
+            if case .note(let id) = result { noteID = id }
+            render()
+            show()
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Couldn't create a note from this template."
+            alert.runModal()
+        }
+    }
+
     func newNote() {
         flushNow()
         if pad.isProject { pad = .scratch }

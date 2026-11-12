@@ -7,6 +7,8 @@ import Foundation
 /// so there is exactly one mutation path (AGENTS.md).
 public enum ContextCommand: Equatable, Sendable {
     case createNote(Pad, text: String)
+    case openDailyNote(date: Date, timeZone: TimeZone)
+    case createFromTemplate(String, date: Date, timeZone: TimeZone)
     /// Saves now. Use for discrete edits (commands, AI, checklist taps).
     case setText(Pad, id: UUID, text: String)
     /// Keystroke path: memory now, disk on the next flush.
@@ -93,6 +95,20 @@ public final class Workspace: @unchecked Sendable {
     @discardableResult
     public func apply(_ command: ContextCommand) throws -> CommandResult {
         switch command {
+        case .openDailyNote(let date, let zone):
+            let day = NoteTemplate.expand("{{date}}", at: date, timeZone: zone)
+            let url = vault.scratch.appendingPathComponent(day + ".md")
+            if !FileManager.default.fileExists(atPath: url.path) {
+                try Data(("# " + day + "\n\n").utf8).write(to: url, options: .withoutOverwriting)
+            }
+            let s = store(for: .scratch)
+            _ = s.reloadFromDisk()
+            guard let note = s.liveNotes.first(where: { s.fileURL(id: $0.id)?.standardizedFileURL.path == url.standardizedFileURL.path }) else {
+                throw WorkspaceError.noSuchNote
+            }
+            return .note(note.id)
+        case .createFromTemplate(let template, let date, let zone):
+            return .note(store(for: .scratch).create(text: NoteTemplate.expand(template, at: date, timeZone: zone)).id)
         case .createNote(let pad, let text):
             return .note(store(for: pad).create(text: text).id)
         case .setText(let pad, let id, let text):

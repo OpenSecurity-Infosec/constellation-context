@@ -118,6 +118,8 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
     }
 
     @objc func toggleWindow(_ sender: Any?) { main?.toggle() }
+    @objc func openDailyNote(_ sender: Any?) { main?.openDailyNote() }
+    @objc func newNoteFromTemplate(_ sender: Any?) { main?.newNoteFromTemplate() }
     @objc func newNote(_ sender: Any?) { main?.newNote() }
     @objc func nextNote(_ sender: Any?) { main?.nextNote() }
     @objc func prevNote(_ sender: Any?) { main?.prevNote() }
@@ -158,6 +160,12 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate 
         let appItem = NSMenuItem(); appItem.submenu = appMenu; menu.addItem(appItem)
         let file = NSMenu(title: "File")
         file.addItem(withTitle: "New Note", action: #selector(newNote(_:)), keyEquivalent: "n")
+        let daily = file.addItem(withTitle: "Open Daily Note", action: #selector(openDailyNote(_:)), keyEquivalent: "d")
+        daily.keyEquivalentModifierMask = [.command, .shift]
+        daily.identifier = NSUserInterfaceItemIdentifier("file.dailyNote")
+        let template = file.addItem(withTitle: "New Note from Template…", action: #selector(newNoteFromTemplate(_:)), keyEquivalent: "n")
+        template.keyEquivalentModifierMask = [.command, .option]
+        template.identifier = NSUserInterfaceItemIdentifier("file.noteFromTemplate")
         file.addItem(withTitle: "Next Note", action: #selector(nextNote(_:)), keyEquivalent: "]")
         file.addItem(withTitle: "Previous Note", action: #selector(prevNote(_:)), keyEquivalent: "[")
         file.addItem(.separator())

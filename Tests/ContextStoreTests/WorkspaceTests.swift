@@ -5,6 +5,34 @@ import Foundation
 import Testing
 
 @Suite struct WorkspaceTests {
+    @Test func dailyNoteReopensWithoutOverwritingAndSurvivesReindex() throws {
+        let vault = tempVault()
+        defer { try? FileManager.default.removeItem(at: vault.root) }
+        let ws = Workspace(vault: vault)
+        let date = Date(timeIntervalSince1970: 0)
+        let zone = TimeZone(secondsFromGMT: 0) ?? .current
+        let command = ContextCommand.openDailyNote(date: date, timeZone: zone)
+        guard case .note(let id) = try ws.apply(command) else { Issue.record("Expected note"); return }
+        #expect(ws.store(for: .scratch).fileURL(id: id)?.lastPathComponent == "1970-01-01.md")
+        try ws.apply(.setText(.scratch, id: id, text: "Edited [[link]]"))
+        #expect(try ws.apply(command) == .note(id))
+        let again = Workspace(vault: vault)
+        guard case .note(let reopened) = try again.apply(command) else { return }
+        #expect(again.store(for: .scratch).note(id: reopened)?.text == "Edited [[link]]")
+        let west = TimeZone(secondsFromGMT: -3600) ?? .current
+        try again.apply(.openDailyNote(date: date, timeZone: west))
+        #expect(FileManager.default.fileExists(atPath: vault.scratch.appendingPathComponent("1969-12-31.md").path))
+    }
+
+    @Test func templateCreationPreservesMarkdownAndUnknownTokens() throws {
+        let vault = tempVault()
+        defer { try? FileManager.default.removeItem(at: vault.root) }
+        let ws = Workspace(vault: vault)
+        let template = "---\ncustom: yes\n---\n# {{date}}\n[[link]] ![[image]] {{unknown}}"
+        guard case .note(let id) = try ws.apply(.createFromTemplate(template, date: Date(timeIntervalSince1970: 0), timeZone: TimeZone(secondsFromGMT: 0) ?? .current)) else { return }
+        #expect(ws.store(for: .scratch).note(id: id)?.text == template.replacingOccurrences(of: "{{date}}", with: "1970-01-01"))
+    }
+
     @Test func padsLiveInTheirOwnFolders() throws {
         let vault = tempVault()
         let ws = Workspace(vault: vault)
