@@ -33,6 +33,10 @@ extension ContextWindowController {
             }
         }
         items.append(ActionMenuItem.submenu("Export", exportMenuItems()))
+        items.append(ActionMenuItem(
+            inspectorOpen ? "Hide Inspector" : "Show Inspector",
+            key: "i", modifiers: [.command, .option], identifier: "note.inspector"
+        ) { [weak self] in self?.toggleInspector() })
         items.append(.separator())
         items.append(ActionMenuItem("Move to Trash", identifier: "note.trash") { [weak self] in self?.trashCurrent() })
         if place == .more {
@@ -51,7 +55,8 @@ extension ContextWindowController {
         let menu = NSMenu()
         noteMenuItems(for: .more).forEach(menu.addItem)
         let y = view.isFlipped ? ZenMetrics.headerHeight : view.bounds.height - ZenMetrics.headerHeight
-        menu.popUp(positioning: nil, at: NSPoint(x: view.bounds.width - 44, y: y), in: view)
+        let right = view.bounds.width - (inspectorOpen ? NoteInspector.width : 0)
+        menu.popUp(positioning: nil, at: NSPoint(x: right - 44, y: y), in: view)
     }
 
     private func projectMenuItems(_ info: ProjectInfo) -> [NSMenuItem] {

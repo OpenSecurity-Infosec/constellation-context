@@ -33,6 +33,8 @@ final class ContextWindowController {
     private var hosting: NSHostingView<ContextEditorRoot>?
     /// Hover chrome for the zen canvas.
     let chrome = ZenChrome()
+    /// Whether the settings panel is open on the right.
+    private(set) var inspectorOpen = false
     private var lastMathBody = ""
     private var lastMathResults: [MathEngine.LineOutcome] = []
 
@@ -202,6 +204,19 @@ final class ContextWindowController {
         }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    /// Opens or closes the settings panel. The window grows to the right to
+    /// make room, so the text doesn't move, and gives the room back after.
+    func toggleInspector() {
+        inspectorOpen.toggle()
+        var frame = window.frame
+        frame.size.width += inspectorOpen ? NoteInspector.width : -NoteInspector.width
+        if let screen = window.screen?.visibleFrame, frame.maxX > screen.maxX {
+            frame.origin.x = max(screen.minX, screen.maxX - frame.width)
+        }
+        window.setFrame(frame, display: true, animate: true)
+        render(preservingFocus: true)
     }
 
     func toggle() {
@@ -834,6 +849,8 @@ final class ContextWindowController {
             note: current,
             pad: pad,
             pads: pads,
+            project: cachedProjectInfo,
+            inspectorOpen: inspectorOpen,
             aiState: aiState,
             liveCount: live.count,
             noteIndex: live.firstIndex(where: { $0.id == noteID }) ?? 0,

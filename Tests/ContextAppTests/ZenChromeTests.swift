@@ -44,6 +44,25 @@ import Testing
         #expect(more.contains("Library"))
         #expect(more.contains("Settings…"))
     }
+
+    @Test func inspectorGrowsTheWindowAndGivesTheRoomBack() {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ctx-insp-\(UUID().uuidString)", isDirectory: true)
+        let controller = ContextWindowController(workspace: Workspace(vault: BaseVault(root: root)), live: false)
+        defer { controller.window.orderOut(nil) }
+        controller.window.setFrame(NSRect(x: 100, y: 100, width: 640, height: 480), display: false)
+        let before = controller.window.frame
+
+        #expect(controller.noteMenuItems(for: .canvas).map(\.title).contains("Show Inspector"))
+        controller.toggleInspector()
+        #expect(controller.inspectorOpen)
+        #expect(controller.window.frame.width == before.width + NoteInspector.width)
+        #expect(controller.window.frame.minX == before.minX, "the text stays where it was")
+        #expect(controller.noteMenuItems(for: .canvas).map(\.title).contains("Hide Inspector"))
+
+        controller.toggleInspector()
+        #expect(!controller.inspectorOpen)
+        #expect(controller.window.frame.width == before.width)
+    }
 }
 
 /// Typography is display only: the title is set larger, and the saved

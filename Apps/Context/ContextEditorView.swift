@@ -13,6 +13,8 @@ struct ContextEditorRoot: View {
     var note: ContextNote
     var pad: Pad = .scratch
     var pads: [Pad] = []
+    var project: ProjectInfo?
+    var inspectorOpen = false
     var aiState: AIState = .idle
     var liveCount: Int
     var noteIndex: Int = 0
@@ -34,6 +36,20 @@ struct ContextEditorRoot: View {
     @State private var slashSelected: Int = 0
 
     var body: some View {
+        HStack(spacing: 0) {
+            canvas
+            if inspectorOpen {
+                NoteInspector(controller: controller, pad: pad, project: project, escCloses: aiState == .idle)
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: inspectorOpen)
+        .background(Color.ctxEditorBackground)
+        .ignoresSafeArea()
+        .frame(minWidth: 360, minHeight: 240)
+    }
+
+    private var canvas: some View {
         ZStack {
             editor
             VStack(spacing: 0) {
@@ -53,9 +69,6 @@ struct ContextEditorRoot: View {
         .animation(.easeOut(duration: 0.18), value: chrome.header)
         .animation(.easeOut(duration: 0.18), value: chrome.footer)
         .animation(.easeOut(duration: 0.25), value: chrome.positionFlash)
-        .background(Color.ctxEditorBackground)
-        .ignoresSafeArea()
-        .frame(minWidth: 360, minHeight: 240)
     }
 
     // MARK: - Header (hover only)
