@@ -203,3 +203,13 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
 - The `contextctl` CLI and MCP server (`ContextAutomation`).
 - The "less is more" trim of legacy modes and settings.
 - Live inline Markdown styling in the Library editor.
+
+- **2026-11-12, gap 3, template foundation (Partial).** Added the pure
+  `NoteTemplate.expand` contract for `{{date}}` (Gregorian `yyyy-MM-dd`, explicit
+  date and time zone). Unknown tokens and Markdown remain unchanged. No new
+  settings or canvas controls. Template selection and daily-note creation are
+  still unfinished; owner-only verification and Anytype linking remain pending.
+  Local tests unavailable (Linux host has no Swift); validation runs on cortex02
+  against an isolated temporary source copy before push. Manual GUI checks for
+  this foundation: none; existing canvas smoke checks remain pending.
+  Validation: cortex02 isolated suite passed, 356 tests in 56 suites.
