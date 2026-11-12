@@ -34,7 +34,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Scratch, Clipboard (history captured as editable files in `<base>/Clipboard/`), and project Context pads.
   - A pad switcher in the overlay.
   - Paste keeps Markdown.
-- [ ] **5. Projects and injection**
+- [x] **5. Projects and injection**
   - `Projects/<name>/context.md` and `docs/`; attaching linked-vault notes by reference.
   - Copy-as-context, with `context.md` kept current.
   - `HarnessConnector` and `RouterSync` interfaces, each with a stub.
@@ -94,3 +94,10 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
     - a copy landing in the Clipboard pad;
     - a 1Password copy being skipped.
   - Search and Void work only on the current pad. The cross-source search arrives in step 7 (Library).
+- **2026-11-12, step 5, done** (`74c9afd`).
+  - 231 tests pass.
+  - **Decision:** the kept-current, harness-facing file is the *assembled* context at `<base>/.context/projects/<name>.md`, not `context.md`. It includes docs and references, it is derived, and it is rewritten only when its text changes. Bindings and references live in `Projects/<name>/project.json` because they are user data.
+  - Attaching Anytype notes needs a note picker. That arrives with the Library (step 7). The overlay's Add Document handles files, and files inside a linked Obsidian vault become references.
+  - Unproven, needs a manual pass:
+    - the Context menu and Send to Project;
+    - pasting the Copy Import Line output into a real `CLAUDE.md` and confirming Claude Code picks the file up.
