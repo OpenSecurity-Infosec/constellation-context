@@ -6,7 +6,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
 
 ## Steps
 
-- [ ] **1. Base vault**
+- [x] **1. Base vault**
   - New `ContextVault` module with three pieces:
     - `MarkdownDocument`: lossless frontmatter split, read, and edit;
     - `BaseVault` layout;
@@ -62,3 +62,9 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
 ## Log
 
 (Each iteration appends: date, step, result, and anything unproven.)
+
+- **2026-11-12, step 1, done** (`e5cbadd`).
+  - 193 tests pass.
+  - The installed app migrated the real `notes.json` (2 live notes) into `~/Context/Scratch/`. Ids and dates were kept, and the backup is `notes.json.migrated-2026-11-12-110125`.
+  - Unproven: the overlay was not visually inspected this iteration, and Settings → Base vault → Change… was not clicked through in the installed app.
+  - Known leftover: `PlainText.sanitize` still strips Markdown bullets and quotes on paste. Step 4 changes paste to keep Markdown.
