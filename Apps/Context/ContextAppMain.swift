@@ -91,13 +91,17 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         guard let intent = URLScheme.parse(url) else {
             let alert = NSAlert()
             alert.messageText = "Cannot open Context URL"
-            alert.informativeText = "Unknown action or invalid parameters. Use open, new?text=…, search?query=…, or append?text=…. Note identifiers are not supported."
+            alert.informativeText = "Unknown action or invalid parameters. Use open, new?text=…, search?query=…, or append?text=…. Use id=<UUID> with open or append to target a live note."
             alert.runModal()
             return
         }
         switch intent {
         case .open:
             main?.show()
+        case .openNote(let id):
+            main?.openNote(id: id)
+        case .appendToNote(let id, let text):
+            if main?.openNote(id: id) == true { main?.appendToCurrent(text) }
         case .newNote(let text):
             main?.newNoteWithText(text)
         case .search(let query):

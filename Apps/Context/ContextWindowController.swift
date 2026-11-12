@@ -625,6 +625,11 @@ final class ContextWindowController {
         }
     }
 
+    func copyNoteLink() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("context://open?id=\(noteID.uuidString)", forType: .string)
+    }
+
     func copyNote() { NoteExport.copyToClipboard(note) }
 
     func sendToAppleNotes() {
@@ -746,6 +751,19 @@ final class ContextWindowController {
         timer = NoteTimer()
         render()
         show()
+    }
+
+    @discardableResult
+    func openNote(id: UUID) -> Bool {
+        guard store.liveNotes.contains(where: { $0.id == id }) else {
+            alert("This note is unavailable. It may be in The Void or have been deleted.")
+            return false
+        }
+        flushNow()
+        noteID = id
+        afterNavigate()
+        show()
+        return true
     }
 
     func appendToCurrent(_ text: String) {

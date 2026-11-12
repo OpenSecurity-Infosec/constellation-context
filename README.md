@@ -45,7 +45,7 @@ The build identity (`<git short hash> · built <local time>`) shows bottom-right
 | Two-finger swipe navigation | Partial (same as swipe row above) |
 | Note search pane (⌘F) | Partial (title+body search with fuzzy match for typos/partial tokens, exact ranked first; saved queries with pin/rename/delete and keyboard selection; literal and fuzzy-token highlighting; GUI feel vs Antinote unverified) |
 | iCloud sync (your own iCloud, off by default, last-writer-wins) | Partial (CloudKit private DB coded + key-value fallback; two-Mac round-trip unproven) |
-| URL schemes (`context://`) | Partial (open/new/search/append parse + handle; single percent decode, Unicode, empty/missing parameters and invalid routes covered by unit tests; invalid requests show an alert; note IDs unsupported and rejected; packaged alerts and real Raycast/Alfred flows untested) |
+| URL schemes (`context://`) | Partial (open/new/search/append parse + handle; single percent decode, Unicode, empty/missing parameters and invalid routes covered by unit tests; invalid requests show an alert; stable UUID note links and targeted append supported; Copy Note Link in the existing toolbar; missing/trashed/expired targets alert without appending elsewhere; packaged alerts and real Raycast/Alfred flows untested) |
 | Raycast/Alfred | Partial via URL schemes (see Automation below; no native extensions) |
 | Themes (system / light / dark, instant switch) | Partial (Mocha/Paper/Forest accents + adjustable text size + optional translucent window; separate persisted light/dark colour choices follow system appearance, migrating the previous accent to both; interactive appearance switching unverified; Antinote paper types, theme maker, app icon picker missing) |
 | Dock + menu bar + pin (dock / menu / both / neither) | Partial (toggles live; menu-bar-only edge cases unproven) |
@@ -129,6 +129,10 @@ Encode parameter values once as UTF-8 percent escapes. `+` stays a literal plus;
 use `%20` for spaces, `%26` for ampersands, `%25` for percent signs.
 `new` accepts missing/empty text; search requires `query` (empty opens search);
 append requires nonempty text and targets the current note. Open shows the overlay.
-Note identifiers are unsupported: unknown parameters, duplicate parameters,
+Use **Copy Note Link** in the toolbar to obtain `context://open?id=<UUID>`.
+`context://append?id=<UUID>&text=...` appends to that live note; unavailable
+notes show an alert without changing the current note. These links refer to IDs
+in your local store, not portable shared content. Targeted navigation and clipboard
+feel remain unverified by hand. Unknown parameters, duplicate parameters,
 unknown actions, extra paths and fragments are rejected with a visible alert.
 Real Raycast/Alfred execution and packaged-app alert/selection feel have not been verified.

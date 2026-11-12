@@ -8,6 +8,8 @@ public enum URLScheme: Sendable {
 
     public enum Intent: Equatable, Sendable {
         case open
+        case openNote(id: UUID)
+        case appendToNote(id: UUID, text: String)
         case newNote(text: String?)
         case search(query: String)
         case append(text: String)
@@ -32,13 +34,19 @@ public enum URLScheme: Sendable {
         let items = components.queryItems ?? []
         let names = items.map { $0.name.lowercased() }
         guard Set(names).count == names.count,
-              names.allSatisfy({ ["text", "query", "q"].contains($0) }),
+              names.allSatisfy({ ["text", "query", "q", "id"].contains($0) }),
               items.allSatisfy({ $0.value != nil }),
               (components.percentEncodedQuery?.removingPercentEncoding != nil || items.isEmpty) else { return nil }
         let params = queryItems(url)
+        let id: UUID?
+        if let raw = params["id"] {
+            guard let parsed = UUID(uuidString: raw) else { return nil }
+            id = parsed
+        } else { id = nil }
+        if id != nil && !["", "open", "append"].contains(action) { return nil }
         switch action {
         case "", "open":
-            return .open
+            return id.map { .openNote(id: $0) } ?? .open
         case "new", "create", "note":
             return .newNote(text: params["text"])
         case "search", "find":
@@ -46,7 +54,7 @@ public enum URLScheme: Sendable {
             return .search(query: q)
         case "append":
             guard let t = params["text"], !t.isEmpty else { return nil }
-            return .append(text: t)
+            return id.map { .appendToNote(id: $0, text: t) } ?? .append(text: t)
         default:
             return nil
         }

@@ -70,6 +70,7 @@ struct ContextEditorRoot: View {
             }
             Menu("Export") {
                 Button("Copy") { controller?.copyNote() }
+                Button("Copy Note Link") { controller?.copyNoteLink() }
                 Button("Quick Export .txt") { controller?.quickExport(kind: .txt) }
                 Button("Quick Export Markdown") { controller?.quickExport(kind: .markdown) }
                 Button("Quick Export PDF") { controller?.quickExport(kind: .pdf) }

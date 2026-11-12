@@ -44,3 +44,15 @@ import Testing
         #expect(URLScheme.parse(URL(string: value)!) == nil)
     }
 }
+
+@Suite struct NoteLinkTests {
+    @Test func targetedRoutes() {
+        let id = UUID()
+        #expect(URLScheme.parse(URL(string: "context://open?id=\(id)")!) == .openNote(id: id))
+        #expect(URLScheme.parse(URL(string: "context://append?id=\(id)&text=snow%20%E9%9B%AA")!) == .appendToNote(id: id, text: "snow 雪"))
+    }
+    @Test(arguments: ["context://open?id=", "context://append?id=bad&text=x", "context://new?id=00000000-0000-0000-0000-000000000001", "context://open?id=00000000-0000-0000-0000-000000000001&ID=00000000-0000-0000-0000-000000000001"])
+    func rejectsInvalidTargets(_ value: String) {
+        #expect(URLScheme.parse(URL(string: value)!) == nil)
+    }
+}
