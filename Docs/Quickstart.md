@@ -35,6 +35,25 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh       # package, codesign, install /Appli
 
 `run-app.sh` stamps `Contents/Resources/ContextRevision` with `git rev-parse --short HEAD`. If the stamp does not match HEAD, the installed app is stale.
 
+## Test machine: cortex02
+
+cortex02 is the default computer-use and testing machine. It is a dedicated MacBook Pro (Intel x86_64, 32 GB, macOS 26), reachable at `cortex02.local` (192.168.123.153) over SSH as `oz`.
+
+- **Checkout:** `~/Projects/context`, branch `pivot`. It is set to `receive.denyCurrentBranch updateInstead`, so a push from this Mac updates its working tree:
+
+  ```bash
+  git push cortex02.local:Projects/context master:pivot
+  ssh cortex02.local 'cd ~/Projects/context && ./Scripts/test.sh && CONTEXT_REBUILD=1 ./Scripts/run-app.sh'
+  ```
+
+  `~/Projects/constellation-context` there belongs to another agent. Leave it alone.
+- **Toolchain:** Command Line Tools only (Swift 6.3.3, no Xcode). `./Scripts/test.sh` adds the Testing framework flags. The hosted editor tests run there because `oz` is logged into its desktop.
+- **T3 Code:** the desktop app v0.1.9 (x64). There is no `t3` background service for Intel, so the app must stay running. The server is network-accessible on port 3773 and is paired with a pairing code from `~/.t3/bin/t3 pair`.
+- **Claude Code:** `~/.local/bin/claude`.
+- **Needs the owner once, at the machine:**
+  - **Screen Recording and Accessibility** (and Automation → System Events) for `T3 Code (Beta)` and for SSH (`sshd-keygen-wrapper`), in System Settings → Privacy & Security. Until they are granted, `screencapture` and UI scripting fail.
+  - **`claude` login.**
+
 ## Repo map
 
 | Path | Owns |
