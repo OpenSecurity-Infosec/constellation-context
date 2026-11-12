@@ -6,6 +6,45 @@ import Foundation
 public final class NoteStore: @unchecked Sendable {
     private let lock = NSLock()
     private var notes: [ContextNote] = []
+    private var searches: [SavedSearch] = []
+
+    public struct SavedSearch: Codable, Identifiable, Equatable, Sendable {
+        public var id = UUID()
+        public var name: String
+        public var query: String
+        public var pinned = false
+    }
+
+    public var savedSearches: [SavedSearch] {
+        lock.withLock { searches.sorted {
+            if $0.pinned != $1.pinned { return $0.pinned }
+            return $0.name == $1.name ? $0.id.uuidString < $1.id.uuidString : $0.name < $1.name
+        } }
+    }
+
+    public func saveSearch(query: String) {
+        lock.withLock {
+            let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !query.isEmpty, !searches.contains(where: { $0.query == query }) else { return }
+            searches.append(SavedSearch(name: query, query: query))
+            save()
+        }
+    }
+
+    public func editSearch(id: UUID, name: String? = nil, togglePin: Bool = false, delete: Bool = false) {
+        lock.withLock {
+            guard let i = searches.firstIndex(where: { $0.id == id }) else { return }
+            if delete { searches.remove(at: i) }
+            else {
+                if let name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    searches[i].name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+                if togglePin { searches[i].pinned.toggle() }
+            }
+            save()
+        }
+    }
+
     private let fileURL: URL
 
     public init(fileURL: URL? = nil) {
@@ -164,13 +203,16 @@ public final class NoteStore: @unchecked Sendable {
 
     private func load() {
         guard let data = try? Data(contentsOf: fileURL) else { return }
-        if let decoded = try? JSONDecoder().decode([ContextNote].self, from: data) {
-            notes = decoded
-        }
+        if let decoded = try? JSONDecoder().decode([ContextNote].self, from: data) { notes = decoded }
+        if let data = try? Data(contentsOf: fileURL.appendingPathExtension("searches")),
+           let decoded = try? JSONDecoder().decode([SavedSearch].self, from: data) { searches = decoded }
     }
 
     private func save() {
         guard let data = try? JSONEncoder().encode(notes) else { return }
         try? data.write(to: fileURL, options: .atomic)
+        if let searchesData = try? JSONEncoder().encode(searches) {
+            try? searchesData.write(to: fileURL.appendingPathExtension("searches"), options: .atomic)
+        }
     }
 }

@@ -82,3 +82,17 @@ import Testing
         #expect(NoteSearch.search(query: "milkk nope", in: notes).isEmpty)
     }
 }
+
+@Suite struct SearchHighlightTests {
+    @Test func repeatedAndFuzzyHighlights() {
+        let text = "Milk MILK groceries"
+        let ranges = NoteSearch.highlightRanges(query: "milk grocries", in: text)
+        #expect(ranges.map { String(text[$0]) } == ["Milk", "MILK", "groceries"])
+    }
+    @Test func exactTitleRanksAboveNewerFuzzyTitle() {
+        let exact = ContextNote(text: "milk", createdAt: .distantPast, updatedAt: .distantPast)
+        let fuzzy = ContextNote(text: "milky", createdAt: Date(), updatedAt: Date())
+        #expect(NoteSearch.search(query: "milkk", in: [fuzzy, exact]).contains { $0.id == exact.id })
+        #expect(NoteSearch.search(query: "milk", in: [ContextNote(text: "mlik"), exact]).first?.id == exact.id)
+    }
+}

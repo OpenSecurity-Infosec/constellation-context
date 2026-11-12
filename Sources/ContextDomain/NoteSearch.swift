@@ -17,6 +17,25 @@ public enum NoteSearch: Sendable {
         }
     }
 
+    /// Literal occurrences plus whole fuzzy tokens, using original string indices.
+    public static func highlightRanges(query: String, in text: String) -> [Range<String.Index>] {
+        let words = query.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+        var ranges: [Range<String.Index>] = []
+        for word in words {
+            var start = text.startIndex
+            while start < text.endIndex, let range = text.range(of: word, options: .caseInsensitive, range: start..<text.endIndex) {
+                ranges.append(range)
+                start = range.upperBound
+            }
+        }
+        for token in text.split(whereSeparator: { !$0.isLetter && !$0.isNumber }) {
+            if words.contains(where: { fuzzyMatch(query: $0, candidate: token.lowercased()) && !token.lowercased().contains($0) }) {
+                ranges.append(token.startIndex..<token.endIndex)
+            }
+        }
+        return ranges
+    }
+
     /// Filters live notes by query. Empty query returns all newest-first.
     /// Multi-word queries require every word to match somewhere (exact or
     /// fuzzy). Results rank exact matches above fuzzy ones, title hits above
