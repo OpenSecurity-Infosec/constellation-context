@@ -204,7 +204,9 @@ struct ContextEditorRoot: View {
                 ForEach(mathResults.indices, id: \.self) { i in
                     switch mathResults[i] {
                 case .value(let r):
-                    Text(r.display)
+                    // gutterDisplay names the variable on assignment
+                    // lines ("price = 10"), plain value elsewhere.
+                    Text(r.gutterDisplay)
                         .font(.system(size: ContextSettings.shared.fontSize).monospaced())
                         .foregroundStyle(Color.ctxAccent)
                         .frame(height: lineHeight)
