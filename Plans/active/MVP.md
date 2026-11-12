@@ -19,7 +19,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - One-time `notes.json` migration that keeps ids and dates. The old file is renamed, never deleted.
   - CloudKit/KV sync removed (ADR-0001: file sync replaces it).
   - Settings: base-vault location with Reveal and Change.
-- [ ] **2. Connector interface and Anytype connector**
+- [x] **2. Connector interface and Anytype connector**
   - `VaultConnector` protocol and a shared conformance suite.
   - An Anytype local-API client behind a transport protocol, so tests use a fake.
   - Object to Markdown mapping: body, plus relations as frontmatter.
@@ -68,3 +68,12 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - The installed app migrated the real `notes.json` (2 live notes) into `~/Context/Scratch/`. Ids and dates were kept, and the backup is `notes.json.migrated-2026-11-12-110125`.
   - Unproven: the overlay was not visually inspected this iteration, and Settings → Base vault → Change… was not clicked through in the installed app.
   - Known leftover: `PlainText.sanitize` still strips Markdown bullets and quotes on paste. Step 4 changes paste to keep Markdown.
+- **2026-11-12, step 2, done** (`17f6db0`).
+  - 205 tests pass.
+  - The Anytype client follows the official v1 OpenAPI spec (`2025-11-08`).
+  - Verified only against an in-memory fake of that API. Anytype was not running and linking needs the user to read a 4-digit code.
+  - Unproven, needs a manual pass:
+    - Settings → Link Anytype… against the real app;
+    - the real markdown round-trip fidelity of Anytype's `markdown` field;
+    - whether `last_modified_date` is present on list results.
+  - Limits by design: edits that Anytype can't hold are refused with a message. That covers unknown keys, options not in Anytype, and non-numeric numbers. Clearing a number or date is refused.
