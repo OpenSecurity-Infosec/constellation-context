@@ -67,7 +67,7 @@ import Testing
 
 @Suite struct CodeHighlightTokenizerTests {
     private func spans(_ text: String, _ language: CodeHighlight.Language) -> [(CodeHighlight.TokenKind, String)] {
-        CodeHighlight.tokens(in: text, language: language).map { ($0.kind, String(text[$0.range])) }
+        CodeHighlight.tokens(in: text, language: language).filter { ![.identifier, .type, .function].contains($0.kind) }.map { ($0.kind, String(text[$0.range])) }
     }
 
     @Test func swiftKeywordStringCommentNumber() {
@@ -128,14 +128,14 @@ import Testing
     @Test func noteLevelTokensCoverFencedBlockOnly() {
         let note = ContextNote(text: "let outside = 1\n```swift\nlet inside = 2\n```")
         let got = CodeHighlight.tokens(for: note).map { String(note.text[$0.range]) }
-        #expect(got == ["let", "2"])
+        #expect(got == ["let", "inside", "2"])
     }
 
     @Test func codeModeNoteTokensSkipTriggerLine() {
         let note = ContextNote(text: "code\nlet x = \"hi\"")
         let got = CodeHighlight.tokens(for: note).map { ($0.kind, String(note.text[$0.range])) }
-        #expect(got.map(\.1) == ["let", "\"hi\""])
-        #expect(got.map(\.0) == [.keyword, .string])
+        #expect(got.map(\.1) == ["let", "x", "\"hi\""])
+        #expect(got.map(\.0) == [.keyword, .identifier, .string])
     }
 
     @Test func emptyAndWhitespaceTokenizeToNothing() {
