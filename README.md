@@ -38,7 +38,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
 | Apple Notes / Obsidian / Bear direct export | Partial (all three wired; missing-app paths now specific — Notes/Bear install prompts, vault unset/missing/not-a-folder/unwritable each named, picker only when no usable vault, no fake vault creation) |
 | Link shrink (shortened display, click expand, ⌘↩ open) | Partial (long URLs render shortened in the editor with the full URL as tooltip; plain click expands/collapses in place, ⌘↩ opens the link under the caret, and copy/save/export always carry the full URL — the `…` form never reaches disk; detection covers scheme URLs incl. non-http (`ftp:`, `context:`, `obsidian:`…), `mailto:`/`tel:`, `www.`, bare domains with port/path/query/fragment, localhost, IPv4, and e-mail-as-mailto, with trailing-punctuation trimming and balanced-parentheses handling, domain-unit-tested; the link being typed stays full until the caret leaves it and identical URLs toggle together; live click/keyboard feel in the packaged app vs Antinote unverified) |
-| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
+| Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (25 builtins: date/time variants (`today`/`tomorrow`/`yesterday`/`now`/`time`/`timestamp`, custom formats via `today(yyyy/MM/dd)`), line transforms (`sort_lines` incl. `(desc)`, `reverse_lines`, `dedupe_lines`, `trim_lines`, `remove_blank_lines`, `shuffle_lines`), text transforms (`upper`/`lower`/`title`/`trim`, `base64_encode`/`base64_decode`, `hash` (SHA-256), `md5`, `json_format`), `random` ranges/picks, `count`, `uuid`, `help`, plus aliases (`date`, `sort`, `sha256`, `json`, …); arguments are parenthesised (`::random(1, 10)`, quotes protect commas) and reach JS scripts as `input.args`; unknown commands never fail silently — the popup shows the error with did-you-mean suggestions (prefix/edit-distance/substring), non-math notes mark unknown `::tokens` in the gutter, and run/argument/JSON/base64 errors land in the status bar; JS sandbox surfaces syntax/thrown errors, missing `run`, unusable returns, and unreadable files, terminates scripts at a 2s wall-clock limit (unit-tested with infinite loops), and keeps fetch/XHR/WebSocket absent; domain logic unit-tested on cortex only (343 tests) — live popup/gutter/status-bar feel in the packaged app vs Antinote unverified; selection-scoped transforms are implemented and tested in the domain but the editor does not yet pass a selection, so in-app transforms are token/whole-note only; no extension gallery, no network bridge for scripts) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |
 | Note search pane (⌘F) | Partial (title+body search with fuzzy match for typos/partial tokens, exact ranked first; no saved searches) |
@@ -66,19 +66,30 @@ Alfred: Workflow → Open URL with the same forms.
 ## Extensions (`::` commands)
 
 Type `::` in any note for autocomplete: native builtins plus installed
-JavaScript extensions. Drop `.js` files into the Extensions folder
-(Settings → Reveal), each declaring a command:
+JavaScript extensions. `::help` lists every builtin in the note. Many
+builtins take parenthesised arguments — `::random(1, 10)`,
+`::today(yyyy/MM/dd)`, `::upper(some text)`, `::hash(abc)`,
+`::sort_lines(desc)` (quote an argument to protect commas). Text commands
+(`upper`, `base64_encode`, `json_format`, …) act on their argument, else
+on the note body. An unknown command shows did-you-mean suggestions in the
+popup instead of failing silently.
+
+Drop `.js` files into the Extensions folder (Settings → Reveal), each
+declaring a command:
 
 ```js
 // name: shout — hint: Uppercase the note body
 function run(input) { return { fullText: input.text.toUpperCase() }; }
 ```
 
-`input` is `{ text, token, selection, now }`. Return `{ replacement }` to
-swap the `::token`, `{ fullText }` to rewrite the buffer, `{ append }` to
-add, or a bare string. Scripts run sandboxed in JavaScriptCore with no
-network bridge; Settings → "Let extensions call their own APIs" stays OFF
-unless you opt in.
+`input` is `{ text, token, selection, now, args }` (`args` is the
+parenthesised argument list). Return `{ replacement }` to swap the
+`::token`, `{ fullText }` to rewrite the buffer, `{ append }` to add, or a
+bare string; return `{ error: "…" }` (or throw) to show an error in the
+status bar. Scripts run sandboxed in JavaScriptCore with no network
+bridge (Settings → "Let extensions call their own APIs" stays OFF unless
+you opt in) and are terminated after 2 seconds, so a runaway script
+cannot hang the app.
 
 ## Notes
 

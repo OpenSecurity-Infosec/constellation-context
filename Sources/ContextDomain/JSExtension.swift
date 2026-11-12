@@ -39,12 +39,15 @@ public enum JSExtension: Sendable {
         public var token: String
         public var selection: String
         public var nowISO: String
+        /// Parenthesised `::name(a, b)` arguments, exposed as `input.args`.
+        public var args: [String]
 
-        public init(text: String, token: String, selection: String, nowISO: String) {
+        public init(text: String, token: String, selection: String, nowISO: String, args: [String] = []) {
             self.text = text
             self.token = token
             self.selection = selection
             self.nowISO = nowISO
+            self.args = args
         }
     }
 
@@ -52,6 +55,49 @@ public enum JSExtension: Sendable {
         case replacement(String)
         case fullText(String)
         case append(String)
+    }
+
+    /// Why a script did not produce an edit. `message` is the one-line
+    /// form the editor surfaces; nothing fails silently.
+    public enum ExtensionError: Error, Equatable, Sendable {
+        /// Syntax error at load, a thrown exception, or `{ error: "…" }`.
+        case scriptError(String)
+        /// The script defines no callable global `run`.
+        case missingRunFunction
+        /// The JS execution time limit fired and terminated the script.
+        case timedOut(seconds: Double)
+        /// `run` returned something unusable (number, nothing, wrong keys).
+        case invalidReturn(String)
+        case contextUnavailable
+
+        public var message: String {
+            switch self {
+            case .scriptError(let detail):
+                return "extension error: \(detail)"
+            case .missingRunFunction:
+                return "extension defines no run(input) function"
+            case .timedOut(let seconds):
+                return "extension timed out after \(trimmedSeconds(seconds))s and was stopped"
+            case .invalidReturn(let detail):
+                return "extension returned \(detail) — return a string or { replacement } / { fullText } / { append }"
+            case .contextUnavailable:
+                return "JavaScript runtime unavailable"
+            }
+        }
+
+        private func trimmedSeconds(_ value: Double) -> String {
+            value == value.rounded() ? String(Int(value)) : String(value)
+        }
+    }
+
+    /// A `.js` file that could not be loaded as an extension.
+    public struct LoadFailure: Equatable, Sendable {
+        public var fileName: String
+        public var message: String
+        public init(fileName: String, message: String) {
+            self.fileName = fileName
+            self.message = message
+        }
     }
 
     /// Parses `// name: x — hint: y` headers (both `—` and `-` accepted).
@@ -89,16 +135,35 @@ public enum JSExtension: Sendable {
 
     /// Loads all `.js` files from a folder, sorted by file name.
     public static func load(from folder: URL) -> [Script] {
+        loadReport(from: folder).scripts
+    }
+
+    /// Like `load`, but unreadable or non-UTF-8 `.js` files are reported
+    /// instead of silently skipped.
+    public static func loadReport(from folder: URL) -> (scripts: [Script], failures: [LoadFailure]) {
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
-        ) else { return [] }
-        return files
-            .filter { $0.pathExtension.lowercased() == "js" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .compactMap { url in
-                guard let source = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-                return parseHeader(fileName: url.lastPathComponent, source: source)
+        ) else { return ([], []) }
+        var scripts: [Script] = []
+        var failures: [LoadFailure] = []
+        for url in files
+            .filter({ $0.pathExtension.lowercased() == "js" })
+            .sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+            do {
+                let source = try String(contentsOf: url, encoding: .utf8)
+                if let script = parseHeader(fileName: url.lastPathComponent, source: source) {
+                    scripts.append(script)
+                } else {
+                    failures.append(LoadFailure(fileName: url.lastPathComponent, message: "no usable command name"))
+                }
+            } catch {
+                failures.append(LoadFailure(
+                    fileName: url.lastPathComponent,
+                    message: "could not read as UTF-8: \((error as NSError).localizedDescription)"
+                ))
             }
+        }
+        return (scripts, failures)
     }
 
     /// Default extensions folder: ~/Library/Application Support/ConstellationContext/Extensions.
@@ -110,35 +175,100 @@ public enum JSExtension: Sendable {
         return base
     }
 
-    /// Runs a script's `run(input)` in a sandboxed JSContext.
-    /// No network, no file access, 5s wall-clock guard via JS timeout is
-    /// enforced by evaluating synchronously on the calling thread.
-    public static func run(_ script: Script, input: Input, allowNetwork: Bool = false) -> Output? {
-        guard let ctx = JSContext() else { return nil }
-        ctx.exceptionHandler = { _, _ in }
-        // Privacy: explicitly no fetch/XHR/network bridge. When the user
-        // opts in via Settings, scripts may request fetches through a
-        // declared `wantsFetch` return — the host performs them.
+    /// Default wall-clock limit for a script run, in seconds.
+    public static let defaultTimeout: TimeInterval = 2
+
+    /// Runs a script's `run(input)` in a sandboxed JSContext and reports
+    /// failures instead of swallowing them: load/throw errors, a missing
+    /// `run`, an unusable return value, and timeouts. The timeout uses
+    /// JavaScriptCore's execution time limit, which actually terminates
+    /// the script (an infinite loop cannot hang the app).
+    /// No network, no file access: `fetch`/`XMLHttpRequest`/`WebSocket`
+    /// are absent from the bare context and are explicitly left undefined.
+    public static func runResult(
+        _ script: Script,
+        input: Input,
+        allowNetwork: Bool = false,
+        timeout: TimeInterval = defaultTimeout
+    ) -> Result<Output, ExtensionError> {
+        guard let ctx = JSContext() else { return .failure(.contextUnavailable) }
+        // Privacy: no fetch/XHR/network bridge, whatever Settings say —
+        // `allowNetwork` only ever meant scripts may *declare* fetches for
+        // the host to perform; no bridge is installed here.
         _ = allowNetwork
+
+        var exceptionText: String?
+        ctx.exceptionHandler = { _, value in
+            if let value, exceptionText == nil {
+                exceptionText = value.toString()
+            }
+        }
+
+        // Execution time limit: JSC asks the callback once the budget is
+        // spent; answering true terminates the script on the spot.
+        let flag = TimeoutFlag()
+        let limit = max(timeout, 0.05)
+        let group = JSContextGetGroup(ctx.jsGlobalContextRef)
+        jsContextGroupSetExecutionTimeLimit(group, limit, { _, clientData in
+            if let clientData {
+                Unmanaged<TimeoutFlag>.fromOpaque(clientData).takeUnretainedValue().fired = true
+            }
+            return true
+        }, UnsafeMutableRawPointer(Unmanaged.passUnretained(flag).toOpaque()))
+        defer { jsContextGroupClearExecutionTimeLimit(group) }
+
+        func failureSoFar() -> ExtensionError? {
+            if flag.fired { return .timedOut(seconds: limit) }
+            if let exceptionText { return .scriptError(exceptionText) }
+            return nil
+        }
+
+        ctx.evaluateScript("this.fetch = undefined; this.XMLHttpRequest = undefined; this.WebSocket = undefined;")
         ctx.evaluateScript(script.source)
-        guard let runFn = ctx.objectForKeyedSubscript("run"), !runFn.isUndefined else { return nil }
+        if let failure = failureSoFar() { return .failure(failure) }
+
+        guard let runFn = ctx.objectForKeyedSubscript("run"), !runFn.isUndefined, !runFn.isNull else {
+            return .failure(.missingRunFunction)
+        }
         let inputObj = JSValue(newObjectIn: ctx)
         inputObj?.setValue(input.text, forProperty: "text")
         inputObj?.setValue(input.token, forProperty: "token")
         inputObj?.setValue(input.selection, forProperty: "selection")
         inputObj?.setValue(input.nowISO, forProperty: "now")
-        guard let result = runFn.call(withArguments: [inputObj as Any]), !result.isUndefined, !result.isNull else {
-            return nil
+        inputObj?.setValue(input.args, forProperty: "args")
+        guard let result = runFn.call(withArguments: [inputObj as Any]) else {
+            if let failure = failureSoFar() { return .failure(failure) }
+            return .failure(.missingRunFunction)
+        }
+        if let failure = failureSoFar() { return .failure(failure) }
+        if result.isUndefined || result.isNull {
+            return .failure(.invalidReturn(result.isUndefined ? "undefined" : "null"))
         }
         if result.isString {
-            return .replacement(result.toString())
+            return .success(.replacement(result.toString()))
         }
         if let dict = result.toDictionary() as? [String: Any] {
-            if let full = dict["fullText"] as? String { return .fullText(full) }
-            if let app = dict["append"] as? String { return .append(app) }
-            if let rep = dict["replacement"] as? String { return .replacement(rep) }
+            if let errorText = dict["error"] as? String { return .failure(.scriptError(errorText)) }
+            if let full = dict["fullText"] as? String { return .success(.fullText(full)) }
+            if let app = dict["append"] as? String { return .success(.append(app)) }
+            if let rep = dict["replacement"] as? String { return .success(.replacement(rep)) }
+            let keys = dict.keys.sorted().joined(separator: ", ")
+            return .failure(.invalidReturn(keys.isEmpty ? "an empty object" : "an object with keys {\(keys)}"))
         }
-        return nil
+        if result.isNumber { return .failure(.invalidReturn("a number (\(result.toString() ?? ""))")) }
+        if result.isBoolean { return .failure(.invalidReturn("a boolean")) }
+        return .failure(.invalidReturn("an unsupported value"))
+    }
+
+    /// Runs a script's `run(input)`, returning nil on any failure.
+    /// Prefer `runResult` so the user hears why.
+    public static func run(_ script: Script, input: Input, allowNetwork: Bool = false) -> Output? {
+        try? runResult(script, input: input, allowNetwork: allowNetwork).get()
+    }
+
+    /// Mutable box shared with the C timeout callback via clientData.
+    private final class TimeoutFlag {
+        var fired = false
     }
 
     private static func ensureSamples(in folder: URL) {
@@ -154,3 +284,19 @@ public enum JSExtension: Sendable {
         }
     }
 }
+
+// JavaScriptCore's execution-time-limit entry points are exported by the
+// framework but not declared in its public headers, so bind the C symbols
+// directly. Signatures mirror JSContextRefPrivate.h.
+private typealias JSShouldTerminateCallback = @convention(c) (JSContextRef?, UnsafeMutableRawPointer?) -> Bool
+
+@_silgen_name("JSContextGroupSetExecutionTimeLimit")
+private func jsContextGroupSetExecutionTimeLimit(
+    _ group: JSContextGroupRef?,
+    _ limit: Double,
+    _ callback: JSShouldTerminateCallback?,
+    _ clientData: UnsafeMutableRawPointer?
+)
+
+@_silgen_name("JSContextGroupClearExecutionTimeLimit")
+private func jsContextGroupClearExecutionTimeLimit(_ group: JSContextGroupRef?)

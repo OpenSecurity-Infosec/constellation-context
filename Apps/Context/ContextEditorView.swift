@@ -20,6 +20,7 @@ struct ContextEditorRoot: View {
     var timerRunning: Bool
     var ratesFootnote: String? = nil
     var jsExtensions: [JSExtension.Script] = []
+    var slashError: String? = nil
 
     @State private var text: String = ""
     @State private var isEditing = false
@@ -109,19 +110,16 @@ struct ContextEditorRoot: View {
                         controller?.collectPaste(pasted)
                     } : nil)
                         .font(.system(size: ContextSettings.shared.fontSize))
-                    if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
+                    if let fragment = slashFragment {
                         slashPopup(fragment: fragment)
                     }
                 }
             }
         }
         .onKeyPress(.return) {
-            if slashFragment != nil, let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
-                if slashSelected < matches.count {
-                    runSlashCommand(matches[slashSelected].name)
-                    return .handled
-                }
+            if let fragment = slashFragment, let name = slashActionName(fragment: fragment) {
+                runSlashCommand(name)
+                return .handled
             }
             return .ignored
         }
@@ -134,8 +132,8 @@ struct ContextEditorRoot: View {
         }
         .onKeyPress(.downArrow) {
             if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
-                slashSelected = min(slashSelected + 1, matches.count - 1)
+                let count = slashActionNames(fragment: fragment).count
+                if count > 0 { slashSelected = min(slashSelected + 1, count - 1) }
                 return .handled
             }
             return .ignored
@@ -148,12 +146,9 @@ struct ContextEditorRoot: View {
             return .ignored
         }
         .onKeyPress(.tab) {
-            if let fragment = slashFragment {
-                let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
-                if slashSelected < matches.count {
-                    runSlashCommand(matches[slashSelected].name)
-                    return .handled
-                }
+            if let fragment = slashFragment, let name = slashActionName(fragment: fragment) {
+                runSlashCommand(name)
+                return .handled
             }
             return .ignored
         }
@@ -201,6 +196,18 @@ struct ContextEditorRoot: View {
                         .frame(height: lineHeight)
                 }
             default:
+                if mathResults.isEmpty {
+                    // Unknown `::command` gutter for non-math notes: one
+                    // warning row per offending line, blank elsewhere.
+                    let slashGutter = SlashCommand.gutterLines(in: note.text, extensions: jsExtensions)
+                    ForEach(slashGutter.indices, id: \.self) { i in
+                        Text(slashGutter[i])
+                            .font(.system(size: ContextSettings.shared.fontSize).monospaced())
+                            .foregroundStyle(Color.ctxWarning)
+                            .lineLimit(1)
+                            .frame(height: lineHeight)
+                    }
+                }
                 ForEach(mathResults.indices, id: \.self) { i in
                     switch mathResults[i] {
                 case .value(let r):
@@ -268,34 +275,83 @@ struct ContextEditorRoot: View {
         }
     }
 
+    /// Names Return/Tab/↑↓ act on: completions, or did-you-mean
+    /// suggestions when the fragment matches nothing.
+    private func slashActionNames(fragment: String) -> [String] {
+        let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
+        if !matches.isEmpty { return matches.map(\.name) }
+        return SlashCommand.suggestions(for: fragment, extensions: jsExtensions)
+    }
+
+    private func slashActionName(fragment: String) -> String? {
+        let names = slashActionNames(fragment: fragment)
+        guard slashSelected >= 0, slashSelected < names.count else { return nil }
+        return names[slashSelected]
+    }
+
     /// `::` autocomplete popup: type to filter, Tab/↑↓ to move, Return to run.
-    /// Native builtins first, then installed JS extensions.
+    /// Native builtins first, then installed JS extensions. An unknown
+    /// fragment gets an explicit error row with suggested commands instead
+    /// of the popup silently vanishing.
     private func slashPopup(fragment: String) -> some View {
         let matches = SlashCommand.completions(matching: fragment, extensions: jsExtensions)
-        return VStack(alignment: .leading, spacing: 0) {
-            ForEach(matches.indices, id: \.self) { i in
-                Button {
-                    runSlashCommand(matches[i].name)
-                } label: {
-                    HStack {
-                        Text("::\(matches[i].name)")
-                            .font(.system(.body).monospaced())
-                        Text(matches[i].hint)
+        let suggestions = matches.isEmpty
+            ? SlashCommand.suggestions(for: fragment, extensions: jsExtensions)
+            : []
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if matches.isEmpty {
+                    Text("unknown command ::\(fragment)")
+                        .font(.system(.body).monospaced())
+                        .foregroundStyle(Color.ctxWarning)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                    if suggestions.isEmpty {
+                        Text("::help lists commands")
                             .font(.caption).foregroundStyle(.secondary)
-                        Spacer()
+                            .padding(.horizontal, 10).padding(.vertical, 5)
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(i == slashSelected ? Color.ctxAccent.opacity(0.25) : Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    ForEach(suggestions.indices, id: \.self) { i in
+                        Button {
+                            runSlashCommand(suggestions[i])
+                        } label: {
+                            HStack {
+                                Text("did you mean ::\(suggestions[i])?")
+                                    .font(.system(.body).monospaced())
+                                Spacer()
+                            }
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(i == slashSelected ? Color.ctxAccent.opacity(0.25) : Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
+                ForEach(matches.indices, id: \.self) { i in
+                    Button {
+                        runSlashCommand(matches[i].name)
+                    } label: {
+                        HStack {
+                            Text("::\(matches[i].name)")
+                                .font(.system(.body).monospaced())
+                            Text(matches[i].hint)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .lineLimit(2)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(i == slashSelected ? Color.ctxAccent.opacity(0.25) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
         .padding(4)
         .background(Color.ctxPanelBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 8)
-        .frame(width: 280)
+        .frame(width: 320)
+        .frame(maxHeight: 280)
         .offset(x: 24, y: 60)
     }
 
@@ -359,7 +415,11 @@ struct ContextEditorRoot: View {
 
     private var statusBar: some View {
         HStack {
-            if let ratesFootnote {
+            if let slashError {
+                Text(slashError)
+                    .font(.caption).foregroundStyle(Color.ctxWarning)
+                    .lineLimit(2)
+            } else if let ratesFootnote {
                 Text(ratesFootnote)
                     .font(.caption).foregroundStyle(.secondary)
             } else {
@@ -520,7 +580,7 @@ final class ContextTextView: NSTextView {
             hideSlashCompletion()
             return
         }
-        let fragment = String(found.token.dropFirst(2))
+        let fragment = SlashCommand.fragment(fromToken: found.token)
         let range = NSRange(location: found.range.lowerBound, length: found.range.upperBound - found.range.lowerBound)
         onSlash?(fragment, range)
         showSlashCompletion(fragment: fragment, tokenRange: range)

@@ -61,6 +61,10 @@ final class ContextWindowController {
         }
     }
 
+    /// Last `::` command / JS extension failure, shown in the status bar
+    /// until the text next changes so errors never fail silently.
+    var slashErrorMessage: String?
+
     var ratesFootnote: String? {
         // Show only in math notes mentioning a currency code.
         let body = note.bodyWithoutTrigger.uppercased()
@@ -152,6 +156,7 @@ final class ContextWindowController {
     }
 
     func onTextChange(_ text: String) {
+        slashErrorMessage = nil
         store.stage(id: noteID, text: text)
         scheduleFlush()
         render(preservingFocus: true)
@@ -344,11 +349,15 @@ final class ContextWindowController {
 
     // MARK: - Slash commands
 
-    /// Runs a `::` command: native builtins first, then installed JS scripts.
+    /// Runs a `::` command: native builtins first, then installed JS scripts
+    /// (a `.js` file can no longer shadow a builtin, matching completions).
     /// JS `replacement` swaps the token; `fullText` rewrites the buffer;
-    /// `append` adds to the end.
+    /// `append` adds to the end. Failures land in `slashErrorMessage`.
+    /// Parenthesised arguments typed in the token (`::random(1, 10)`) are
+    /// parsed from the token text and forwarded to builtins and JS alike.
     func runSlashCommand(name: String, tokenRange: NSRange) {
-        if runJSExtension(name: name, tokenRange: tokenRange) { return }
+        slashErrorMessage = nil
+        if !SlashCommand.isBuiltin(name), runJSExtension(name: name, tokenRange: tokenRange) { return }
         let fullText = note.text
         let chars = Array(fullText)
         let intRange: Range<Int>? = {
@@ -357,12 +366,23 @@ final class ContextWindowController {
             else { return nil }
             return tokenRange.location..<(tokenRange.location + tokenRange.length)
         }()
-        guard let edit = SlashCommand.run(
+        let invocation = intRange.flatMap { SlashCommand.parseInvocation(String(chars[$0])) }
+        let result = SlashCommand.runResult(
             name: name,
+            arguments: invocation?.arguments ?? [],
+            rawArgument: invocation?.hasParenthesisedArgs == true ? invocation?.rawArgument : nil,
             tokenRange: intRange,
             fullText: fullText,
-            selection: nil
-        ) else { return }
+            selection: nil,
+            knownNames: jsExtensions.map(\.commandName)
+        )
+        guard let edit = try? result.get() else {
+            if case .failure(let error) = result {
+                slashErrorMessage = error.gutterMessage
+            }
+            render(preservingFocus: true)
+            return
+        }
         if let transformed = edit.fullText {
             store.update(id: noteID, text: transformed)
         } else if let range = edit.tokenRange {
@@ -387,16 +407,25 @@ final class ContextWindowController {
             else { return "::\(name)" }
             return String(chars[tokenRange.location..<(tokenRange.location + tokenRange.length)])
         }()
+        let invocation = SlashCommand.parseInvocation(token)
         let input = JSExtension.Input(
             text: fullText,
             token: token,
             selection: "",
-            nowISO: ISO8601DateFormatter().string(from: Date())
+            nowISO: ISO8601DateFormatter().string(from: Date()),
+            args: invocation?.arguments ?? []
         )
-        guard let output = JSExtension.run(
+        let result = JSExtension.runResult(
             script, input: input,
             allowNetwork: ContextSettings.shared.extensionsAllowNetwork
-        ) else { return true }
+        )
+        guard let output = try? result.get() else {
+            if case .failure(let error) = result {
+                slashErrorMessage = "::\(name): \(error.message)"
+            }
+            render(preservingFocus: true)
+            return true
+        }
         switch output {
         case .replacement(let rep):
             var updated = fullText
@@ -796,7 +825,8 @@ final class ContextWindowController {
             remaining: timer.remaining,
             timerRunning: timer.isRunning,
             ratesFootnote: ratesFootnote,
-            jsExtensions: jsExtensions
+            jsExtensions: jsExtensions,
+            slashError: slashErrorMessage
         )
         if let hosting {
             hosting.rootView = view
