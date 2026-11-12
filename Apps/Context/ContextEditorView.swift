@@ -332,7 +332,7 @@ struct ContextEditorRoot: View {
                 Text(autoPasteArmed ? "Everything you copy lands here as plain text." : "Type paste + Return to collect copies.")
                     .font(.caption).foregroundStyle(.secondary)
             case .code:
-                Text("Snippet buffer — paste strips styling.")
+                Text("Snippet buffer — syntax highlighting on; fence with ```swift / ```python / ```js / ```sh to pick a language.")
                     .font(.caption).foregroundStyle(.secondary)
             default:
                 EmptyView()
@@ -498,6 +498,9 @@ final class ContextTextView: NSTextView {
         let range = NSRange(location: 0, length: full.length)
         storage.removeAttribute(.link, range: range)
         storage.removeAttribute(.toolTip, range: range)
+        storage.removeAttribute(.foregroundColor, range: range)
+        storage.addAttribute(.font, value: ContextTheme.bodyFont, range: range)
+        applyCodeHighlighting(storage: storage)
         for urlRange in LinkShrink.urlRanges(in: string) {
             let ns = NSRange(urlRange, in: string)
             let raw = String(string[urlRange])
@@ -513,6 +516,30 @@ final class ContextTextView: NSTextView {
             .underlineStyle: NSUnderlineStyle.single.rawValue,
             .cursor: NSCursor.pointingHand,
         ]
+    }
+
+    /// Per-block syntax highlighting: mono font over each code block, token
+    /// colors inside it. The buffer text itself stays plain — these are
+    /// display attributes only, recomputed with the link attributes on
+    /// every edit. Block/kind derivation is shared with the domain tests
+    /// via `CodeHighlight` (a `code` first line makes the body one block).
+    private func applyCodeHighlighting(storage: NSTextStorage) {
+        let note = ContextNote(text: string)
+        for block in CodeHighlight.blocks(for: note) {
+            storage.addAttribute(.font, value: ContextTheme.monoFont, range: NSRange(block.range, in: string))
+            for token in CodeHighlight.tokens(in: string, range: block.range, language: block.language) {
+                storage.addAttribute(.foregroundColor, value: Self.color(for: token.kind), range: NSRange(token.range, in: string))
+            }
+        }
+    }
+
+    private static func color(for kind: CodeHighlight.TokenKind) -> NSColor {
+        switch kind {
+        case .keyword: .systemPurple
+        case .string: .systemGreen
+        case .comment: .secondaryLabelColor
+        case .number: .systemOrange
+        }
     }
 
     private func shrinkURLsAroundSelection() {

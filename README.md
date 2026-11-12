@@ -29,7 +29,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | `sum` / `avg` totals | Partial (per-line contribution gutter, live totals, thousands folding, ISO-date ignore, comment skip) |
 | `count` lines/words/chars with `//` comments | Partial (per-line word/char gutter with ignored-line marks, live totals derived from the same rows, comment/blank skip) |
 | `list` checklists with tick-off | Partial (nesting + marker cycling + drag-reorder with subtree-follow and persisted order; live-drag human verification still open) |
-| `code` snippet buffer | Partial (plain-text hold, no per-block highlighting yet) |
+| `code` snippet buffer | Partial (per-block highlighting: fenced ```lang blocks in any note + whole-body `code` mode with inferred language; Swift/Python/JS/shell keyword/string/comment/number coloring in mono, tokenizer unit-tested; no type/function coloring, no language picker, look-and-feel vs Antinote unproven) |
 | `timer` stopwatch / countdown / pomodoro | Partial (inline controls + named fullscreen with progress ring, elapsed/remaining status line, paused state, Done-in finish line, finish beep; Antinote-grade scene art still missing) |
 | `paste` AutoPaste collection | Partial |
 | Screenshot-to-text OCR (on-device) | Partial (image drop + ⌥⇧S region capture via Apple Vision into the current note; Esc cancels; Screen Recording permission prompt on first use) |
