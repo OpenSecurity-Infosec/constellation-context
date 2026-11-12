@@ -10,7 +10,7 @@ final class SettingsWindowController {
 
     private init() {
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 700),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 820),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered, defer: false
         )
@@ -94,6 +94,7 @@ private struct SettingsView: View {
             BaseVaultSettingsRow()
             ClipboardSettingsRow()
             LinkedVaultsSection()
+            AISettingsRow()
             ExtensionSettingsRow()
             Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)

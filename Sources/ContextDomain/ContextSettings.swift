@@ -14,6 +14,9 @@ public struct ContextSettings: Codable, Sendable {
     public var baseVaultPath: String? = nil
     /// Keep copies as editable notes in the Clipboard pad.
     public var clipboardHistory: Bool = true
+    /// OpenAI-compatible endpoint and model for AI actions; nil = defaults.
+    public var aiBaseURL: String? = nil
+    public var aiModel: String? = nil
     public var extensionsAllowNetwork: Bool = false
     public var showInDock: Bool = true
     public var colorTheme: ColorTheme = .mocha
@@ -70,7 +73,7 @@ public struct ContextSettings: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case fontSize, showMenuBarExtra, pinOnTop, hotKeyCode, hotKeyModifiers
-        case obsidianVaultPath, themeMode, baseVaultPath, clipboardHistory
+        case obsidianVaultPath, themeMode, baseVaultPath, clipboardHistory, aiBaseURL, aiModel
         case extensionsAllowNetwork, showInDock, colorTheme, translucentWindow
         case lastExportDirectory
     }
@@ -86,6 +89,8 @@ public struct ContextSettings: Codable, Sendable {
         themeMode = try c.decodeIfPresent(ThemeMode.self, forKey: .themeMode) ?? .system
         baseVaultPath = try c.decodeIfPresent(String.self, forKey: .baseVaultPath)
         clipboardHistory = try c.decodeIfPresent(Bool.self, forKey: .clipboardHistory) ?? true
+        aiBaseURL = try c.decodeIfPresent(String.self, forKey: .aiBaseURL)
+        aiModel = try c.decodeIfPresent(String.self, forKey: .aiModel)
         extensionsAllowNetwork = try c.decodeIfPresent(Bool.self, forKey: .extensionsAllowNetwork) ?? false
         showInDock = try c.decodeIfPresent(Bool.self, forKey: .showInDock) ?? true
         colorTheme = try c.decodeIfPresent(ColorTheme.self, forKey: .colorTheme) ?? .mocha

@@ -21,10 +21,12 @@ final class ContextWindowController {
     let projects = ProjectContextService()
     /// Cached `ProjectInfo` for the current pad; renders run 4× a second.
     var projectInfoCache: (pad: Pad, info: ProjectInfo?)?
+    var aiState: AIState = .idle
+    var aiTask: Task<Void, Never>?
     private let rates = RateStore()
     private var math = MathEngine()
     private let autoPaste = AutoPasteMonitor()
-    private var noteID: UUID
+    private(set) var noteID: UUID
     private var timer = NoteTimer()
     private var timerMode: NoteTimer.Mode = .stopwatch
     private var tickTimer: Timer?
@@ -812,6 +814,8 @@ final class ContextWindowController {
             pad: pad,
             pads: pads,
             project: cachedProjectInfo,
+            aiActions: aiActions,
+            aiState: aiState,
             liveCount: store.liveNotes.count,
             mathResults: results,
             aggregate: sumAvg.map(math.format),

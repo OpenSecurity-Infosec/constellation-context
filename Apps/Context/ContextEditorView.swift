@@ -1,3 +1,4 @@
+import ContextAI
 import ContextDomain
 import ContextStore
 import SwiftUI
@@ -10,6 +11,8 @@ struct ContextEditorRoot: View {
     var pad: Pad = .scratch
     var pads: [Pad] = []
     var project: ProjectInfo?
+    var aiActions: [AIAction] = []
+    var aiState: AIState = .idle
     var liveCount: Int
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
@@ -35,6 +38,7 @@ struct ContextEditorRoot: View {
             toolbar
             Divider()
             editor
+            if aiState != .idle { aiDrawer }
             if note.kind != .plain { modeBar }
             statusBar
         }
@@ -68,6 +72,15 @@ struct ContextEditorRoot: View {
             Button("›") { controller?.nextNote() }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
             Spacer()
+            Menu("AI") {
+                ForEach(aiActions, id: \.self) { action in
+                    Button(action.title) { controller?.runAI(action) }
+                }
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .font(.caption)
+            .accessibilityIdentifier("overlay.aiMenu")
             if let project {
                 projectMenu(project)
             } else if pads.contains(where: \.isProject) {
@@ -370,6 +383,71 @@ struct ContextEditorRoot: View {
         .padding(.horizontal, 12).padding(.vertical, 6)
     }
 
+    @ViewBuilder
+    private var aiDrawer: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            switch aiState {
+            case .idle:
+                EmptyView()
+            case .thinking(let label):
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text(label).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Cancel") { controller?.cancelAI() }
+                        .keyboardShortcut(.cancelAction)
+                }
+            case .failed(let message):
+                HStack {
+                    Text(message).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("OK") { controller?.cancelAI() }
+                        .keyboardShortcut(.cancelAction)
+                }
+            case .ready(let proposal, let target):
+                HStack {
+                    Text("\(proposal.action.title) → \(target.label)")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Button("Reject") { controller?.rejectProposal() }
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("overlay.ai.reject")
+                    Button("Accept") { controller?.acceptProposal() }
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .accessibilityIdentifier("overlay.ai.accept")
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(proposal.diff.enumerated()), id: \.offset) { _, line in
+                            diffRow(line)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 220)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(Color.ctxPanelBackground)
+        .accessibilityIdentifier("overlay.ai.drawer")
+    }
+
+    private func diffRow(_ line: DiffLine) -> some View {
+        let marker: String
+        let style: Color
+        switch line.kind {
+        case .same: marker = "  "; style = .secondary
+        case .added: marker = "+ "; style = .primary
+        case .removed: marker = "− "; style = .secondary
+        }
+        return Text(marker + line.text)
+            .font(.system(.caption, design: .monospaced))
+            .foregroundStyle(style)
+            .strikethrough(line.kind == .removed)
+            .background(line.kind == .added ? Color.ctxAccent.opacity(0.12) : Color.clear)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func projectMenu(_ info: ProjectInfo) -> some View {
         Menu("Context") {
             Button("Copy as Context") { controller?.copyProjectContext() }
@@ -438,6 +516,7 @@ private struct PlainTextEditor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
+        ContextTextView.active = tv
         tv.onChange = { newText in
             text = newText
             onCommit()
@@ -492,6 +571,9 @@ final class ContextTextView: NSTextView {
     var onSlash: ((String, NSRange) -> Void)?
     var onImagePaste: ((NSImage) -> Void)?
     private var slashCompletion: NSView?
+    /// The overlay's text view, so accepted AI proposals can be applied
+    /// as a native, undoable edit.
+    static weak var active: ContextTextView?
 
     override func paste(_ sender: Any?) {
         // Text only, Markdown kept: styling is dropped, structure stays.
