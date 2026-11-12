@@ -25,6 +25,16 @@ public enum URLScheme: Sendable {
         // Support both `context://new?text=` and `context:new?text=` shapes.
         let pathAction = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).lowercased()
         let action = host.isEmpty ? pathAction : host
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              components.user == nil, components.password == nil, components.port == nil,
+              components.fragment == nil,
+              host.isEmpty || url.path.isEmpty || url.path == "/" else { return nil }
+        let items = components.queryItems ?? []
+        let names = items.map { $0.name.lowercased() }
+        guard Set(names).count == names.count,
+              names.allSatisfy({ ["text", "query", "q"].contains($0) }),
+              items.allSatisfy({ $0.value != nil }),
+              (components.percentEncodedQuery?.removingPercentEncoding != nil || items.isEmpty) else { return nil }
         let params = queryItems(url)
         switch action {
         case "", "open":
@@ -35,7 +45,7 @@ public enum URLScheme: Sendable {
             guard let q = params["query"] ?? params["q"] else { return nil }
             return .search(query: q)
         case "append":
-            guard let t = params["text"] else { return nil }
+            guard let t = params["text"], !t.isEmpty else { return nil }
             return .append(text: t)
         default:
             return nil
