@@ -37,7 +37,7 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh
 | Copy to clipboard | Shipped |
 | Recoverable trash (The Void) with expiry | Partial (30-day expiry with per-note days-left countdown; multi-select bulk restore with expired-skip notice) |
 | Apple Notes / Obsidian / Bear direct export | Partial (all three wired; missing-app paths now specific — Notes/Bear install prompts, vault unset/missing/not-a-folder/unwritable each named, picker only when no usable vault, no fake vault creation) |
-| Link shrink (shortened display, click expand, ⌘↩ open) | Partial |
+| Link shrink (shortened display, click expand, ⌘↩ open) | Partial (long URLs render shortened in the editor with the full URL as tooltip; plain click expands/collapses in place, ⌘↩ opens the link under the caret, and copy/save/export always carry the full URL — the `…` form never reaches disk; detection covers scheme URLs incl. non-http (`ftp:`, `context:`, `obsidian:`…), `mailto:`/`tel:`, `www.`, bare domains with port/path/query/fragment, localhost, IPv4, and e-mail-as-mailto, with trailing-punctuation trimming and balanced-parentheses handling, domain-unit-tested; the link being typed stays full until the caret leaves it and identical URLs toggle together; live click/keyboard feel in the packaged app vs Antinote unverified) |
 | Native `::` commands (`today`, `now`, `sort_lines`, `uuid`) + JS extensions | Partial (builtins + sandboxed .js work; no extension gallery) |
 | Checklist nesting (Tab) + marker cycling (⌘⇧M) | Partial |
 | Two-finger swipe navigation | Partial (same as swipe row above) |

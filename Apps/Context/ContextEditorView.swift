@@ -417,11 +417,15 @@ private struct PlainTextEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let tv = scroll.documentView as? NSTextView else { return }
         (tv as? ContextTextView)?.onCollectPaste = onCollectPaste
-        if tv.string != text {
+        // Compare against reconstructed source text: the view may be
+        // showing collapsed link displays while `text` is the full note.
+        let current = (tv as? ContextTextView)?.sourceTextForSaving() ?? tv.string
+        if current != text {
             let selected = tv.selectedRanges
+            (tv as? ContextTextView)?.resetLinkExpansion()
             tv.string = text
             tv.selectedRanges = selected
-            (tv as? ContextTextView)?.refreshLinkAttributes()
+            (tv as? ContextTextView)?.refreshLinkAttributes(collapsingAtCaret: true)
         }
         tv.font = ContextTheme.bodyFont
     }
@@ -431,8 +435,11 @@ private struct PlainTextEditor: NSViewRepresentable {
 }
 
 /// NSTextView that strips formatting on paste and reports changes.
-/// Applies Link Shrink: pasted URLs display shortened while the full URL
-/// is preserved for open/copy. Links render clickable.
+/// Applies Link Shrink: long URLs render in their shortened display
+/// form while the full URL is preserved (custom attribute + domain
+/// presentation) for save/copy/open. A plain click on a shortened
+/// link expands it in place; clicking the expanded link collapses it
+/// again. ⌘↩ opens the link under the caret.
 final class ContextTextView: NSTextView {
     var onChange: ((String) -> Void)?
     var onFocus: ((Bool) -> Void)?
@@ -443,6 +450,16 @@ final class ContextTextView: NSTextView {
     var onImagePaste: ((NSImage) -> Void)?
     var onCollectPaste: ((String) -> Void)?
     private var slashCompletion: NSView?
+
+    /// Raw URLs the user clicked to expand; all other shortened links
+    /// render collapsed. Identical URLs toggle together.
+    private var expandedLinkRawValues: Set<String> = []
+    private var lastLinkPresentation: LinkShrink.Presentation?
+    private var applyingLinkDisplay = false
+    /// Carries the full raw URL over its collapsed display span so the
+    /// source text can be reconstructed for save/copy even after the
+    /// surrounding text (and thus every range) shifts.
+    private static let fullURLKey = NSAttributedString.Key("ContextLinkShrinkFullURL")
 
     override func paste(_ sender: Any?) {
         // Plain text only: strip styling, bullets, indentation.
@@ -483,16 +500,21 @@ final class ContextTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
+        guard !applyingLinkDisplay else { return }
         refreshLinkAttributes()
-        onChange?(string)
-        onCaret?(selectedRange().location)
+        let source = sourceTextForSaving()
+        onChange?(source)
+        onCaret?(sourceCaretCharacterOffset(in: source))
         checkSlashTrigger()
     }
 
-    /// Fires onSlash while the caret sits on a `::token`.
+    /// Fires onSlash while the caret sits on a `::token`. Runs against
+    /// reconstructed source text so a collapsed link earlier on the
+    /// line cannot shift the token range the controller applies.
     private func checkSlashTrigger() {
-        let caret = selectedRange().location
-        guard let found = SlashCommand.token(at: caret, in: string) else {
+        let source = sourceTextForSaving()
+        let caret = sourceCaretCharacterOffset(in: source)
+        guard let found = SlashCommand.token(at: caret, in: source) else {
             hideSlashCompletion()
             return
         }
@@ -514,26 +536,99 @@ final class ContextTextView: NSTextView {
         slashCompletion = nil
     }
 
-    /// Shortens display of long URLs while keeping full text intact.
-    /// Uses link attributes with a shortened tooltip so the buffer stays
-    /// plain text and copy/paste preserves the real URL.
-    func refreshLinkAttributes() {
-        guard let storage = textStorage else { return }
+    /// Full note text with every collapsed link span restored to its
+    /// raw URL. This — not `string` — is what gets saved and copied.
+    func sourceTextForSaving() -> String {
+        reconstructedSource(in: NSRange(location: 0, length: (string as NSString).length))
+    }
+
+    private func reconstructedSource(in range: NSRange) -> String {
+        guard let storage = textStorage, range.length > 0 else {
+            return (string as NSString).substring(with: range)
+        }
         let full = string as NSString
-        let range = NSRange(location: 0, length: full.length)
+        var out = ""
+        storage.enumerateAttribute(Self.fullURLKey, in: range, options: []) { value, runRange, _ in
+            let piece = full.substring(with: runRange)
+            guard let raw = value as? String else { out += piece; return }
+            let shown = LinkShrink.shortened(raw)
+            if piece == shown {
+                out += raw
+            } else if piece.hasPrefix(shown) {
+                // Characters typed glued to the end inherit the
+                // attribute; the URL itself is still intact.
+                out += raw + String(piece.dropFirst(shown.count))
+            } else {
+                // The collapsed span itself was edited: keep the
+                // literal text rather than resurrecting the old URL.
+                out += piece
+            }
+        }
+        return out
+    }
+
+    func resetLinkExpansion() {
+        expandedLinkRawValues = []
+        lastLinkPresentation = nil
+    }
+
+    private func sourceCaretUTF16Offset() -> Int {
+        lastLinkPresentation?.sourceOffset(forDisplayOffset: selectedRange().location)
+            ?? selectedRange().location
+    }
+
+    private func sourceCaretCharacterOffset(in source: String) -> Int {
+        let clamped = min(max(sourceCaretUTF16Offset(), 0), source.utf16.count)
+        return source.distance(from: source.startIndex, to: String.Index(utf16Offset: clamped, in: source))
+    }
+
+    /// Renders the domain presentation: long URLs shown shortened
+    /// (full URL in the tooltip and the reconstruction attribute),
+    /// expanded ones in full. Unless `collapsingAtCaret` is set
+    /// (paste, note load, click toggle), the link under the caret
+    /// stays full so typing a URL never shrinks it mid-edit; it
+    /// collapses on the next edit after the caret leaves it.
+    func refreshLinkAttributes(collapsingAtCaret: Bool = false) {
+        guard !applyingLinkDisplay, let storage = textStorage else { return }
+        applyingLinkDisplay = true
+        defer { applyingLinkDisplay = false }
+        if hasMarkedText() { return } // never rebuild during IME composition
+        let source = sourceTextForSaving()
+        var expanded = expandedLinkRawValues
+        if !collapsingAtCaret,
+           let editing = LinkShrink.link(atUTF16Offset: sourceCaretUTF16Offset(), in: source),
+           editing.isShortened
+        {
+            expanded.insert(editing.raw)
+        }
+        let presentation = LinkShrink.presentation(for: source, expanded: expanded)
+        if presentation.text != string {
+            let old = selectedRange()
+            let srcStart = lastLinkPresentation?.sourceOffset(forDisplayOffset: old.location) ?? old.location
+            let srcEnd = lastLinkPresentation?.sourceOffset(forDisplayOffset: old.location + old.length)
+                ?? (old.location + old.length)
+            let newStart = presentation.displayOffset(forSourceOffset: srcStart)
+            let newEnd = presentation.displayOffset(forSourceOffset: srcEnd)
+            storage.mutableString.setString(presentation.text)
+            setSelectedRange(NSRange(location: newStart, length: max(0, newEnd - newStart)))
+            // A display rebuild invalidates ranges recorded by undo.
+            undoManager?.removeAllActions()
+        }
+        lastLinkPresentation = presentation
+        let range = NSRange(location: 0, length: (string as NSString).length)
         storage.removeAttribute(.link, range: range)
         storage.removeAttribute(.toolTip, range: range)
         storage.removeAttribute(.foregroundColor, range: range)
+        storage.removeAttribute(Self.fullURLKey, range: range)
         storage.addAttribute(.font, value: ContextTheme.bodyFont, range: range)
-        applyCodeHighlighting(storage: storage)
-        for urlRange in LinkShrink.urlRanges(in: string) {
-            let ns = NSRange(urlRange, in: string)
-            let raw = String(string[urlRange])
-            guard let url = LinkShrink.openableURL(raw) else { continue }
+        applyCodeHighlighting(storage: storage, presentation: presentation, source: source)
+        for link in presentation.links {
+            guard let url = link.url else { continue }
+            let ns = NSRange(location: link.displayUTF16Range.lowerBound, length: link.displayUTF16Range.count)
             storage.addAttribute(.link, value: url, range: ns)
-            let short = LinkShrink.shortened(raw)
-            if short != raw {
-                storage.addAttribute(.toolTip, value: short, range: ns)
+            if link.isCollapsed {
+                storage.addAttribute(.toolTip, value: link.raw, range: ns)
+                storage.addAttribute(Self.fullURLKey, value: link.raw, range: ns)
             }
         }
         linkTextAttributes = [
@@ -541,6 +636,10 @@ final class ContextTextView: NSTextView {
             .underlineStyle: NSUnderlineStyle.single.rawValue,
             .cursor: NSCursor.pointingHand,
         ]
+        var typing = typingAttributes
+        typing.removeValue(forKey: Self.fullURLKey)
+        typing.removeValue(forKey: .link)
+        typingAttributes = typing
     }
 
     /// Per-block syntax highlighting: mono font over each code block, token
@@ -548,12 +647,20 @@ final class ContextTextView: NSTextView {
     /// display attributes only, recomputed with the link attributes on
     /// every edit. Block/kind derivation is shared with the domain tests
     /// via `CodeHighlight` (a `code` first line makes the body one block).
-    private func applyCodeHighlighting(storage: NSTextStorage) {
-        let note = ContextNote(text: string)
+    /// Block/token ranges derive from source text and are mapped into
+    /// display coordinates so a collapsed link before a block cannot
+    /// shift its colors.
+    private func applyCodeHighlighting(storage: NSTextStorage, presentation: LinkShrink.Presentation, source: String) {
+        func mapped(_ ns: NSRange) -> NSRange {
+            let start = presentation.displayOffset(forSourceOffset: ns.location)
+            let end = presentation.displayOffset(forSourceOffset: ns.location + ns.length)
+            return NSRange(location: start, length: max(0, end - start))
+        }
+        let note = ContextNote(text: source)
         for block in CodeHighlight.blocks(for: note) {
-            storage.addAttribute(.font, value: ContextTheme.monoFont, range: NSRange(block.range, in: string))
-            for token in CodeHighlight.tokens(in: string, range: block.range, language: block.language) {
-                storage.addAttribute(.foregroundColor, value: Self.color(for: token.kind), range: NSRange(token.range, in: string))
+            storage.addAttribute(.font, value: ContextTheme.monoFont, range: mapped(NSRange(block.range, in: source)))
+            for token in CodeHighlight.tokens(in: source, range: block.range, language: block.language) {
+                storage.addAttribute(.foregroundColor, value: Self.color(for: token.kind), range: mapped(NSRange(token.range, in: source)))
             }
         }
     }
@@ -568,47 +675,71 @@ final class ContextTextView: NSTextView {
     }
 
     private func shrinkURLsAroundSelection() {
-        refreshLinkAttributes()
+        // A paste lands complete: collapse immediately, caret included.
+        refreshLinkAttributes(collapsingAtCaret: true)
     }
 
-    /// ⌘↩ opens the URL under the caret in the default browser.
+    /// ⌘↩ opens the URL under the caret in the default browser. The
+    /// caret is converted to source coordinates first, so it works
+    /// the same on a collapsed or expanded link.
     func openURLAtCaret() -> Bool {
-        let caret = selectedRange().location
-        let text = string
-        for urlRange in LinkShrink.urlRanges(in: text) {
-            let ns = NSRange(urlRange, in: text)
-            if NSLocationInRange(caret, ns) || NSLocationInRange(max(0, caret - 1), ns) {
-                let raw = String(text[urlRange])
-                if let url = LinkShrink.openableURL(raw) {
-                    onOpenURL?(url)
-                    return true
-                }
-            }
+        let source = sourceTextForSaving()
+        guard let link = LinkShrink.link(atUTF16Offset: sourceCaretUTF16Offset(), in: source),
+              let url = link.url
+        else { return false }
+        onOpenURL?(url)
+        return true
+    }
+
+    override func copy(_ sender: Any?) {
+        let range = selectedRange()
+        guard range.length > 0 else { super.copy(sender); return }
+        // Copying a collapsed link copies the full URL, not the `…` form.
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(reconstructedSource(in: range), forType: .string)
+    }
+
+    override func cut(_ sender: Any?) {
+        let range = selectedRange()
+        guard range.length > 0 else { super.cut(sender); return }
+        copy(sender)
+        if shouldChangeText(in: range, replacementString: "") {
+            textStorage?.replaceCharacters(in: range, with: "")
+            didChangeText()
         }
-        return false
     }
 
     override func mouseDown(with event: NSEvent) {
-        // Option-click (or double-click) a link reveals the full URL in place:
-        // selection expands to the whole URL so it can be edited/copied.
-        if event.modifierFlags.contains(.option) || event.clickCount >= 2 {
+        // Plain click on a shortened link toggles expand/collapse in
+        // place (⌘↩ is how a link opens). Modified or multi clicks
+        // keep their usual selection behavior.
+        let plainClick = event.clickCount == 1
+            && event.modifierFlags.intersection([.shift, .command, .option, .control]).isEmpty
+        if plainClick, let presentation = lastLinkPresentation {
             let point = convert(event.locationInWindow, from: nil)
             let idx = characterIndexForInsertion(at: point)
-            for urlRange in LinkShrink.urlRanges(in: string) {
-                let ns = NSRange(urlRange, in: string)
-                if NSLocationInRange(idx, ns) {
-                    setSelectedRange(ns)
-                    return
+            if let hit = presentation.presentedLink(atDisplayUTF16Offset: idx),
+               LinkShrink.shortened(hit.raw).contains("…")
+            {
+                expandedLinkRawValues = LinkShrink.toggled(expandedLinkRawValues, raw: hit.raw)
+                refreshLinkAttributes(collapsingAtCaret: true)
+                if let now = lastLinkPresentation?.links.first(where: {
+                    $0.raw == hit.raw && $0.sourceUTF16Range == hit.sourceUTF16Range
+                }) {
+                    setSelectedRange(NSRange(
+                        location: now.displayUTF16Range.lowerBound,
+                        length: now.displayUTF16Range.count))
                 }
+                return
             }
         }
         super.mouseDown(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
-        // ⌘↩ opens the URL under the caret.
+        // ⌘↩ (Return or keypad Enter) opens the URL under the caret.
         if event.modifierFlags.contains(.command),
-           event.keyCode == 36 || event.characters == "\r" || event.characters == "\n"
+           event.keyCode == 36 || event.keyCode == 76 || event.characters == "\r" || event.characters == "\n"
         {
             if openURLAtCaret() { return }
         }
