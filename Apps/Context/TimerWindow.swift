@@ -119,6 +119,8 @@ private struct TimerFullscreenView: View {
     var onReset: () -> Void
     var onExit: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -127,10 +129,14 @@ private struct TimerFullscreenView: View {
                     .font(.title3).foregroundStyle(.secondary)
             }
             Text(vm.snapshot.name)
-                .font(.largeTitle.weight(.semibold))
+                .font(.system(size: 30, weight: .medium, design: .rounded))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
             if vm.snapshot.finished {
                 Text("Done")
-                    .font(.system(size: 120, weight: .bold).monospaced())
+                    .font(.system(size: 112, weight: .light, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
                     .foregroundStyle(Color.ctxAccent)
                 Text(TimerScene.finishLine(total: vm.snapshot.total))
                     .font(.title2).foregroundStyle(.secondary)
@@ -138,17 +144,26 @@ private struct TimerFullscreenView: View {
                 HStack(alignment: .center, spacing: 32) {
                     if let fraction = vm.snapshot.fraction {
                         ZStack {
-                            ProgressView(value: fraction)
-                                .progressViewStyle(.circular)
-                                .scaleEffect(3)
-                                .frame(width: 120, height: 120)
+                            Circle()
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 6)
+                            Circle()
+                                .trim(from: 0, to: min(1, max(0, fraction)))
+                                .stroke(Color.ctxAccent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
                             Text(TimerScene.ringLabel(fraction: fraction))
-                                .font(.title3.monospaced())
+                                .font(.system(size: 18, weight: .medium, design: .rounded).monospacedDigit())
                         }
+                        .frame(width: 120, height: 120)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Progress")
+                        .accessibilityValue(TimerScene.ringLabel(fraction: fraction))
                     }
                     VStack(alignment: .leading, spacing: 8) {
                         Text(vm.snapshot.display)
-                            .font(.system(size: 120, weight: .bold).monospaced())
+                            .font(.system(size: 112, weight: .light, design: .rounded).monospacedDigit())
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
                         let remaining = vm.snapshot.total.map { max(0, $0 - vm.snapshot.elapsed) }
                         let line = TimerScene.statusLine(
                             elapsed: vm.snapshot.elapsed,
@@ -175,6 +190,39 @@ private struct TimerFullscreenView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.ctxEditorBackground)
+        .padding(48)
+        .background(TimerAtmosphere(reduceMotion: reduceMotion))
+        .tint(.ctxAccent)
+    }
+}
+
+/// Palette-derived aurora: the same paper and accent tokens as the editor.
+private struct TimerAtmosphere: View {
+    let reduceMotion: Bool
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            let phase = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate / 18
+            GeometryReader { geometry in
+                ZStack {
+                    Color.ctxEditorBackground
+                    ForEach(0..<3) { index in
+                        Ellipse()
+                            .fill(RadialGradient(
+                                colors: [Color.ctxAccent.opacity(colorScheme == .dark ? 0.22 : 0.14), .clear],
+                                center: .center, startRadius: 0,
+                                endRadius: geometry.size.width * 0.45))
+                            .frame(width: geometry.size.width * 0.9, height: geometry.size.height * 0.9)
+                            .position(
+                                x: geometry.size.width * (0.5 + 0.4 * sin(phase + Double(index) * 2.1)),
+                                y: geometry.size.height * (0.5 + 0.4 * cos(phase * 0.7 + Double(index) * 2.1)))
+                    }
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

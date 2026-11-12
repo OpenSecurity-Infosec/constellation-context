@@ -14,6 +14,16 @@ Host: apps01
 These assignments document intended access; they do not provision credentials or enforce infrastructure permissions. Keep secrets outside the repository. Use credential references, inspect shared resources, and avoid interrupting other projects.
 <!-- apps01:surfaces:end -->
 
+## Test Mac
+
+Use cortex02: `ssh oz@192.168.123.153` (Intel x86_64, macOS 26, Swift 6.3, CLT only).
+Checkout: `/Users/oz/Projects/constellation-context`. After pushing, run
+`ssh oz@192.168.123.153 ~/bin/context-ci.sh`; it pulls, builds, runs tests
+with the Testing-framework flags, and relaunches `/Applications/Context.app`.
+This supersedes the historical Cortex surface above for build/test. Hands-on GUI
+testing happens separately outside T3: do not look for VNC or a GUI testing service.
+End summaries with concrete manual app checks.
+
 ## Dev guide
 
 Open-source Mac-native Antinote-style scratchpad in Swift (SwiftPM, no Xcode
@@ -45,38 +55,8 @@ apps01 is Linux with no Swift toolchain, and `Package.swift` declares
 `.macOS(.v15)` plus AppKit/SwiftUI/CloudKit types — `swift build` /
 `swift test` do not run here. Build and test on a Mac instead.
 
-The cortex Mac in the surfaces block above (`oz@192.168.123.231`, macOS,
-Swift 6.3.x) is reachable from apps01 when the provisioned key is present:
-use the `crew-cortex01` SSH alias (or `-i ~/.ssh/crew_cortex01`); a bare
-`ssh oz@192.168.123.231` without that key/agent will be denied. There is
-no standing checkout on cortex — sync the tree over first, then build:
-
-```bash
-# from apps01, in this repo (excluding local build products)
-rsync -a --exclude .git --exclude .build ./ crew-cortex01:~/constellation-context/
-ssh crew-cortex01 'cd ~/constellation-context && swift build'
-```
-
-`.build/` is gitignored and untracked; never commit it.
-
-`swift build` works as-is on cortex. Plain `swift test` does not: cortex has
-Command Line Tools only (no Xcode), so SwiftPM cannot find the `Testing`
-module. Point it at the CLT frameworks (verified: 181 tests pass):
-
-```bash
-ssh crew-cortex01 'cd ~/constellation-context && \
-  DYLD_LIBRARY_PATH=/Library/Developer/CommandLineTools/Library/Developer/usr/lib:/Library/Developer/CommandLineTools/Library/Developer/Frameworks \
-  swift test \
-  -Xswiftc -F -Xswiftc /Library/Developer/CommandLineTools/Library/Developer/Frameworks \
-  -Xlinker -F/Library/Developer/CommandLineTools/Library/Developer/Frameworks \
-  -Xlinker -rpath -Xlinker /Library/Developer/CommandLineTools/Library/Developer/usr/lib \
-  -Xlinker -rpath -Xlinker /Library/Developer/CommandLineTools/Library/Developer/Frameworks'
-```
-
-On any Mac with Command Line Tools: `swift test`, `swift build`, then
-`CONTEXT_REBUILD=1 ./Scripts/run-app.sh` to install/open the app. UI feel,
-hotkeys, paste/OCR, sync round-trips, and the packaged `.app` can only be
-verified interactively on a Mac — say so when a change was only unit-tested.
+.build/ is gitignored; never commit it. Use the cortex02 CI command above.
+Report its result line; distinguish automated checks from unverified GUI feel.
 
 ### Commits
 
