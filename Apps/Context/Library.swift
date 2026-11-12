@@ -37,7 +37,7 @@ final class LibraryModel {
 
     var source: LibrarySource? = .pad(.scratch) { didSet { if oldValue != source { query = ""; loadItems() } } }
     var items: [LibraryItem] = []
-    var query = "" { didSet { if oldValue != query { loadItems() } } }
+    var query = "" { didSet { if oldValue != query { scheduleSearch() } } }
     var selection: LibraryItemID? {
         didSet {
             guard oldValue != selection else { return }
@@ -192,6 +192,15 @@ final class LibraryModel {
     }
 
     // MARK: - Listing
+
+    private func scheduleSearch() {
+        loadTask?.cancel()
+        loadTask = Task {
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            guard !Task.isCancelled else { return }
+            loadItems()
+        }
+    }
 
     func loadItems() {
         loadTask?.cancel()

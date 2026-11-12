@@ -8,6 +8,7 @@ import Foundation
 /// whose file changed on disk since it was read is refused as a
 /// conflict; paths that escape the vault are refused.
 public struct ObsidianConnector: VaultConnector {
+    private let index = ListingIndex()
     public let id: String
     public let displayName: String
     public let root: URL
@@ -21,43 +22,53 @@ public struct ObsidianConnector: VaultConnector {
 
     public func list() async throws -> [VaultNoteSummary] {
         try ensureRoot()
-        return markdownFiles().compactMap { url in
-            guard let rel = relativePath(url) else { return nil }
-            let snippet = (try? String(contentsOf: url, encoding: .utf8)).map {
-                String(MarkdownDocument(parsing: $0).body.prefix(160))
-            } ?? ""
-            return VaultNoteSummary(
-                ref: VaultNoteRef(vaultID: id, noteID: rel),
-                title: url.deletingPathExtension().lastPathComponent,
-                snippet: snippet,
-                modified: Self.modificationDate(url)
-            )
-        }
-        .sorted { ($0.modified ?? .distantPast) > ($1.modified ?? .distantPast) }
+        return try await index.entries(self).map(\.summary)
     }
 
     public func search(_ query: String) async throws -> [VaultNoteSummary] {
-        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !q.isEmpty else { return try await list() }
-        try ensureRoot()
-        var titleHits: [VaultNoteSummary] = []
-        var bodyHits: [VaultNoteSummary] = []
-        for url in markdownFiles() {
-            guard let rel = relativePath(url) else { continue }
-            let title = url.deletingPathExtension().lastPathComponent
-            let text = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-            let summary = VaultNoteSummary(
-                ref: VaultNoteRef(vaultID: id, noteID: rel), title: title,
-                snippet: String(MarkdownDocument(parsing: text).body.prefix(160)),
-                modified: Self.modificationDate(url)
-            )
-            if title.lowercased().contains(q) {
-                titleHits.append(summary)
-            } else if text.lowercased().contains(q) {
-                bodyHits.append(summary)
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let entries = try await index.entries(self)
+        guard !q.isEmpty else { return entries.map(\.summary) }
+        let titles = entries.filter { $0.summary.title.lowercased().contains(q) }
+        let bodies = entries.filter { !$0.summary.title.lowercased().contains(q) && $0.text.contains(q) }
+        return (titles + bodies).map(\.summary)
+    }
+
+    /// Memory-only, rebuildable index. Metadata is checked on every request so
+    /// external additions, edits, renames and removals remain visible.
+    private actor ListingIndex {
+        struct Entry {
+            let summary: VaultNoteSummary
+            let text: String
+            let size: Int?
+        }
+        private var cached: [String: Entry] = [:]
+
+        func entries(_ connector: ObsidianConnector) throws -> [Entry] {
+            try connector.ensureRoot()
+            var next: [String: Entry] = [:]
+            for url in connector.markdownFiles() {
+                try Task.checkCancellation()
+                guard let path = connector.relativePath(url) else { continue }
+                let metadata = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+                if let old = cached[path], old.summary.modified == metadata.contentModificationDate,
+                   old.size == metadata.fileSize {
+                    next[path] = old
+                    continue
+                }
+                let text = try String(contentsOf: url, encoding: .utf8)
+                next[path] = Entry(summary: VaultNoteSummary(
+                    ref: VaultNoteRef(vaultID: connector.id, noteID: path),
+                    title: url.deletingPathExtension().lastPathComponent,
+                    snippet: String(MarkdownDocument(parsing: text).body.prefix(160)),
+                    modified: metadata.contentModificationDate), text: text.lowercased(), size: metadata.fileSize)
+            }
+            cached = next
+            return next.values.sorted {
+                if $0.summary.modified == $1.summary.modified { return $0.summary.ref.noteID < $1.summary.ref.noteID }
+                return ($0.summary.modified ?? .distantPast) > ($1.summary.modified ?? .distantPast)
             }
         }
-        return titleHits + bodyHits
     }
 
     public func read(_ ref: VaultNoteRef) async throws -> VaultNote {

@@ -254,3 +254,22 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     and restore in The Void; click simple, aliased, folder-qualified and
     heading links across base/linked sources; check missing/duplicate targets
     and image embeds. Confirm keyboard shortcuts and menu availability.
+
+- **2026-11-12, gap 4 (Partial, validation in progress).**
+  - Plan: connector-owned rebuildable in-memory index caches snippets and searchable
+    text; metadata reconciliation detects external edits/additions/removals without
+    rereading unchanged bodies. Actor isolation keeps indexing off the UI actor.
+  - Library search waits 200 ms after typing; cancellation suppresses superseded
+    queries. No settings, modes or controls added.
+  - Manual checks (no GUI/VNC attempted): browse the ~693-note vault, rapidly type
+    and clear search, switch sources during search, edit/add/delete externally and
+    reopen listing; confirm overlay opens ready to type during indexing.
+  - Installed-app responsiveness remains unproven until those owner checks.
+  - Measurement protocol: synthetic 693-note temporary vault (~1.6 KB each),
+    cold listing then warm full-body search, timed with ContinuousClock on
+    cortex02. This excludes iCloud hydration and UI latency; the 200 ms quiet
+    interval is intentional. Local swift test unavailable (Linux, no Swift).
+  - Isolated cortex02 validation passed: 361 tests / 57 suites. Synthetic
+    warm search measured 87 ms (200 ms debounce additionally); this does not
+    prove the real-vault "instant" criterion. No real note bodies were read
+    for benchmarking. Post-push CI/rebuild results reported separately.

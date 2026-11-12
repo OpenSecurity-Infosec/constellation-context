@@ -3,6 +3,29 @@ import Foundation
 import Testing
 
 @Suite struct ObsidianConnectorTests {
+    @Test func indexedVaultScaleAndExternalChanges() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        for n in 0..<693 {
+            try ("# Note \(n)\n" + String(repeating: "searchable body ", count: 100)).write(
+                to: root.appendingPathComponent("Note-\(n).md"), atomically: true, encoding: .utf8)
+        }
+        let c = ObsidianConnector(id: "scale", displayName: "Scale", root: root)
+        let clock = ContinuousClock()
+        let cold = clock.now
+        #expect(try await c.list().count == 693)
+        let coldTime = cold.duration(to: clock.now)
+        let warm = clock.now
+        #expect(try await c.search("searchable").count == 693)
+        print("693-note fixture: cold \(coldTime), warm search \(warm.duration(to: clock.now))")
+        try "replacement needle".write(to: root.appendingPathComponent("Note-0.md"), atomically: true, encoding: .utf8)
+        #expect(try await c.search("needle").count == 1)
+        try FileManager.default.removeItem(at: root.appendingPathComponent("Note-0.md"))
+        #expect(try await c.list().count == 692)
+        #expect(try await c.search("needle").isEmpty)
+    }
+
     /// A small Obsidian-style vault: config, nested notes, attachments,
     /// frontmatter with comments and wikilinks, and Obsidian's trash.
     func fixture() throws -> (ObsidianConnector, URL) {
