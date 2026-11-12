@@ -165,3 +165,31 @@ func linkedVault() throws -> ObsidianConnector {
         #expect(throws: WorkspaceError.noSuchDocument) { try ws.apply(.writeDocument(project: "Alpha", fileName: "../context.md", text: "x")) }
     }
 }
+
+@Suite struct ImportResolutionTests {
+    @Test func importResolvesAndTracksContextEdits() async throws {
+        let ws = makeWorkspace()
+        defer { try? FileManager.default.removeItem(at: ws.vault.root) }
+        try ws.apply(.createProject(name: "Import Project"))
+        let project = ws.project("Import Project")
+        let delivery = ContextDelivery(log: DeliveryLog(fileURL: ws.vault.state.appendingPathComponent("deliveries.jsonl")))
+        let importer = ws.vault.root.appendingPathComponent("consumer/CLAUDE.md")
+        try FileManager.default.createDirectory(at: importer.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let line = ContextDelivery.importLine(for: project)
+        #expect(line.hasPrefix("@/"))
+        try (line + "\n").write(to: importer, atomically: true, encoding: .utf8)
+        let saved = try String(contentsOf: importer, encoding: .utf8).trimmingCharacters(in: .newlines)
+        let resolved = URL(fileURLWithPath: String(saved.dropFirst()), relativeTo: importer.deletingLastPathComponent()).standardizedFileURL
+        #expect(resolved == project.output.standardizedFileURL)
+        for text in ["Initial context", "Edited context"] {
+            let store = ws.store(for: .project("Import Project"))
+            let note = try #require(store.liveNotes.first)
+            try ws.apply(.setText(.project("Import Project"), id: note.id, text: text))
+            let assembled = await ContextAssembler().assemble(project)
+            try delivery.writeFile(assembled, for: project)
+            #expect(FileManager.default.fileExists(atPath: resolved.path))
+            #expect(try String(contentsOf: resolved, encoding: .utf8) == assembled.text)
+            #expect(assembled.text.contains(text))
+        }
+    }
+}

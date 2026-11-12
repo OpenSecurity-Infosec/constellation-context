@@ -141,15 +141,15 @@ Gaps to close:
 1. **Verify by use, not by unit test.** "Done" means exercised in the installed app (UI automation or the owner). The agent needs Accessibility and Screen Recording permission for its terminal to do this itself.
 2. **Real Anytype link** (first connector): list, open, edit, attach. This needs the owner to enter the Anytype code once.
 3. **Obsidian replacement for daily notes:**
-   - daily notes;
-   - templates (at least date tokens);
-   - create, rename, and delete notes in the Library;
-   - folder browsing;
-   - following `[[wikilinks]]`.
+   - [x] daily notes (code/tests; owner QA pending);
+   - [x] templates with date tokens (code/tests; owner QA pending);
+   - [x] create, rename, and delete notes in the Library (code/tests);
+   - [ ] folder browsing (linked implemented; base folders remain open);
+   - [x] following `[[wikilinks]]` (code/tests; owner QA pending).
 4. **Speed on the real vault (693 notes):**
-   - an index or cached listing instead of reading every file;
-   - debounced search;
-   - measured against "instant".
+   - [x] cached connector listing;
+   - [x] debounced search;
+   - [ ] measured against "instant" on the real vault.
 5. **Less is more in the overlay (Partial):**
    - a text-only, quiet toolbar (no emoji buttons);
    - Void, Export, Search, New, and Trash moved behind menus and shortcuts;
@@ -379,3 +379,26 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
   - Local swift test unavailable (Linux has no Swift). Isolated cortex02 suite
     and post-push CI/install verification are reported in the turn close-out.
   - Validation: isolated cortex02 suite passed, 372 tests in 62 suites.
+
+- **2026-11-12, MVP audit and import contract (Partial).**
+  - Gap 3: daily notes/date-token templates, Library create/rename/trash and
+    wikilink following have code and regression coverage from prior entries.
+    Linked folder paths now appear in the existing sources sidebar, derived
+    through connector listing. Base-vault arbitrary folder browsing remains open.
+    This sidebar disclosure supports Vision's Library browsing requirement.
+  - Gap 4: cached connector listings and debounced search are implemented;
+    the earlier 693-note synthetic measurement does not establish real-vault latency.
+  - Gaps 5–6: quiet overlay/menu actions, grouped Settings and display-only
+    inline Markdown styling are implemented; installed interaction needs owner QA.
+  - Gap 7: `Scripts/check-context-import.sh` exercises the shared Copy Import
+    Line formatter, writes CLAUDE.md in a temporary consumer directory, resolves
+    its absolute import, and checks assembled contents after Workspace edits.
+    Copy Import Line now flushes and writes the assembled file before publishing
+    the clipboard line. This proves the filesystem contract only; actual Claude
+    parsing/consumption (especially paths containing spaces) remains unproven.
+  - Owner manual checks: browse linked nested folders, switch sources rapidly,
+    follow links, edit and reopen notes; verify the copied import in Claude Code.
+    All existing overlay/focus, IME, Anytype, iCloud and real-vault speed checks
+    remain pending. No GUI/VNC attempted. No claim of installed-app verification.
+  - Validation: isolated cortex02 source copy passed 373 tests in 63 suites.
+    Local Linux host has no Swift toolchain. Installed GUI QA remains pending.

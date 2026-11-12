@@ -11,6 +11,7 @@ import SwiftUI
 enum LibrarySource: Hashable {
     case pad(Pad)
     case linked(String)
+    case linkedFolder(String, String)
 }
 
 enum LibraryItemID: Hashable {
@@ -34,6 +35,7 @@ final class LibraryModel {
     var linked: [LinkedVault] = []
     private var connectors: [String: any VaultConnector] = [:]
     var projects: [String] = []
+    var folders: [String: [String]] = [:]
 
     var source: LibrarySource? = .pad(.scratch) { didSet { if oldValue != source { query = ""; loadItems() } } }
     var items: [LibraryItem] = []
@@ -73,6 +75,20 @@ final class LibraryModel {
         linked = LinkedVaultRegistry.standard?.load() ?? []
         let secrets = KeychainSecretStore()
         connectors = Dictionary(uniqueKeysWithValues: linked.compactMap { v in Connectors.make(v, secrets: secrets).map { (v.id, $0) } })
+        for (id, connector) in connectors where connector.kind == .obsidian {
+            Task {
+                guard let notes = try? await connector.list() else { return }
+                var paths = Set<String>()
+                for note in notes {
+                    var path = (note.ref.noteID as NSString).deletingLastPathComponent
+                    while !path.isEmpty && path != "." {
+                        paths.insert(path)
+                        path = (path as NSString).deletingLastPathComponent
+                    }
+                }
+                folders[id] = paths.sorted()
+            }
+        }
         projects = workspace().projects
         loadItems()
     }
@@ -212,14 +228,20 @@ final class LibraryModel {
         switch source {
         case .pad(let pad)?:
             items = padItems(pad)
-        case .linked(let id)?:
+        case .linked(let id)?, .linkedFolder(let id, _)?:
             items = []
             guard let connector = connectors[id] else { return }
             loadTask = Task {
                 do {
                     let list = try await connector.list()
                     guard !Task.isCancelled else { return }
-                    items = list.map { LibraryItem(id: .linked($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
+                    let visible = list.filter { note in
+                        if case .linkedFolder(_, let folder)? = source {
+                            return note.ref.noteID.hasPrefix(folder + "/")
+                        }
+                        return true
+                    }
+                    items = visible.map { LibraryItem(id: .linked($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
                     status = nil
                 } catch let error as VaultError {
                     status = error.message

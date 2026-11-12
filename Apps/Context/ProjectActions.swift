@@ -105,10 +105,17 @@ extension ContextWindowController {
 
     /// `@path` line for a CLAUDE.md or AGENTS.md that imports the file.
     func copyImportLine() {
-        guard let info = projectInfo else { return }
-        refreshProjectFile()
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString("@\(info.outputPath)", forType: .string)
+        guard let name = projectName else { return }
+        flushNow()
+        let project = workspace.project(name)
+        Task { @MainActor in
+            let context = await projects.assemble(project)
+            do {
+                try projects.delivery(for: workspace).writeFile(context, for: project)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(ContextDelivery.importLine(for: project), forType: .string)
+            } catch { alert("Couldn't prepare the context file.") }
+        }
     }
 
     func revealProjectFile() {

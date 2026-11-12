@@ -121,6 +121,12 @@ struct LibraryView: View {
                     ForEach(model.linked) { vault in
                         Label(vault.name, systemImage: vault.kind == .anytype ? "square.stack" : "books.vertical")
                             .tag(LibrarySource.linked(vault.id))
+                        ForEach(model.folders[vault.id] ?? [], id: \.self) { folder in
+                            Label(folder, systemImage: "folder")
+                                .padding(.leading, 12)
+                                .tag(LibrarySource.linkedFolder(vault.id, folder))
+                                .accessibilityIdentifier("library.folder.\(vault.id).\(folder)")
+                        }
                     }
                 }
             }

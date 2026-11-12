@@ -146,6 +146,11 @@ public struct ContextDelivery: Sendable {
         return true
     }
 
+    /// Absolute paths resolve independently of the importing CLAUDE.md location.
+    public static func importLine(for project: ProjectFiles) -> String {
+        "@" + project.output.path
+    }
+
     public func recordClipboard(_ context: AssembledContext) {
         log.append(DeliveryRecord(project: context.project, target: .clipboard, characters: context.text.count, ok: true))
     }
