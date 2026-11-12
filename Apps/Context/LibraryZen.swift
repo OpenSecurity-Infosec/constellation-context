@@ -1,5 +1,6 @@
 import AppKit
 import ContextDomain
+import ContextStore
 import SwiftUI
 
 /// Which Library panels show. At rest the Library is the note alone. The
@@ -106,6 +107,9 @@ struct LibraryView: View {
     private var sources: some View {
         List(selection: $model.source) {
             Section("Context") {
+                Label("Base Vault", systemImage: "books.vertical")
+                    .tag(LibrarySource.linked(Workspace.baseSourceID))
+                folderRows(Workspace.baseSourceID)
                 Label("Scratch", systemImage: "note.text").tag(LibrarySource.pad(.scratch))
                 Label("Clipboard", systemImage: "doc.on.clipboard").tag(LibrarySource.pad(.clipboard))
             }
@@ -121,12 +125,7 @@ struct LibraryView: View {
                     ForEach(model.linked) { vault in
                         Label(vault.name, systemImage: vault.kind == .anytype ? "square.stack" : "books.vertical")
                             .tag(LibrarySource.linked(vault.id))
-                        ForEach(model.folders[vault.id] ?? [], id: \.self) { folder in
-                            Label(folder, systemImage: "folder")
-                                .padding(.leading, 12)
-                                .tag(LibrarySource.linkedFolder(vault.id, folder))
-                                .accessibilityIdentifier("library.folder.\(vault.id).\(folder)")
-                        }
+                        folderRows(vault.id)
                     }
                 }
             }
@@ -136,6 +135,15 @@ struct LibraryView: View {
         .padding(.top, 32)
         .background(Color.ctxPanelBackground)
         .accessibilityIdentifier("library.sources")
+    }
+
+    private func folderRows(_ id: String) -> some View {
+        ForEach(model.folders[id] ?? [], id: \.self) { folder in
+            Label(folder, systemImage: "folder")
+                .padding(.leading, 12)
+                .tag(LibrarySource.linkedFolder(id, folder))
+                .accessibilityIdentifier("library.folder.\(id).\(folder)")
+        }
     }
 
     private var notes: some View {

@@ -144,7 +144,7 @@ Gaps to close:
    - [x] daily notes (code/tests; owner QA pending);
    - [x] templates with date tokens (code/tests; owner QA pending);
    - [x] create, rename, and delete notes in the Library (code/tests);
-   - [ ] folder browsing (linked implemented; base folders remain open);
+   - [x] folder browsing in base and linked vaults (code/tests; owner QA pending);
    - [x] following `[[wikilinks]]` (code/tests; owner QA pending).
 4. **Speed on the real vault (693 notes):**
    - [x] cached connector listing;
@@ -402,3 +402,20 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     remain pending. No GUI/VNC attempted. No claim of installed-app verification.
   - Validation: isolated cortex02 source copy passed 373 tests in 63 suites.
     Local Linux host has no Swift toolchain. Installed GUI QA remains pending.
+
+- **2026-11-12, base-vault folder browsing (Partial pending owner QA).**
+  - Plan: expose the base vault through the existing filesystem connector and
+    share folder projection, filtering and sidebar rows with linked vaults.
+    This implements Vision's Library browsing requirement without a new setting.
+  - Arbitrary base documents open through the connector; edits use a typed
+    Workspace command and refresh pad stores, retaining connector conflict checks.
+  - Temporary-vault coverage checks nested folders, folder boundary filtering,
+    lossless opening/editing and unknown metadata/wikilink/embed preservation.
+  - Owner checks: reveal Library sources; browse Base Vault and nested folders;
+    open root and nested notes, edit and reopen; check Scratch/project pad views
+    reflect edits. Switch between base and linked folders; check search, image
+    reading and quiet panel disclosure. No GUI/VNC QA attempted.
+  - Validation: final isolated cortex02 suite passed 374 tests in 64 suites.
+    Managed pad/document identities are reused when browsing their base paths,
+    and base attachments copy into projects through the existing command.
+    Installed appearance and interaction remain pending the owner checks above.

@@ -75,18 +75,12 @@ final class LibraryModel {
         linked = LinkedVaultRegistry.standard?.load() ?? []
         let secrets = KeychainSecretStore()
         connectors = Dictionary(uniqueKeysWithValues: linked.compactMap { v in Connectors.make(v, secrets: secrets).map { (v.id, $0) } })
+        connectors[Workspace.baseSourceID] = workspace().baseConnector
+        folders = [:]
         for (id, connector) in connectors where connector.kind == .obsidian {
             Task {
                 guard let notes = try? await connector.list() else { return }
-                var paths = Set<String>()
-                for note in notes {
-                    var path = (note.ref.noteID as NSString).deletingLastPathComponent
-                    while !path.isEmpty && path != "." {
-                        paths.insert(path)
-                        path = (path as NSString).deletingLastPathComponent
-                    }
-                }
-                folders[id] = paths.sorted()
+                folders[id] = VaultFolders.paths(in: notes)
             }
         }
         projects = workspace().projects
@@ -194,11 +188,12 @@ final class LibraryModel {
                     for item in try await connector.list() {
                         let path = (item.ref.noteID as NSString).deletingPathExtension
                         if path == name || (path as NSString).lastPathComponent == name || item.title == name {
-                            matches.append(.linked(item.ref))
+                            matches.append(itemID(item.ref))
                         }
                     }
                 } catch { status = "Couldn't search every linked vault."; return }
             }
+            matches = Array(Set(matches))
             guard matches.count == 1, let match = matches.first else {
                 status = matches.isEmpty ? "Link target not found." : "More than one note matches this link."
                 return
@@ -237,11 +232,11 @@ final class LibraryModel {
                     guard !Task.isCancelled else { return }
                     let visible = list.filter { note in
                         if case .linkedFolder(_, let folder)? = source {
-                            return note.ref.noteID.hasPrefix(folder + "/")
+                            return VaultFolders.contains(note.ref.noteID, in: folder)
                         }
                         return true
                     }
-                    items = visible.map { LibraryItem(id: .linked($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
+                    items = visible.map { LibraryItem(id: itemID($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
                     status = nil
                 } catch let error as VaultError {
                     status = error.message
@@ -252,6 +247,25 @@ final class LibraryModel {
         case nil:
             items = []
         }
+    }
+
+    private func itemID(_ ref: VaultNoteRef) -> LibraryItemID {
+        guard ref.vaultID == Workspace.baseSourceID else { return .linked(ref) }
+        let ws = workspace()
+        for pad in ws.pads {
+            let store = ws.store(for: pad)
+            for note in store.liveNotes {
+                if let file = store.fileURL(id: note.id), ws.vault.relativePath(of: file) == ref.noteID {
+                    return .note(pad, note.id)
+                }
+            }
+            if case .project(let name) = pad {
+                for file in ws.project(name).documents() where ws.vault.relativePath(of: file) == ref.noteID {
+                    return .doc(project: name, fileName: file.lastPathComponent)
+                }
+            }
+        }
+        return .linked(ref)
     }
 
     private func padItems(_ pad: Pad) -> [LibraryItem] {
@@ -296,7 +310,7 @@ final class LibraryModel {
         loadTask = Task {
             for connector in connectors.values {
                 guard let hits = try? await connector.search(q), !Task.isCancelled else { continue }
-                items += hits.map { LibraryItem(id: .linked($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
+                items += hits.map { LibraryItem(id: itemID($0.ref), title: $0.title, snippet: $0.snippet, modified: $0.modified, source: connector.displayName) }
             }
         }
     }
@@ -379,7 +393,8 @@ final class LibraryModel {
             guard var note = loaded, note.document.text != text, let connector = connectors[ref.vaultID] else { return }
             note.document = MarkdownDocument(parsing: text)
             do {
-                let written = try await connector.write(note)
+                let written = try await (ref.vaultID == Workspace.baseSourceID
+                    ? ws.apply(BaseVaultCommand.write(note)) : connector.write(note))
                 if selection == id { loadedLinked = written }
                 status = nil
             } catch let error as VaultError {
@@ -400,6 +415,9 @@ final class LibraryModel {
         let ws = workspace()
         do {
             switch id {
+            case .linked(let ref) where ref.vaultID == Workspace.baseSourceID:
+                guard let connector = connectors[ref.vaultID] as? ObsidianConnector else { return }
+                try ws.apply(.addDocument(project: project, file: connector.fileURL(for: ref.noteID)))
             case .linked(let ref):
                 let title = items.first { $0.id == id }?.title ?? ref.noteID
                 try ws.apply(.attachReference(project: project, ProjectReference(ref: ref, title: title)))
