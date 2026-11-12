@@ -3,17 +3,19 @@ import ContextDomain
 import ContextStore
 import SwiftUI
 
-/// SwiftUI editor surface: toolbar, trigger badge, text buffer with math
-/// gutter overlay, checklist rows, timer controls, and export menu.
+/// The zen canvas: full-bleed text and nothing else. A header (pad,
+/// new, search, ⋯) and the note-position dots live in hover bands at the
+/// edges and fade in only when the pointer goes there. Every action is also
+/// in the menu bar and the right-click menu.
 struct ContextEditorRoot: View {
     weak var controller: ContextWindowController?
+    @ObservedObject var chrome: ZenChrome
     var note: ContextNote
     var pad: Pad = .scratch
     var pads: [Pad] = []
-    var project: ProjectInfo?
-    var aiActions: [AIAction] = []
     var aiState: AIState = .idle
     var liveCount: Int
+    var noteIndex: Int = 0
     var mathResults: [MathEngine.LineOutcome]
     var aggregate: String?
     var sumAvgLines: [String] = []
@@ -32,20 +34,36 @@ struct ContextEditorRoot: View {
     @State private var slashSelected: Int = 0
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
+        ZStack {
             editor
-            if aiState != .idle { aiDrawer }
-            if note.kind != .plain { modeBar }
-            statusBar
+            VStack(spacing: 0) {
+                header
+                    .opacity(chrome.header ? 1 : 0)
+                    .allowsHitTesting(chrome.header)
+                Spacer(minLength: 0)
+                VStack(spacing: 8) {
+                    if aiState != .idle { aiCard }
+                    if hasModeCard { modeCard }
+                    positionDots
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
+            }
         }
+        .animation(.easeOut(duration: 0.18), value: chrome.header)
+        .animation(.easeOut(duration: 0.18), value: chrome.footer)
+        .animation(.easeOut(duration: 0.25), value: chrome.positionFlash)
         .background(Color.ctxEditorBackground)
-        .frame(minWidth: 480, minHeight: 360)
+        .ignoresSafeArea()
+        .frame(minWidth: 360, minHeight: 240)
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 8) {
+    // MARK: - Header (hover only)
+
+    private var header: some View {
+        HStack(spacing: 14) {
+            // Room for the traffic lights, which fade with the header.
+            Color.clear.frame(width: 64, height: 1)
             Menu(pad.title) {
                 ForEach(Array(pads.enumerated()), id: \.element) { index, p in
                     Button(index < 9 ? "\(p.title)  ⌘\(index + 1)" : p.title) { controller?.switchPad(p) }
@@ -54,73 +72,66 @@ struct ContextEditorRoot: View {
                 Button("New Project…") { controller?.promptNewProject() }
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .fixedSize()
-            .font(.caption.weight(.medium))
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
             .accessibilityIdentifier("overlay.padMenu")
-            Button("‹") { controller?.prevNote() }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
-            Text("\(liveCount)")
-                .font(.caption).foregroundStyle(.secondary)
-                .frame(minWidth: 20)
-            Button("›") { controller?.nextNote() }
-                .buttonStyle(.plain).foregroundStyle(.secondary)
-            Spacer()
-            Menu("AI") {
-                ForEach(aiActions, id: \.self) { action in
-                    Button(action.title) { controller?.runAI(action) }
-                }
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
-            .font(.caption)
-            .accessibilityIdentifier("overlay.aiMenu")
-            if let project {
-                projectMenu(project)
-            } else if pads.contains(where: \.isProject) {
-                Menu("Send to Project") {
-                    ForEach(pads.filter(\.isProject), id: \.self) { p in
-                        Button(p.title) { controller?.sendToProject(p.title) }
-                    }
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
-                .font(.caption)
-                .accessibilityIdentifier("overlay.sendToProject")
-            }
-            if let trigger = note.kind.triggerWord {
-                Text(trigger)
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Color.ctxAccent.opacity(0.18))
-                    .foregroundStyle(Color.ctxAccent)
-                    .clipShape(Capsule())
-            }
-            if autoPasteArmed {
-                Text("collecting pastes")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Menu("Export") {
-                Button("Copy") { controller?.copyNote() }
-                Button("Quick Export .txt") { controller?.quickExport(kind: .txt) }
-                Button("Quick Export Markdown") { controller?.quickExport(kind: .markdown) }
-                Button("Quick Export PDF") { controller?.quickExport(kind: .pdf) }
-                Divider()
-                Button("Save .txt As…") { controller?.export(kind: .txt) }
-                Button("Save Markdown As…") { controller?.export(kind: .markdown) }
-                Button("Save PDF As…") { controller?.export(kind: .pdf) }
-                Divider()
-                Button("Send to Apple Notes") { controller?.sendToAppleNotes() }
-                Button("Send to Obsidian") { controller?.sendToObsidian() }
-                Button("Send to Bear") { controller?.sendToBear() }
-            }
-            Button("Void") { controller?.openVoid() }.buttonStyle(.plain)
-            Button("🔍") { controller?.openSearch() }.buttonStyle(.plain)
-                .help("Search notes (⌘F)")
-            Button("+") { controller?.newNote() }.buttonStyle(.plain)
-            Button("🗑") { controller?.trashCurrent() }.buttonStyle(.plain)
+            Spacer(minLength: 0)
+            headerIcon("plus", help: "New note (⌘N)", id: "overlay.newNote") { controller?.newNote() }
+            headerIcon("magnifyingglass", help: "Search notes (⌘F)", id: "overlay.search") { controller?.openSearch() }
+            headerIcon("ellipsis", help: "More", id: "overlay.more") { controller?.showMoreMenu() }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Color.ctxPanelBackground)
+        .padding(.horizontal, 12)
+        .frame(height: ZenMetrics.headerHeight)
+        .background {
+            // Empty header space drags the window, like a title bar.
+            Color.ctxEditorBackground
+                .contentShape(Rectangle())
+                .gesture(WindowDragGesture())
+        }
+    }
+
+    private func headerIcon(_ symbol: String, help: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .regular))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .help(help)
+        .accessibilityIdentifier(id)
+    }
+
+    // MARK: - Footer
+
+    /// Where this note sits in the pad. Shown after a note switch and when
+    /// the pointer is near the bottom edge; hidden for a single note.
+    @ViewBuilder
+    private var positionDots: some View {
+        if liveCount > 1 {
+            Group {
+                if liveCount <= 12 {
+                    HStack(spacing: 6) {
+                        ForEach(0..<liveCount, id: \.self) { i in
+                            Circle()
+                                .fill(i == noteIndex ? Color.primary : Color.secondary.opacity(0.4))
+                                .frame(width: 5, height: 5)
+                        }
+                    }
+                } else {
+                    Text("\(noteIndex + 1) / \(liveCount)")
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(height: 12)
+            .opacity(chrome.footer || chrome.positionFlash ? 0.8 : 0)
+            .allowsHitTesting(false)
+            .accessibilityIdentifier("overlay.position")
+        }
     }
 
     private var editor: some View {
@@ -138,6 +149,8 @@ struct ContextEditorRoot: View {
                         slashSelected = 0
                     }, onImagePaste: { image in
                         controller?.handleImageDrop(image)
+                    }, contextMenuItems: {
+                        controller?.noteMenuItems(for: .canvas) ?? []
                     })
                         .font(.system(size: ContextSettings.shared.fontSize))
                     if let fragment = slashFragment, !SlashCommand.completions(matching: fragment, extensions: jsExtensions).isEmpty {
@@ -253,7 +266,9 @@ struct ContextEditorRoot: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.trailing, 12)
+        // Line up with the text view's inset (it adds 10pt of its own).
+        .padding(.top, ZenMetrics.textInset.height - 10)
+        .padding(.trailing, ZenMetrics.textInset.width)
         .allowsHitTesting(false)
     }
 
@@ -287,6 +302,9 @@ struct ContextEditorRoot: View {
             .onDelete { _ in }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .padding(.top, ZenMetrics.textInset.height - 10)
+        .padding(.horizontal, ZenMetrics.textInset.width - 16)
     }
 
     private func markerPrefix(_ item: ChecklistItem) -> String {
@@ -325,7 +343,7 @@ struct ContextEditorRoot: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 8)
         .frame(width: 280)
-        .offset(x: 24, y: 60)
+        .offset(x: ZenMetrics.textInset.width, y: ZenMetrics.textInset.height + 24)
     }
 
     private func handleSlashKey(_ event: NSEvent, matches: [SlashCommand.Definition]) -> NSEvent? {
@@ -340,9 +358,18 @@ struct ContextEditorRoot: View {
         slashFragment = nil
     }
 
-    @ViewBuilder
-    private var modeBar: some View {
-        Divider()
+    /// Legacy first-line modes keep a small floating readout. Plain notes
+    /// and modes with nothing live to show get none.
+    private var hasModeCard: Bool {
+        switch note.kind {
+        case .sum, .avg, .count, .timer: true
+        case .paste: autoPasteArmed
+        case .math: ratesFootnote != nil
+        default: false
+        }
+    }
+
+    private var modeCard: some View {
         HStack(spacing: 12) {
             switch note.kind {
             case .sum, .avg:
@@ -356,28 +383,31 @@ struct ContextEditorRoot: View {
                 }
             case .timer:
                 Text(NoteTimer.format(remaining ?? elapsed))
-                    .font(.system(.title2).monospaced())
+                    .font(.system(.title3).monospaced())
                 Button(timerRunning ? "Stop" : "Start") {
                     timerRunning ? controller?.timerStop() : controller?.timerStart()
                 }
                 Button("Reset") { controller?.timerReset() }
-                Button("Full screen") { controller?.openTimerFullscreen() }
+                Button("Full Screen") { controller?.openTimerFullscreen() }
             case .paste:
-                Text(autoPasteArmed ? "Everything you copy lands here as plain text." : "Type paste + Return to collect copies.")
-                    .font(.caption).foregroundStyle(.secondary)
-            case .code:
-                Text("Snippet buffer — paste strips styling.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text("Collecting copies").font(.caption).foregroundStyle(.secondary)
+            case .math:
+                if let ratesFootnote {
+                    Text(ratesFootnote).font(.caption).foregroundStyle(.secondary)
+                }
             default:
                 EmptyView()
             }
-            Spacer()
         }
+        .buttonStyle(.borderless)
         .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(.regularMaterial, in: Capsule())
     }
 
+    /// AI proposals float over the bottom of the canvas until accepted or
+    /// rejected.
     @ViewBuilder
-    private var aiDrawer: some View {
+    private var aiCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             switch aiState {
             case .idle:
@@ -420,8 +450,8 @@ struct ContextEditorRoot: View {
                 .frame(maxHeight: 220)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Color.ctxPanelBackground)
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityIdentifier("overlay.ai.drawer")
     }
 
@@ -440,65 +470,6 @@ struct ContextEditorRoot: View {
             .background(line.kind == .added ? Color.ctxAccent.opacity(0.12) : Color.clear)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
-
-    private func projectMenu(_ info: ProjectInfo) -> some View {
-        Menu("Context") {
-            Button("Copy as Context") { controller?.copyProjectContext() }
-                .keyboardShortcut("c", modifiers: [.command, .shift])
-            Button("Copy Import Line") { controller?.copyImportLine() }
-            Button("Reveal Context File") { controller?.revealProjectFile() }
-            Divider()
-            Button("Add Document…") { controller?.addProjectDocument() }
-            if !info.documents.isEmpty || !info.references.isEmpty {
-                Menu("Remove") {
-                    ForEach(info.documents, id: \.self) { name in
-                        Button(name) { controller?.removeProjectDocument(name) }
-                    }
-                    ForEach(info.references, id: \.ref) { r in
-                        Button("\(r.title) (linked)") { controller?.detachProjectReference(r.ref) }
-                    }
-                }
-            }
-            Divider()
-            Menu("Deliver To") {
-                ForEach(HarnessKind.allCases, id: \.self) { kind in
-                    Toggle("\(kind.displayName) (not built yet)", isOn: Binding(
-                        get: { info.harnesses.contains(kind) },
-                        set: { _ in controller?.toggleHarness(kind) }
-                    ))
-                }
-                Toggle("Constellation Router (not built yet)", isOn: Binding(
-                    get: { info.routerSync },
-                    set: { _ in controller?.toggleRouterSync() }
-                ))
-            }
-            Button("Deliver Now") { controller?.deliverNow() }
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .font(.caption)
-        .accessibilityIdentifier("overlay.projectMenu")
-    }
-
-    private var statusBar: some View {
-        HStack {
-            if let ratesFootnote {
-                Text(ratesFootnote)
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
-                Text("⌥A toggle · ⌘1 Scratch · ⌘2 Clipboard · ⌘[ ⌘] notes")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button("Library") { controller?.openLibrary() }
-                .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
-                .accessibilityIdentifier("overlay.library")
-            Button("Settings") { controller?.openSettings() }
-                .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(Color.ctxPanelBackground)
-    }
 }
 
 /// The note's text view. The store is the single source of truth: typing
@@ -514,6 +485,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     var onIndent: ((ChecklistItem.IndentDirection) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
     var onImagePaste: ((NSImage) -> Void)?
+    var contextMenuItems: (() -> [NSMenuItem])?
 
     func makeNSView(context: Context) -> NSScrollView {
         let tv = ContextTextView()
@@ -524,6 +496,7 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.onSlash = { fragment, range in onSlash?(fragment, range) }
         tv.onOpenURL = { url in NSWorkspace.shared.open(url) }
         tv.onImagePaste = { image in onImagePaste?(image) }
+        tv.contextMenuItems = contextMenuItems
         tv.isAutomaticLinkDetectionEnabled = false
         tv.font = ContextTheme.bodyFont
         tv.isRichText = false
@@ -531,10 +504,11 @@ private struct PlainTextEditor: NSViewRepresentable {
         tv.allowsUndo = true
         tv.backgroundColor = .clear
         tv.insertionPointColor = .labelColor
-        tv.textContainerInset = NSSize(width: 10, height: 10)
+        tv.textContainerInset = ZenMetrics.textInset
         let scroll = NSScrollView()
         scroll.documentView = tv
         scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
         scroll.drawsBackground = false
         context.coordinator.view = tv
         context.coordinator.onChange = onChange
@@ -547,6 +521,7 @@ private struct PlainTextEditor: NSViewRepresentable {
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let tv = scroll.documentView as? ContextTextView else { return }
         context.coordinator.onChange = onChange
+        tv.contextMenuItems = contextMenuItems
         if tv.font != ContextTheme.bodyFont { tv.font = ContextTheme.bodyFont }
         let switched = context.coordinator.noteID != noteID
         context.coordinator.noteID = noteID
@@ -582,6 +557,8 @@ final class ContextTextView: NSTextView {
     var onOpenURL: ((URL) -> Void)?
     var onSlash: ((String, NSRange) -> Void)?
     var onImagePaste: ((NSImage) -> Void)?
+    /// Note actions shown above the standard text items on right-click.
+    var contextMenuItems: (() -> [NSMenuItem])?
     private var slashCompletion: NSView?
     /// The overlay's text view, so accepted AI proposals can be applied
     /// as a native, undoable edit.
@@ -716,6 +693,17 @@ final class ContextTextView: NSTextView {
             }
         }
         super.mouseDown(with: event)
+    }
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let base = super.menu(for: event) ?? NSMenu()
+        let extra = contextMenuItems?() ?? []
+        guard !extra.isEmpty else { return base }
+        for item in extra.reversed() {
+            base.insertItem(item, at: 0)
+        }
+        base.insertItem(.separator(), at: extra.count)
+        return base
     }
 
     override func keyDown(with event: NSEvent) {

@@ -56,8 +56,10 @@ enum ContextTheme {
             }
         } else {
             window.isOpaque = true
-            window.backgroundColor = nil
-            window.titlebarAppearsTransparent = false
+            // The zen canvas draws under a transparent title bar, so the
+            // window's own color must match the editor.
+            window.backgroundColor = editorBackground
+            window.titlebarAppearsTransparent = true
             for sub in window.contentView?.subviews ?? [] where sub is NSVisualEffectView {
                 sub.removeFromSuperview()
             }

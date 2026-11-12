@@ -19,6 +19,18 @@ Context should feel like a calm, native Mac utility where **text is the interfac
 - **Accessibility identifiers.** Every actionable control gets a stable identifier for UI tests and agent verification (Crew rule).
 - **Avoid web-app patterns.** No oversized cards, floating pill navigation, or dashboard side rails.
 
+## Zen canvas
+
+The canvas starts with text and nothing else. These rules turn "less is more" into layout:
+
+- **No visible window chrome.** No title bar, separator, toolbar, or status bar. The traffic lights are hidden until the header shows.
+- **Three layers of disclosure.**
+  1. **Hidden (the default).** Text, the caret, and generous margins. Nothing else is drawn.
+  2. **Hover bands.** When the pointer is near the top edge, the header fades in: the pad name, new note, search, and ⋯. When the pointer is near the bottom edge, the note-position dots fade in. The dots also flash briefly after a note switch. Typing hides both until the pointer moves again.
+  3. **Native menus.** Every note action is built once (`noteMenuItems`) and appears in the menu bar's Note menu, the canvas's right-click menu, and the header's ⋯ button. Deeper configuration stays in Settings.
+- **Transient work floats.** AI proposals and the legacy mode readouts are floating material cards at the bottom of the canvas. They are not full-width bars, and they disappear when they are done.
+- **No hint text.** Shortcuts live in menus, not in the canvas.
+
 ## Surfaces
 
 - **Quick overlay.** One pad at a time, with full-bleed text. Switch pads by swipe or ⌘[ / ⌘]. The pad indicator stays minimal. The overlay opens ready to type.

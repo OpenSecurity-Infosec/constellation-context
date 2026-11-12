@@ -4,7 +4,7 @@ import ContextVault
 
 @main
 @MainActor
-final class ContextAppDelegate: NSObject, NSApplicationDelegate {
+final class ContextAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var main: ContextWindowController?
     private var status: ContextStatusItem?
     private var pendingURL: URL?
@@ -133,6 +133,12 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
     @objc func openLibrary(_ sender: Any?) { main?.openLibrary() }
     @objc func switchPad(_ sender: NSMenuItem) { main?.switchPad(number: sender.tag) }
 
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu.title == "Note" else { return }
+        menu.removeAllItems()
+        main?.noteMenuItems(for: .menuBar).forEach(menu.addItem)
+    }
+
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
         let appMenu = NSMenu()
@@ -152,6 +158,11 @@ final class ContextAppDelegate: NSObject, NSApplicationDelegate {
         shot.keyEquivalentModifierMask = [.option, .shift]
         file.addItem(shot)
         let fileItem = NSMenuItem(); fileItem.submenu = file; menu.addItem(fileItem)
+        // Note actions live here and in the canvas's right-click menu, so
+        // the canvas itself shows no controls. Rebuilt on open.
+        let note = NSMenu(title: "Note")
+        note.delegate = self
+        let noteItem = NSMenuItem(); noteItem.submenu = note; menu.addItem(noteItem)
         let format = NSMenu(title: "Format")
         let cycle = NSMenuItem(title: "Cycle Line Marker", action: #selector(cycleMarker(_:)), keyEquivalent: "m")
         cycle.keyEquivalentModifierMask = [.command, .shift]

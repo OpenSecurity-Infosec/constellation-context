@@ -31,6 +31,8 @@ final class ContextWindowController {
     private var timerMode: NoteTimer.Mode = .stopwatch
     private var tickTimer: Timer?
     private var hosting: NSHostingView<ContextEditorRoot>?
+    /// Hover chrome for the zen canvas.
+    let chrome = ZenChrome()
     private var lastMathBody = ""
     private var lastMathResults: [MathEngine.LineOutcome] = []
 
@@ -47,15 +49,22 @@ final class ContextWindowController {
             backing: .buffered, defer: false
         )
         window.title = "Context"
+        // Zen canvas: no visible title bar. The traffic lights fade in with
+        // the header when the pointer reaches the top edge.
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
         window.isFloatingPanel = true
         window.level = .floating
         window.center()
         window.isMovableByWindowBackground = false
         window.onSwipe = { [weak self] direction in self?.applySwipe(direction) }
+        chrome.onHeaderChange = { [weak self] visible in self?.setTrafficLights(visible: visible) }
         ContextTheme.apply(mode: ContextSettings.shared.themeMode)
         if live { refreshRates() }
         render()
         applyLook()
+        setTrafficLights(visible: false, animated: false)
         startTimerTick()
         updatePin()
     }
@@ -196,6 +205,21 @@ final class ContextWindowController {
         window.makeKeyAndOrderFront(nil)
     }
 
+    /// Fades the close, minimize, and zoom buttons with the header.
+    func setTrafficLights(visible: Bool, animated: Bool = true) {
+        let buttons: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
+        let views = buttons.compactMap { window.standardWindowButton($0) }
+        let alpha: CGFloat = visible ? 1 : 0
+        guard animated else {
+            views.forEach { $0.alphaValue = alpha }
+            return
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.18
+            views.forEach { $0.animator().alphaValue = alpha }
+        }
+    }
+
     func toggle() {
         if window.isVisible { window.orderOut(nil) } else { show() }
     }
@@ -252,6 +276,7 @@ final class ContextWindowController {
         autoPaste.stop()
         timer = NoteTimer()
         render()
+        chrome.flashPosition()
     }
 
     func trashCurrent() {
@@ -268,6 +293,7 @@ final class ContextWindowController {
     func onTextChange(_ text: String) {
         apply(.stageText(pad, id: noteID, text: text))
         scheduleFlush()
+        chrome.typing()
         let kind = ContextNote(text: text).kind
         // Arm/disarm AutoPaste with the `paste` trigger.
         if kind == .paste, !autoPaste.isArmed {
@@ -817,15 +843,16 @@ final class ContextWindowController {
             countLines = []
         }
         let items = current.kind == .list ? ChecklistItem.parse(current.text) : []
+        let live = store.liveNotes
         let view = ContextEditorRoot(
             controller: self,
+            chrome: chrome,
             note: current,
             pad: pad,
             pads: pads,
-            project: cachedProjectInfo,
-            aiActions: aiActions,
             aiState: aiState,
-            liveCount: store.liveNotes.count,
+            liveCount: live.count,
+            noteIndex: live.firstIndex(where: { $0.id == noteID }) ?? 0,
             mathResults: results,
             aggregate: sumAvg.map(math.format),
             sumAvgLines: sumAvgLines,
@@ -844,7 +871,8 @@ final class ContextWindowController {
         } else {
             let h = NSHostingView(rootView: view)
             h.translatesAutoresizingMaskIntoConstraints = false
-            let container = NSView(frame: window.contentLayoutRect)
+            let container = ZenContainerView(frame: window.contentLayoutRect)
+            container.onPointer = { [weak self] point, height in self?.chrome.pointer(point, height: height) }
             container.addSubview(h)
             NSLayoutConstraint.activate([
                 h.leadingAnchor.constraint(equalTo: container.leadingAnchor),
