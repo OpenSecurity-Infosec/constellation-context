@@ -8,7 +8,7 @@ Read this first. It takes five minutes and gets you productive in this repo. The
 - **Primary surface:** a ⌥A hotkey overlay with pads. **Scratch** is your heads-up pad. **Clipboard** is editable clipboard history. **Context pads** hold one project's live context each.
 - **Secondary surface:** a minimal Bear-style Library.
 - **Storage:** Context always owns an Obsidian-compliant **base vault** for its own data. Anytype (first) and Obsidian (second) attach as **linked vaults** through connectors.
-- **The point:** projects are curated context packs that get injected into AI harnesses such as Claude Code. In the MVP, copy and a kept-current `context.md` are real. Harness connectors and router sync are stubs behind interfaces.
+- **The point:** projects are curated context packs that get injected into AI harnesses such as Claude Code. In the MVP, copy-as-context and a kept-current assembled file (`~/Context/.context/projects/<name>.md`) are real. Harness connectors and router sync are stubs behind interfaces.
 - **AI:** `gpt-6.1-terra` through the CXN router, an OpenAI-compatible endpoint at `https://infer.cxn.sh/v1`. `constellation/auto` is deprecated.
 - **The rules:**
   - Less is more.
@@ -17,18 +17,11 @@ Read this first. It takes five minutes and gets you productive in this repo. The
   - AI edits the page.
   - Humans and agents share the same operations.
 
-## Today versus the direction
+## Where things stand
 
-| Area | Today (in code) | Direction (Vision) |
-| --- | --- | --- |
-| Storage | One `notes.json` in Application Support | Base vault plus linked vaults ([ADR-0001](ADR/0001-markdown-files-are-the-source-of-truth.md), [ADR-0002](ADR/0002-base-vault-and-linked-vaults.md)) |
-| Notes | Plain-text Antinote-style notes with first-line modes | Markdown canvases with embedded objects |
-| Surfaces | Hotkey overlay, Void, search, timer, and settings windows | Quick overlay with pads, plus a Library window |
-| AI | None | `gpt-6.1-terra` actions as undoable proposals |
-| Harnesses | None | Projects → copy and `context.md` (real) → harness connectors and router sync (stubs) |
-| Roadmap | Antinote parity polish | **Closed.** Build [Vision.md § MVP](Vision.md#mvp) in order |
+The MVP in [Vision.md § MVP](Vision.md#mvp) is built. All eight steps are recorded in [`Plans/active/MVP.md`](../Plans/active/MVP.md), with commits and anything still unproven. Most features are **Partial**: tests pass, but the installed app hasn't been exercised by hand. The manual-check list is at the end of that plan, and the per-feature status is in `README.md` § MVP status.
 
-Do not do Antinote parity work. The README parity table is a historical record.
+The Antinote-parity era is over. The first-line modes (`math`, `list`, `timer`, …), OCR, The Void, and `::` commands still work in Scratch, but they get no new investment. Expect a "less is more" trim (Vision § Open questions).
 
 ## Build, test, run
 
@@ -46,30 +39,34 @@ CONTEXT_REBUILD=1 ./Scripts/run-app.sh       # package, codesign, install /Appli
 
 | Path | Owns |
 | --- | --- |
-| `Sources/ContextDomain` | Value types and pure logic: `Note`, modes, checklist, search, slash commands, URL scheme, settings, sync payloads. No AppKit/SwiftUI. |
+| `Sources/ContextDomain` | Value types and pure logic: `Note`, `Pad`, `ClipboardPolicy`, paste normalizing, modes, checklist, search, slash commands, URL scheme, settings. No AppKit/SwiftUI. |
+| `Sources/ContextVault` | `MarkdownDocument` (lossless frontmatter), `MarkdownBlocks`, `BaseVault` layout, `VaultConnector` + `ObsidianConnector` + `AnytypeConnector`/`AnytypeClient`, the linked-vault registry, and `SecretStore` (Keychain) |
+| `Sources/ContextStore` | `NoteStore` (one pad's files, trash, and index), `Workspace` + `ContextCommand` (**the single mutation path**), the project model (`ProjectFiles`, `project.json`), and the `notes.json` migration |
+| `Sources/ContextHarness` | `ContextAssembler`, `ContextDelivery` (kept-current file and delivery log), and the `HarnessConnector`/`RouterSync` interfaces with stubs |
+| `Sources/ContextAI` | OpenAI-compatible `ModelClient`, `AIActions` → `Proposal`, `LineDiff`, and `OpencodeConfig` |
 | `Sources/ContextMath` | `math`/`sum`/`avg` evaluation, units, currency rates |
-| `Sources/ContextStore` | `NoteStore`, today's JSON persistence with staged flushes |
 | `Sources/ContextExport` | Export (txt/md/pdf) and handoff to Notes/Obsidian/Bear |
-| `Apps/Context` | App composition root: `ContextWindowController` (overlay and menu bar), `ContextEditorView`, the other windows, hotkeys, `SyncManager` |
-| `Tests/*` | Swift Testing suites |
+| `Apps/Context` | App composition root: `ContextWindowController` (overlay, pads, menu bar), `ContextEditorView`, `ProjectActions`, `AIFlow`, `Library`, `ClipboardWatcher`, Settings (`LinkedVaultsSettings`, `AISettings`), and the other windows |
+| `Tests/*` | Swift Testing suites, including the connector conformance suite (`Tests/ContextVaultTests/ConnectorConformance.swift`) |
 | `Scripts/` | `package-app.sh` and `run-app.sh` |
 | `Docs/` | Vision, design guide, ADRs, and this file |
+| `Plans/active/` | Implementation plans and the MVP log |
 
-Planned modules (create each through a plan in `Plans/active/`):
-
-| Module | Owns | Mirrors |
-| --- | --- | --- |
-| `ContextVault` | Markdown and frontmatter, the base vault, `VaultConnector`, and the Anytype and Obsidian connectors | — |
-| `ContextAI` | OpenAI-compatible model client (CXN router, `gpt-6.1-terra`) and AI actions as proposals | Crew's `CrewConstellation` client shape |
-| `ContextHarness` | Projects' harness bindings, copy-as-context, the `context.md` writer, and the `HarnessConnector` and router-sync stubs | — |
-| `ContextAutomation` | `contextctl` CLI and MCP server (later) | Cue's `CaptureAutomation` |
+Not built yet: `ContextAutomation` (the `contextctl` CLI and MCP server, mirroring Cue's `CaptureAutomation`).
 
 ## Where things live
 
-- **Data:** `~/Library/Application Support/ConstellationContext/` holds `notes.json`, settings, `Extensions/`, and the currency cache. Content moves to the base vault; settings stay here.
+- **Content:** the base vault, `~/Context` by default, contains:
+  - `Scratch/` and `Clipboard/`;
+  - `Projects/<name>/` with `context.md`, `docs/`, and `project.json`;
+  - `.trash/`, Obsidian's own trash name, with per-pad subfolders;
+  - `.context/`, which is derived and safe to delete: the indexes, `projects/<name>.md` (the assembled context), and `deliveries.jsonl`.
+- **App data:** `~/Library/Application Support/ConstellationContext/` holds `settings.json`, `vaults.json` (linked vaults), `Extensions/`, the currency cache, and `notes.json.migrated-*` (the pre-vault backup).
+- **Secrets:** the Keychain, service `app.constellation.Context`, with accounts `anytype.apiKey` and `ai.apiKey`.
 - **Bundle and scheme:** bundle id `app.constellation.Context`; URL scheme `context://` (`open`, `new`, `search`, `append`).
 - **Global hotkey:** ⌥A. Region OCR: ⌥⇧S.
-- **Model config reference:** `~/.config/opencode/opencode.json` (the `cxn-router` provider). Never copy its API key into the repo, logs, or plain-text settings.
+- **Model config reference:** `~/.config/opencode/opencode.json`, the `cxn-router` provider. Settings → AI can import its key into the Keychain. Never copy the key into the repo, logs, or plain-text settings.
+- **Live AI test:** `CONTEXT_LIVE_AI_KEY=… swift test --filter LiveModelTests`. It is skipped without the variable.
 
 ## The Constellation family
 
@@ -100,9 +97,20 @@ The apps share no Swift package yet. Do not create one without an ADR.
 ## Gotchas
 
 - **Global hotkeys and input-method candidate windows** cannot be tested automatically. They need a manual pass in the installed app.
-- **Tests must never touch the user's real notes, vaults, or Anytype space.** Use the existing temp-store pattern, which disables clipboard collection, sync, currency refresh, and timer ticks. Use temp vaults and fake connectors.
+- **Tests must never touch the user's real notes, vaults, Anytype space, or Keychain.**
+  - Use `tempVault()` and `Workspace` on temp folders.
+  - Use `FakeAnytype` for Anytype.
+  - Use `MemorySecretStore` for secrets.
+  - Use `FakeModel` for AI.
+- **A new vault connector must pass `checkConnectorConformance`** before it ships.
+- **Screenshots of the app need Screen Recording permission** for the terminal. Without it, visual checks are manual.
 - **Status claims stay honest.** Mark a feature "Shipped" only after you verify it in the installed app. Otherwise it is "Partial".
 
 ## Where to start
 
-Take the first MVP item in [Vision.md § MVP](Vision.md#mvp) that is not done yet. Open a plan in `Plans/active/` for anything that crosses modules. Item 1, the base vault, comes first; most other items depend on it.
+1. Read the open items in `Plans/active/MVP.md`, starting with the manual-check list. Fix what fails there before building anything new.
+2. Then take the next work from [Vision.md § MVP](Vision.md#mvp) "Later". The likely order:
+   - a real Claude Code harness connector;
+   - the `contextctl` CLI and MCP server;
+   - the "less is more" trim of legacy modes.
+3. Open a plan in `Plans/active/` for anything that crosses modules. Add an ADR for architectural decisions.

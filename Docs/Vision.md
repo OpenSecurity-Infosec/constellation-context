@@ -147,27 +147,24 @@ For syncing the base vault, rely on the user's existing file sync (iCloud Drive,
 
 ## Where today's app stands
 
-The app today is an Antinote-parity scratchpad:
+**The MVP is built.** Status is in `README.md` § MVP status. Each step's log, including what is still unproven by hand, is in `Plans/active/MVP.md`.
 
-- the ⌥A hotkey overlay;
-- first-line modes (`math`, `sum`, `avg`, `count`, `list`, `code`, `timer`, `paste`);
-- on-device OCR;
-- The Void trash;
-- `::` commands and JS extensions;
-- the `context://` URL scheme;
-- export to Apple Notes, Obsidian, and Bear;
-- a draft of CloudKit sync.
+The app now has:
 
-All notes live in a single `notes.json`. The overlay and editor are the foundation for the quick surface. The direction changes in four ways:
+- a base vault at `~/Context` (migrated from the old `notes.json`);
+- Anytype and Obsidian connectors behind one interface;
+- Scratch, Clipboard, and project Context pads in the ⌥A overlay;
+- project context assembly with a kept-current file for `@` import;
+- stubbed harness and router delivery;
+- `gpt-6.1-terra` AI actions as diff proposals;
+- a Library window with cross-source search and a canvas that shows images inline in Read mode.
 
-- **Antinote parity is closed.** Existing modes keep working but get no further parity polish. The parity table in `README.md` is a historical record, not a backlog.
-- **Storage moves to the base vault** (ADR-0001, ADR-0002).
-- **New work goes to** the MVP list above, in order.
-- **"Less is more" applies to what exists.** Expect a later pass that trims modes, settings, and features that do not earn their place. CloudKit sync and Bear/Notes handoff are the first candidates.
+Antinote-era features still work in Scratch: first-line modes, OCR, The Void, `::` commands and JS extensions, URL schemes, and export. They are frozen and are candidates for the "less is more" trim. iCloud sync was removed in favor of file sync (ADR-0001).
 
 ## Open questions
 
 - Which first-line modes survive the "less is more" cut?
-- What is the default base-vault location: `~/Documents/Context`, iCloud Drive, or ask on first run?
-- Anytype's exact API surface, authentication, and object-to-Markdown mapping. Confirm these against current Anytype docs before building the connector.
+- Should the base vault default stay at `~/Context`? It was chosen to avoid the Documents privacy prompt on ad-hoc-signed builds. The other options are iCloud Drive, or asking on first run.
+- Anytype's real markdown round-trip fidelity. The connector follows API v1 `2025-11-08`, but it has only been tested against a fake.
+- Live inline styling while typing in the Library (Bear-style). Today, images show only in Read mode.
 - Should Constellation apps share a Swift package for the model client, the Keychain credential, and design tokens? Decide by ADR.

@@ -52,15 +52,19 @@ If the code and these documents disagree, stop and reconcile them before you add
 
 | Module | Owns | Must not depend on |
 | --- | --- | --- |
-| `ContextDomain` | Value types, parsing, pure logic | AppKit, SwiftUI, network |
+| `ContextDomain` | Value types, parsing, pure logic (`Note`, `Pad`, `ClipboardPolicy`, settings) | AppKit, SwiftUI, network |
+| `ContextVault` | `MarkdownDocument`, `BaseVault`, `VaultConnector` and its Anytype and Obsidian connectors, the linked-vault registry, `SecretStore` | UI, `ContextStore` |
+| `ContextStore` | `NoteStore`, `Workspace` + `ContextCommand` (the one mutation path), the project model, migration | UI |
+| `ContextHarness` | Context assembly, delivery and the kept-current file, `HarnessConnector`/`RouterSync` interfaces and stubs | UI |
+| `ContextAI` | OpenAI-compatible model client, AI actions as proposals, line diff | UI, other Context modules |
 | `ContextMath` | Math, unit, and currency evaluation | UI |
-| `ContextStore` | Persistence | UI |
 | `ContextExport` | Export and handoff | UI |
-| `ContextApp` (`Apps/Context`) | Composition root: windows, editor, hotkeys | Privileged logic (keep it in modules) |
-| *planned* `ContextVault` | Markdown and frontmatter, the base vault, `VaultConnector`, and the Anytype and Obsidian connectors | UI |
-| *planned* `ContextAI` | OpenAI-compatible model client and AI actions as proposals | UI |
-| *planned* `ContextHarness` | Harness bindings, copy-as-context, the `context.md` writer, and the `HarnessConnector` and router-sync stubs | UI |
+| `ContextApp` (`Apps/Context`) | Composition root: overlay, Library, Settings, hotkeys | Privileged logic (keep it in modules) |
 | *planned* `ContextAutomation` | `contextctl` CLI and MCP | Alternate mutation paths |
+
+Dependency direction: `ContextDomain` and `ContextVault` are foundational. `ContextStore` depends on both. `ContextHarness` depends on `ContextStore` and `ContextVault`. `ContextAI` stands alone. The app composes everything.
+
+Known deviation from the one mutation path: The Void window still calls `NoteStore.restore`, `restoreMany`, and `destroy` directly. Route them through `Workspace.apply` when you next touch that window.
 
 ## Development loop
 

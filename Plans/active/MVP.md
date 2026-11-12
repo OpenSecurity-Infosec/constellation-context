@@ -47,7 +47,7 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
   - Sidebar: base vault, linked vaults, projects.
   - Note list and search across sources.
   - Canvas editor with images inline.
-- [ ] **8. Close-out**
+- [x] **8. Close-out**
   - README status, written honestly.
   - Quickstart "today" table updated.
   - Manual-check list for the user.
@@ -122,3 +122,54 @@ Each step ships tests, passes `swift test`, ends with `CONTEXT_REBUILD=1 ./Scrip
     - search across sources;
     - Add to Project for an Anytype note;
     - image rendering from the real iCloud Obsidian vault.
+- **2026-11-12, step 8, done.**
+  - README has an honest MVP status table; the Antinote table is kept as a labeled historical baseline.
+  - Quickstart, AGENTS module map, and Vision "where today's app stands" now match the code.
+  - **MVP complete in code.** Most rows are Partial until the manual pass below.
+
+## Manual check (owner, in the installed app)
+
+None of these could be automated from the agent's terminal: it has no Screen Recording permission, linking needs a code shown by Anytype, and these are the user's real vaults.
+
+1. **Overlay:**
+   - ⌥A opens the overlay ready to type.
+   - The pad menu at top left lists Scratch, Clipboard, and projects.
+   - ⌘1, ⌘2, and ⌘3 switch pads.
+   - ⇧⌘N creates a project, and its folder appears in `~/Context/Projects/`.
+2. **Clipboard:**
+   - Copy some text in another app; it appears in the Clipboard pad.
+   - Copy a password from 1Password; it does **not** appear.
+   - Edit an entry; it no longer expires.
+3. **Paste:** pasting a Markdown list or table into Scratch keeps its structure.
+4. **Projects:**
+   - On a project pad, Context → Add Document… adds a file.
+   - Copy as Context (⇧⌘C) puts the assembled prompt on the clipboard.
+   - Copy Import Line gives an `@…/.context/projects/<name>.md` line. Paste it into a real `CLAUDE.md` and confirm Claude Code sees the context.
+   - Deliver Now reports the stubs as "not built yet".
+5. **Send to Project:** from Scratch, the note's text lands at the end of the project's context.
+6. **AI:**
+   - Settings → AI → Use opencode's CXN key, then Test, reports that `gpt-6.1-terra` answered.
+   - On a note, AI → Tidy shows a diff. Accept with ⌘↩, then undo with ⌘Z in one step.
+   - Extract to Project shows the project diff; accept it.
+7. **Anytype:**
+   - With Anytype open, Settings → Link Anytype… → enter the code → pick a space; status shows "Connected · N notes".
+   - In the Library, open an object, edit its body in Edit mode, and confirm the change in Anytype.
+   - Change a select property to an existing option.
+8. **Obsidian:**
+   - Settings → Link Obsidian… → `~/Library/Mobile Documents/iCloud~md~obsidian/Documents`. Watch for an iCloud Drive access prompt.
+   - In the Library, browse and search the vault.
+   - A note with `![[image.png]]` shows the image in Read mode.
+   - Edit a note while Obsidian is open, and confirm there is no corruption and the conflict message appears if both edit at once.
+9. **Library:**
+   - ⇧⌘L opens it.
+   - Search finds notes across Scratch, projects, and both linked vaults.
+   - Add to Project on an Anytype note shows it under the project's Remove menu as "(linked)".
+10. **Base vault:** Settings → Base vault → Change… to another folder, then back.
+
+## Next (after the manual pass)
+
+- Route The Void's restore and delete through `Workspace.apply` (the known deviation).
+- A real Claude Code harness connector.
+- The `contextctl` CLI and MCP server (`ContextAutomation`).
+- The "less is more" trim of legacy modes and settings.
+- Live inline Markdown styling in the Library editor.
