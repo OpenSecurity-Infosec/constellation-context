@@ -419,3 +419,48 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
     Managed pad/document identities are reused when browsing their base paths,
     and base attachments copy into projects through the existing command.
     Installed appearance and interaction remain pending the owner checks above.
+
+## Headless vault speed gate (2026-11-13)
+
+Plan: reuse `ObsidianConnector.list/search`, as Library does for filesystem
+vaults, in a release executable. No UI, settings, dependencies or vault writes.
+
+Run on the MacBook (or any Mac with Swift):
+
+```bash
+./Scripts/bench-vault.sh "/path/to/vault"
+```
+
+The instant budget is **warm search p95 <=100 ms**, including filesystem
+metadata reconciliation, excluding Library's intentional 200 ms debounce,
+rendering and iCloud hydration. Cold index means the first listing on a fresh
+in-memory connector, not a flushed OS disk cache; warm index is its second
+listing. Search uses ten fixed queries, ten rounds (100 samples), nearest-rank
+p50/p95. Exit codes: 0 pass, 1 latency failure, 2 invalid/unreadable/empty input.
+Only aggregate counts/timings are printed. The vault is read only.
+
+Synthetic fixtures can be reproduced with
+`python3 Scripts/generate-bench-vault.py /tmp/new-vault 693` (or `5000`).
+These contain ~1.8 KB notes with frontmatter, Unicode and wikilinks; they do not
+represent Matthew's note distribution. The real-vault checkbox remains open
+until the MacBook command passes. This gate does not verify overlay focus or GUI
+responsiveness, Anytype, or cross-source Library rendering.
+
+Initial cortex02 release measurements with concurrent test compilation:
+693 notes: cold 330.65 ms, warm 72.46 ms, search p50 40.99 ms / p95 99.06 ms;
+5,000 notes: cold 1437.94 ms, warm 272.79 ms, p50 310.50 ms / p95 825.77 ms.
+Reconciliation now prefetches file sizes and derives relative paths from canonical
+root enumeration rather than resolving every note's path on every request.
+Symlinks and nonregular files are excluded; regression coverage protects this.
+
+Final cortex02 release run (sequential benchmark processes, Intel x86_64):
+
+| Synthetic notes | Cold index ms | Warm index ms | Search p50 ms | Search p95 ms | Gate |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 693 | 199.18 | 13.37 | 16.49 | 69.50 | PASS |
+| 5,000 | 1167.93 | 100.28 | 125.04 | 510.94 | FAIL |
+
+Full suite: 375 tests in 65 suites passed on cortex02. The 5,000-note gate remains
+unmet: per-query filesystem reconciliation still scales with vault size. No claim
+that the MVP real-vault measurement or larger-vault instant behavior is complete.
+No GUI manual checks performed. MacBook real-vault command remains required.

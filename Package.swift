@@ -12,9 +12,11 @@ let package = Package(
         .library(name: "ContextHarness", targets: ["ContextHarness"]),
         .library(name: "ContextAI", targets: ["ContextAI"]),
         .library(name: "ContextExport", targets: ["ContextExport"]),
+        .executable(name: "context-bench", targets: ["ContextBench"]),
         .executable(name: "Context", targets: ["ContextApp"]),
     ],
     targets: [
+        .executableTarget(name: "ContextBench", dependencies: ["ContextVault"]),
         .target(name: "ContextDomain"),
         .target(name: "ContextMath", dependencies: ["ContextDomain"]),
         .target(name: "ContextVault"),

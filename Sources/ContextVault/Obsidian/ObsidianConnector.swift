@@ -47,9 +47,17 @@ public struct ObsidianConnector: VaultConnector {
         func entries(_ connector: ObsidianConnector) throws -> [Entry] {
             try connector.ensureRoot()
             var next: [String: Entry] = [:]
+            var enumerationPrefix: String?
             for url in connector.markdownFiles() {
                 try Task.checkCancellation()
-                guard let path = connector.relativePath(url) else { continue }
+                // Resolve the enumeration root once, retaining Foundation's /private aliases.
+                // The walker excludes symlinks and does not descend symlink directories.
+                if enumerationPrefix == nil {
+                    guard let relative = connector.relativePath(url) else { continue }
+                    enumerationPrefix = String(url.path.dropLast(relative.count))
+                }
+                guard let prefix = enumerationPrefix, url.path.hasPrefix(prefix) else { continue }
+                let path = String(url.path.dropFirst(prefix.count))
                 let metadata = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
                 if let old = cached[path], old.summary.modified == metadata.contentModificationDate,
                    old.size == metadata.fileSize {
@@ -158,11 +166,13 @@ public struct ObsidianConnector: VaultConnector {
     func markdownFiles() -> [URL] {
         guard let walker = FileManager.default.enumerator(
             at: root,
-            includingPropertiesForKeys: [.isRegularFileKey, .contentModificationDateKey],
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .contentModificationDateKey, .fileSizeKey],
             options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else { return [] }
         var out: [URL] = []
         for case let url as URL in walker where url.pathExtension.lowercased() == "md" {
+            guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey]),
+                  values.isRegularFile == true, values.isSymbolicLink != true else { continue }
             out.append(url)
         }
         return out
