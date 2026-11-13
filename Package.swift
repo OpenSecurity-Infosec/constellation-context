@@ -5,6 +5,8 @@ let package = Package(
     name: "Context",
     platforms: [.macOS(.v15)],
     products: [
+        .library(name: "ContextAutomation", targets: ["ContextAutomation"]),
+        .executable(name: "contextctl", targets: ["contextctl"]),
         .library(name: "ContextDomain", targets: ["ContextDomain"]),
         .library(name: "ContextMath", targets: ["ContextMath"]),
         .library(name: "ContextVault", targets: ["ContextVault"]),
@@ -16,6 +18,9 @@ let package = Package(
         .executable(name: "Context", targets: ["ContextApp"]),
     ],
     targets: [
+        .target(name: "ContextAutomation", dependencies: ["ContextStore", "ContextVault", "ContextHarness"]),
+        .executableTarget(name: "contextctl", dependencies: ["ContextAutomation", "ContextVault"]),
+        .testTarget(name: "ContextAutomationTests", dependencies: ["ContextAutomation", "ContextStore", "ContextVault"]),
         .executableTarget(name: "ContextBench", dependencies: ["ContextVault"]),
         .target(name: "ContextDomain"),
         .target(name: "ContextMath", dependencies: ["ContextDomain"]),

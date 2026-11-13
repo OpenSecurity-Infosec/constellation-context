@@ -201,7 +201,7 @@ None of these could be automated from the agent's terminal: it has no Screen Rec
 
 - Void mutation routing is implemented; owner interaction checks remain below.
 - A real Claude Code harness connector.
-- The `contextctl` CLI and MCP server (`ContextAutomation`).
+- [x] Minimal `contextctl` CLI and stdio MCP server (`ContextAutomation`); owner client checks pending.
 - The "less is more" trim of legacy modes and settings.
 - Live inline Markdown styling in the Library editor.
 
@@ -512,3 +512,12 @@ Post-push CI and forced installation revision are checked at close-out.
   - Validation: isolated cortex02 full suite passed 376 tests in 65 suites,
     including editor typing/composition and lossless vault regressions. Linux has
     no Swift; no local execution claimed. Post-push CI and forced install follow.
+
+- **2026-11-13, minimal ContextAutomation (Partial pending owner QA).**
+  Shared list-projects, print-context and add-document operations back the CLI
+  and stdio MCP tools. ContextAssembler and Workspace.apply are reused; no UI
+  controls, settings or dependencies added. Linked connector loading is deferred;
+  assembly warnings fail context printing rather than silently omitting sources.
+  Usage, scope and owner checks: [automation plan](context-automation.md).
+  Full cortex02 validation and post-push CI/install are reported at close-out.
+  Validation: isolated cortex02 full suite passed 378 tests in 65 suites.

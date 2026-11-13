@@ -70,7 +70,8 @@ cortex02 is the default computer-use and testing machine. It is a dedicated MacB
 | `Docs/` | Vision, design guide, ADRs, and this file |
 | `Plans/active/` | Implementation plans and the MVP log |
 
-Not built yet: `ContextAutomation` (the `contextctl` CLI and MCP server, mirroring Cue's `CaptureAutomation`).
+`ContextAutomation` provides the minimal `contextctl` CLI and stdio MCP server.
+See [automation usage and limits](../Plans/active/context-automation.md).
 
 ## Where things live
 
