@@ -148,6 +148,14 @@ import Testing
         #expect(hits.map(\.ref.noteID).contains("Home.md"), "body mention also found")
     }
 
+    @Test func searchPreservesCanonicalUnicodeAndLiteralPunctuation() async throws {
+        let (c, _) = try fixture()
+        let note = try await c.create(title: "CAFÉ", body: "A cafe\u{301} and [[target]] 计划")
+        #expect(try await c.search("cafe\u{301}").first?.ref == note.ref)
+        #expect(try await c.search("[[target]]").first?.ref == note.ref)
+        #expect(try await c.search("计划").first?.ref == note.ref)
+    }
+
     @Test func missingFolderIsReportedNotCrashed() async throws {
         let c = ObsidianConnector(id: "gone", displayName: "Gone", root: URL(fileURLWithPath: "/tmp/ctx-missing-\(UUID().uuidString)"))
         await #expect(throws: VaultError.self) { _ = try await c.list() }

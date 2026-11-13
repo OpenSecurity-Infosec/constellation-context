@@ -464,3 +464,26 @@ Full suite: 375 tests in 65 suites passed on cortex02. The 5,000-note gate remai
 unmet: per-query filesystem reconciliation still scales with vault size. No claim
 that the MVP real-vault measurement or larger-vault instant behavior is complete.
 No GUI manual checks performed. MacBook real-vault command remains required.
+
+### Search hot path follow-up (2026-11-13)
+
+Kept reconciliation on every request; no freshness timeout or query-result cache.
+Release ablation on cortex02 isolated synthetic fixture: cached titles and literal
+String matching reduced p95 to 219.82 ms; retaining sorted entries when metadata
+is unchanged reduced it to 204.77 ms. Normalized UTF-8 Data substring matching
+removes repeated Unicode substring work; canonical composition preserves accented
+queries. Titles still rank before bodies, with the same modification/path order.
+Only changed files rebuild their searchable bytes. Reused each enumerated URL's
+path and retained the actor-owned, rebuildable index. No dependencies or UI added.
+
+Final sequential release runs, 5,000 generated notes, 100 samples each:
+- Run 1: cold 4384.84 ms, warm 89.34 ms, search p50 87.16 ms, p95 **92.68 ms** PASS.
+- Run 2: cold 1397.37 ms, warm 81.23 ms, search p50 82.48 ms, p95 **85.79 ms** PASS.
+Both retained 450,000 aggregate hits. Cold timing includes normalization and is
+not an OS-cold disk measurement. These results establish the synthetic headless
+gate only; real-vault and installed GUI responsiveness remain unproven.
+Regression coverage adds decomposed accented queries, uppercase titles, literal
+wikilink punctuation and Chinese text; existing tests cover external changes.
+Validation: isolated cortex02 full suite passed **376 tests in 65 suites**.
+Local Linux has no Swift toolchain; all execution validation used cortex02.
+Post-push CI and forced installation revision are checked at close-out.

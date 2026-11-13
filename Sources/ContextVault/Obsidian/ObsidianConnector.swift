@@ -26,12 +26,22 @@ public struct ObsidianConnector: VaultConnector {
     }
 
     public func search(_ query: String) async throws -> [VaultNoteSummary] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().precomposedStringWithCanonicalMapping
         let entries = try await index.entries(self)
         guard !q.isEmpty else { return entries.map(\.summary) }
-        let titles = entries.filter { $0.summary.title.lowercased().contains(q) }
-        let bodies = entries.filter { !$0.summary.title.lowercased().contains(q) && $0.text.contains(q) }
-        return (titles + bodies).map(\.summary)
+        // Canonically composed UTF-8 permits fast literal substring matching without
+        // repeating Unicode normalization for every body on every keystroke.
+        let needle = Data(q.utf8)
+        var titles: [VaultNoteSummary] = []
+        var bodies: [VaultNoteSummary] = []
+        for entry in entries {
+            if entry.title.range(of: needle) != nil {
+                titles.append(entry.summary)
+            } else if entry.text.range(of: needle) != nil {
+                bodies.append(entry.summary)
+            }
+        }
+        return titles + bodies
     }
 
     /// Memory-only, rebuildable index. Metadata is checked on every request so
@@ -39,43 +49,52 @@ public struct ObsidianConnector: VaultConnector {
     private actor ListingIndex {
         struct Entry {
             let summary: VaultNoteSummary
-            let text: String
+            let title: Data
+            let text: Data
             let size: Int?
         }
         private var cached: [String: Entry] = [:]
+        private var ordered: [Entry] = []
 
         func entries(_ connector: ObsidianConnector) throws -> [Entry] {
             try connector.ensureRoot()
             var next: [String: Entry] = [:]
+            var changed = false
             var enumerationPrefix: String?
             for url in connector.markdownFiles() {
                 try Task.checkCancellation()
+                let filePath = url.path
                 // Resolve the enumeration root once, retaining Foundation's /private aliases.
                 // The walker excludes symlinks and does not descend symlink directories.
                 if enumerationPrefix == nil {
                     guard let relative = connector.relativePath(url) else { continue }
-                    enumerationPrefix = String(url.path.dropLast(relative.count))
+                    enumerationPrefix = String(filePath.dropLast(relative.count))
                 }
-                guard let prefix = enumerationPrefix, url.path.hasPrefix(prefix) else { continue }
-                let path = String(url.path.dropFirst(prefix.count))
+                guard let prefix = enumerationPrefix, filePath.hasPrefix(prefix) else { continue }
+                let path = String(filePath.dropFirst(prefix.count))
                 let metadata = try url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
                 if let old = cached[path], old.summary.modified == metadata.contentModificationDate,
                    old.size == metadata.fileSize {
                     next[path] = old
                     continue
                 }
+                changed = true
                 let text = try String(contentsOf: url, encoding: .utf8)
                 next[path] = Entry(summary: VaultNoteSummary(
                     ref: VaultNoteRef(vaultID: connector.id, noteID: path),
                     title: url.deletingPathExtension().lastPathComponent,
                     snippet: String(MarkdownDocument(parsing: text).body.prefix(160)),
-                    modified: metadata.contentModificationDate), text: text.lowercased(), size: metadata.fileSize)
+                    modified: metadata.contentModificationDate), title: Data(url.deletingPathExtension().lastPathComponent.lowercased().precomposedStringWithCanonicalMapping.utf8), text: Data(text.lowercased().precomposedStringWithCanonicalMapping.utf8), size: metadata.fileSize)
             }
+            changed = changed || next.count != cached.count
             cached = next
-            return next.values.sorted {
-                if $0.summary.modified == $1.summary.modified { return $0.summary.ref.noteID < $1.summary.ref.noteID }
-                return ($0.summary.modified ?? .distantPast) > ($1.summary.modified ?? .distantPast)
+            if changed {
+                ordered = next.values.sorted {
+                    if $0.summary.modified == $1.summary.modified { return $0.summary.ref.noteID < $1.summary.ref.noteID }
+                    return ($0.summary.modified ?? .distantPast) > ($1.summary.modified ?? .distantPast)
+                }
             }
+            return ordered
         }
     }
 
