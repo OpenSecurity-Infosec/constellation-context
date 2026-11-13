@@ -93,7 +93,8 @@ struct ContextEditorRoot: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 12, weight: .regular))
-                .frame(width: 22, height: 22)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: 22, minHeight: 22)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

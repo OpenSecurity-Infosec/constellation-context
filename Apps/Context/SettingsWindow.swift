@@ -35,18 +35,21 @@ private struct SettingsView: View {
         Form {
             Section("Placement") {
                 Toggle("Show in Dock", isOn: $showInDock)
+                    .accessibilityIdentifier("settings.showInDock")
                     .onChange(of: showInDock) {
                         ContextSettings.shared.showInDock = showInDock
                         ContextSettings.shared.save()
                         PlacementRelayer.dockChanged()
                     }
                 Toggle("Show menu bar icon", isOn: $showMenuBar)
+                    .accessibilityIdentifier("settings.showMenuBar")
                     .onChange(of: showMenuBar) {
                         ContextSettings.shared.showMenuBarExtra = showMenuBar
                         ContextSettings.shared.save()
                         PlacementRelayer.menuBarChanged()
                     }
                 Toggle("Pin above other windows", isOn: $pinOnTop)
+                    .accessibilityIdentifier("settings.pinOnTop")
                     .onChange(of: pinOnTop) {
                         ContextSettings.shared.pinOnTop = pinOnTop
                         ContextSettings.shared.save()
@@ -56,16 +59,24 @@ private struct SettingsView: View {
             Section("Appearance") {
                 Slider(value: $fontSize, in: 11...22, step: 1) {
                     Text("Text size: \(Int(fontSize))")
-                }.onChange(of: fontSize) {
+                }
+                .accessibilityIdentifier("settings.textSize")
+                .onChange(of: fontSize) {
                     ContextSettings.shared.fontSize = CGFloat(fontSize)
                     ContextSettings.shared.save()
                     ThemeRelayer.lookChanged()
                 }
             }
-            BaseVaultSettingsRow()
-            ClipboardSettingsRow()
-            LinkedVaultsSection()
-            AISettingsRow()
+            Section("Vaults") {
+                BaseVaultSettingsRow()
+                LinkedVaultsSection()
+            }
+            Section("Clipboard") {
+                ClipboardSettingsRow()
+            }
+            Section("AI") {
+                AISettingsRow()
+            }
             Text("Toggle with ⌥A from anywhere. Notes are Markdown files in your base vault, on this Mac.")
                 .font(.caption).foregroundStyle(.secondary)
         }

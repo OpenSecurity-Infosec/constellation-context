@@ -42,6 +42,18 @@ import Testing
         #expect(canvas.contains("Move to Trash"))
         #expect(!canvas.contains("Settings…"), "the canvas menu stays about the note")
 
+        for place in [ContextWindowController.NoteMenuPlace.canvas, .menuBar, .more] {
+            let items = controller.noteMenuItems(for: place)
+            #expect(items.first { $0.title == "New Note" }?.keyEquivalent == "n")
+            #expect(items.first { $0.title == "Search…" }?.keyEquivalent == "f")
+            #expect(items.first { $0.title == "Move to Trash" }?.keyEquivalent == "\u{8}")
+            #expect(items.first { $0.title == "Export" }?.submenu?.items.first {
+                $0.title == "Save Markdown As…"
+            }?.keyEquivalentModifierMask == [.command, .shift])
+        }
+        let voidItem = controller.noteMenuItems(for: .more).first { $0.title == "The Void" }
+        #expect(voidItem?.keyEquivalent == "v")
+        #expect(voidItem?.keyEquivalentModifierMask == [.command, .option])
         let more = controller.noteMenuItems(for: .more).map(\.title)
         #expect(more.contains("The Void"))
         let export = controller.noteMenuItems(for: .menuBar).first { $0.title == "Export" }

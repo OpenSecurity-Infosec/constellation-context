@@ -151,9 +151,10 @@ Gaps to close:
    - [x] debounced search;
    - [ ] measured against "instant" on the real vault.
 5. **Less is more in the overlay (Partial):**
-   - a text-only, quiet toolbar (no emoji buttons);
-   - Void, Export, Search, New, and Trash moved behind menus and shortcuts;
-   - Settings grouped.
+   - [x] text-only, quiet hover header (no emoji buttons);
+   - [x] Void, Export, Search, New, and Trash behind menus and shortcuts;
+   - [x] Settings grouped;
+   - [ ] owner verification of installed appearance and interaction.
 6. **Editing quality:** Markdown styling as you type in the overlay and Library.
 7. **End-to-end Claude Code check:** create a project, paste the import line into a real `CLAUDE.md`, and confirm Claude Code uses the context.
 
@@ -487,3 +488,27 @@ wikilink punctuation and Chinese text; existing tests cover external changes.
 Validation: isolated cortex02 full suite passed **376 tests in 65 suites**.
 Local Linux has no Swift toolchain; all execution validation used cortex02.
 Post-push CI and forced installation revision are checked at close-out.
+
+
+- **2026-11-13, gap 5 audit (Partial pending owner QA).**
+  - Audited overlay and Settings against Vision principle 1 and the Design Guide.
+    Existing pad/More hover header and native menus already hide note actions;
+    retained these components. More now sizes to its text rather than clipping
+    into a 22-point icon slot. No settings, modes or controls added.
+  - Grouped existing vault, Clipboard and AI configuration into named native
+    sections alongside Placement and Appearance; added stable identifiers to
+    placement and text-size controls. Existing configuration supports the quick
+    surface, readable text, private clipboard capture, linked sources and model
+    configuration described in the Vision. Legacy appearance/theme controls
+    remain absent. Editor mutation, caret and Markdown storage code untouched.
+  - Extended shared-menu coverage for New/Search/Trash and export/Void shortcuts.
+  - Owner manual checks: ⌥A opens ready to type; hover shows unclipped pad/More
+    text, typing hides it, traffic lights remain visible. Exercise More,
+    right-click and menu-bar actions, ⌘N, ⌘F, ⌘Delete, ⇧⌘E and ⌥⌘V;
+    cancel export and restore a trashed temporary note. Open Settings with ⌘,;
+    check all five groups scroll and existing values persist. Check caret,
+    selection, IME, undo/redo and byte-exact Markdown reopen with frontmatter,
+    wikilinks and embeds. No GUI verification claimed.
+  - Validation: isolated cortex02 full suite passed 376 tests in 65 suites,
+    including editor typing/composition and lossless vault regressions. Linux has
+    no Swift; no local execution claimed. Post-push CI and forced install follow.
