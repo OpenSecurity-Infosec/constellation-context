@@ -96,16 +96,12 @@ struct NoteInspector: View {
                 Button("Reveal") { controller?.revealProjectFile() }
             }
             ForEach(HarnessKind.allCases, id: \.self) { kind in
-                Toggle(isOn: Binding(
+                switchRow(kind.displayName, isOn: Binding(
                     get: { info.harnesses.contains(kind) },
                     set: { _ in controller?.toggleHarness(kind) }
-                )) {
-                    label(kind.displayName, note: "not built yet")
-                }
+                ))
             }
-            Toggle(isOn: Binding(get: { info.routerSync }, set: { _ in controller?.toggleRouterSync() })) {
-                label("Constellation Router", note: "not built yet")
-            }
+            switchRow("Router", isOn: Binding(get: { info.routerSync }, set: { _ in controller?.toggleRouterSync() }))
             Button("Deliver Now") { controller?.deliverNow() }
                 .padding(.top, 4)
         }
@@ -159,10 +155,12 @@ struct NoteInspector: View {
         .frame(minHeight: 22)
     }
 
-    private func label(_ title: String, note: String) -> some View {
-        HStack(spacing: 4) {
-            Text(title)
-            Text("· \(note)").foregroundStyle(.secondary)
+    /// A delivery target that isn't built yet: the switch records intent.
+    private func switchRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        row(title) {
+            Text("not built yet").foregroundStyle(.secondary).lineLimit(1)
+            Toggle("", isOn: isOn).labelsHidden()
         }
+        .help("\(title) delivery isn't built yet. The context file is kept current.")
     }
 }

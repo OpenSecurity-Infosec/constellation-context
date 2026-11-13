@@ -66,13 +66,17 @@ final class LibraryModel {
     private var lastSave: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
 
-    init(workspace: @escaping () -> Workspace) {
+    private let registry: LinkedVaultRegistry?
+
+    /// Tests pass a temp registry so they never read the real one.
+    init(workspace: @escaping () -> Workspace, registry: LinkedVaultRegistry? = .standard) {
         self.workspace = workspace
+        self.registry = registry
         reloadSources()
     }
 
     func reloadSources() {
-        linked = LinkedVaultRegistry.standard?.load() ?? []
+        linked = registry?.load() ?? []
         let secrets = KeychainSecretStore()
         connectors = Dictionary(uniqueKeysWithValues: linked.compactMap { v in Connectors.make(v, secrets: secrets).map { (v.id, $0) } })
         connectors[Workspace.baseSourceID] = workspace().baseConnector

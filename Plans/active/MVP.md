@@ -521,3 +521,21 @@ Post-push CI and forced installation revision are checked at close-out.
   Usage, scope and owner checks: [automation plan](context-automation.md).
   Full cortex02 validation and post-push CI/install are reported at close-out.
   Validation: isolated cortex02 full suite passed 378 tests in 65 suites.
+
+- **2026-11-13, orphan commit reconciliation (Partial pending owner QA).**
+  Folded compatible changes from `980c728` and `4fdde93` onto current master.
+  Kept opt-in AppKit PNG snapshots of overlay rest/header/inspector, Library
+  disclosure, and Markdown rendering; injected a temporary linked-vault registry
+  so snapshots do not read the user's registry. Kept trailing inspector switches
+  and display-only title heading-marker dimming. No production dependencies.
+  Preserved master's gap-6 Markdown implementation, typing protections, quiet
+  toolbar and less-is-more trims. Dropped the duplicate MarkdownSyntax engine,
+  MarkdownFormat actions, Format/Aa menus, raw/styled toggle and persisted raw
+  preference: they duplicate newer styling or add controls/modes without a
+  Vision principle-1 justification. Dropped the controls-only snapshot and tests
+  for those discarded features. Snapshots are opt-in with CONTEXT_SNAPSHOT_DIR;
+  they capture PNGs for review, not cross-machine pixel-baseline assertions.
+  Installed appearance still needs owner review; automated validation below.
+  Validation: isolated cortex02 full suite passed **381 tests in 66 suites**
+  with snapshots enabled (all three snapshot tests passed on Intel). PNG capture
+  needs no Screen Recording permission; no pixel equality or GUI QA claimed.

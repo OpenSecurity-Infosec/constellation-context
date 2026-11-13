@@ -548,6 +548,13 @@ final class ContextTextView: NSTextView {
         }
         if let titleRange {
             storage.addAttributes(title, range: titleRange)
+            // A Markdown heading marker on the title recedes; the text
+            // keeps it, so the file is unchanged.
+            let line = (string as NSString).substring(with: titleRange)
+            let hashes = line.prefix(while: { $0 == "#" }).count
+            if (1...6).contains(hashes), line.dropFirst(hashes).first == " " {
+                storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: NSRange(location: titleRange.location, length: hashes + 1))
+            }
         }
         storage.endEditing()
         defaultParagraphStyle = body[.paragraphStyle] as? NSParagraphStyle
