@@ -17,6 +17,16 @@ This is the operating contract for humans and coding agents in this repo. Follow
 
 If the code and these documents disagree, stop and reconcile them before you add another code path. If a request conflicts with the Vision, say so and ask before you build.
 
+## T3 Code model usage
+
+When working in T3 Code threads on apps01, pick the model from the kind of work:
+
+- **UI work:** Opus 5.5 — provider `claudeAgent`, model `claude-opus-5-5`.
+- **Everything else major:** Neon — provider `antigravity`, model `gemini-4-neon`.
+- **Tight fixes and focused work:** Sol 6.2 — provider `codex`, model `gpt-6.2-sol`. Give Sol explicit, detailed instructions so it stays on topic.
+
+Spin off subagents with the orchestrator v2 tools on T3's built-in `t3-code` MCP server: `delegate_task` to start a child, `orchestrator_capabilities` to list providers, models and options, then `task_status` and `task_cancel` to follow or stop a child. Prefer `delegate_task` over doing every slice in one turn. Use `create_threads` or `t3_thread_launch` only for new top-level threads, not for subagents.
+
 ## Product rules that are easy to regress
 
 - The hotkey overlay opens ready to type, with no perceptible delay.
